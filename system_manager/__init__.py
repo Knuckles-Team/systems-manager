@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 from system_manager.version import __version__, __author__, __credits__
-from system_manager.subshift import subshift, main
+from system_manager.system_manager import SystemManager, main, system_manager
 """
-subsync
+system-manager
 
-A small package to synchronize your subtitle files.
+Install/Update/Clean/Manage your System!
 """
 
 __version__ = __version__
