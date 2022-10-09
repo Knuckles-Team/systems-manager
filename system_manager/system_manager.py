@@ -129,8 +129,9 @@ def system_manager(argv):
             usage()
             sys.exit()
         elif opt in ("-a", "--applications"):
-            applications = arg
-            applications = applications.lower()
+            applications = arg.lower()
+            applications = applications.replace(" ", "")
+            applications = applications.split(",")
         elif opt in ("-i", "--install"):
             install = True
         elif opt in ("-f", "--file"):
