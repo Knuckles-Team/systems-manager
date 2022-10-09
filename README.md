@@ -4,19 +4,21 @@
 System-Manager will update your system and upgrade your applications. You can also install applications as well!
 
 ### Usage:
-| Short Flag | Long Flag      | Description                                   |
-|------------|----------------|-----------------------------------------------|
-| -h         | --help         | See usage for script                          | 
-| -a         | --applications | Applications to install                       | 
-| -c         | --clean        | Clean Recycle/Trash bin                       | 
-| -f         | --file         | File of applications to install               | 
-| -i         | --install      | Install applications                          | 
-| -s         | --silent       | Don't print to stdout                         | 
-| -u         | --update       | Update your applications and Operating System | 
+| Short Flag | Long Flag         | Description                                   |
+|------------|-------------------|-----------------------------------------------|
+| -h         | --help            | See usage for script                          | 
+| -c         | --clean           | Clean Recycle/Trash bin                       | 
+| -e         | --enable-features | Enable Window Features                        | 
+| -f         | --font            | Install Hack NF Font                          | 
+| -i         | --install         | Install applications                          | 
+| -p         | --python          | Install Python Modules                        | 
+| -s         | --silent          | Don't print to stdout                         | 
+| -u         | --update          | Update your applications and Operating System | 
+| -t         | --theme           | Apply Takuyuma Terminal Theme                 | 
 
 ### Example:
 ```bash
-system-manager --file apps.txt --update --install --applications 'python3'
+system-manager --font --update --clean --theme --python 'geniusbot' --install 'python3'
 ```
 
 
