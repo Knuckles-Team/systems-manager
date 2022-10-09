@@ -23,12 +23,16 @@ class SystemManager:
         self.set_applications(applications)
         self.ubuntu_update_command = [['apt', 'update'], ['apt', 'upgrade', '-y'], ['apt', 'autoremove', '-y']]
         self.windows_update_command = [['winget', 'upgrade', '--all']]
+        self.ubuntu_clean_command = [['apt', 'update'], ['apt', 'install', '-y', 'trash-cli'], ['trash-empty']]
+        self.windows_clean_command = [['cleanmgr', '/lowdisk']]
         if self.operating_system == "Ubuntu":
             self.install_command = self.ubuntu_install_command
             self.update_command = self.ubuntu_update_command
+            self.clean_command = self.ubuntu_clean_command
         elif self.operating_system == "Windows":
             self.install_command = self.windows_install_command
             self.update_command = self.windows_update_command
+            self.clean_command = self.windows_clean_command
 
     def install_applications(self):
         if self.install_command:
@@ -44,6 +48,11 @@ class SystemManager:
         if self.update_command:
             for update_single_command in self.update_command:
                 self.run_command(update_single_command)
+
+    def clean(self):
+        if self.clean_command:
+            for clean_single_command in self.clean_command:
+                self.run_command(clean_single_command)
 
     def run_command(self, command):
         try:
@@ -105,12 +114,13 @@ def usage():
     print(f"Usage: \n"
           f"-h | --help         [ See usage for script ]\n"
           f"-a | --applications [ Applications to install ]\n"
+          f"-c | --clean        [ Clean Recycle/Trash bin ]\n"
           f"-f | --file         [ File of applications to install ]\n"
           f"-i | --install      [ Install applications ]\n"
           f"-s | --silent       [ Don't print to stdout ]\n"
           f"-u | --update       [ Update your applications and Operating System ]\n"
           f"Example: \n"
-          f"system-manager --file apps.txt --update --install --application 'python3'\n")
+          f"system-manager --file apps.txt --update --clean --install --applications 'python3'\n")
 
 
 def system_manager(argv):
@@ -119,8 +129,9 @@ def system_manager(argv):
     install = False
     silent = False
     update = False
+    clean = False
     try:
-        opts, args = getopt.getopt(argv, "hisua:f:", ["help", "install", "silent", "update", "applications=", "file="])
+        opts, args = getopt.getopt(argv, "hcisua:f:", ["help", "clean", "install", "silent", "update", "applications=", "file="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -132,6 +143,8 @@ def system_manager(argv):
             applications = arg.lower()
             applications = applications.replace(" ", "")
             applications = applications.split(",")
+        elif opt in ("-c", "--clean"):
+            clean = True
         elif opt in ("-i", "--install"):
             install = True
         elif opt in ("-f", "--file"):
@@ -152,6 +165,11 @@ def system_manager(argv):
         system_manager_instance.set_applications(applications=applications)
         print("Installing...")
         system_manager_instance.install_applications()
+
+    if clean:
+        print("Cleaning Recycle/Trash Bin")
+        system_manager_instance.clean()
+
     print("Done!")
 
 
