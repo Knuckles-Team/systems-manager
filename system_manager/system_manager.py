@@ -23,7 +23,7 @@ class SystemManager:
         self.set_applications(applications)
         self.ubuntu_update_command = [['apt', 'update'], ['apt', 'upgrade', '-y'], ['apt', 'autoremove', '-y']]
         self.windows_update_command = [['winget', 'upgrade', '--all']]
-        self.ubuntu_clean_command = [['apt', 'update'], ['apt', 'install', '-y', 'trash-cli'], ['trash-empty']]
+        self.ubuntu_clean_command = [['trash-empty']]
         self.windows_clean_command = [['cleanmgr', '/lowdisk']]
         if self.operating_system == "Ubuntu":
             self.install_command = self.ubuntu_install_command
@@ -48,11 +48,13 @@ class SystemManager:
         if self.update_command:
             for update_single_command in self.update_command:
                 self.run_command(update_single_command)
+                print(self.result.returncode, self.result.stdout, self.result.stderr)
 
     def clean(self):
         if self.clean_command:
             for clean_single_command in self.clean_command:
                 self.run_command(clean_single_command)
+                print(self.result.returncode, self.result.stdout, self.result.stderr)
 
     def run_command(self, command):
         try:
@@ -90,15 +92,15 @@ class SystemManager:
             if self.operating_system == "Ubuntu":
                 self.applications = \
                     [
-                        "adb", "android-studio", "ansible", "atomicparsley", "audacity", "chrome", "dialog",
-                        "discord", "docker", "dos2unix", "enscript", "ffmpeg", "fstab", "geniusbot", "gimp", "git",
-                        "gnome", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "history", "jq", "kexi",
-                        "kvm", "mediainfo", "mkvtoolnix", "neofetch", "nfs", "nordvpn", "openjdk", "openssh", "openvpn",
-                        "packer", "phoronix", "preload", "poppler-utils", "powershell", "python", "pycharm", "redshift",
-                        "rygel", "scrcpy", "statlog", "steam", "startup-disk-creator", "system-manager", "telegram",
-                        "tesseract", "theme-manager", "tigervnc", "tmux", "transmission", "translate-shell",
-                        "trash-cli", "tree", "unzip", "udisks2", "vlc", "video-manager", "wine", "wireshark",
-                        "youtube-dl", "xdotool", "xsel", "yq"
+                        "atomicparsley", "audacity", "curl", "dialog", "discord", "containerd", "docker.io", "docker-compose",
+                        "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git", "gnome-shell", "ubuntu-gnome-desktop",
+                        "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi", "kvm", "mediainfo",
+                        "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools", "openjdk-8-jdk",
+                        "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3", "pycharm", "rygel",
+                        "scrcpy", "sysstat", "net-tools", "numactl", "linux-tools-common", "steam",
+                        "startup-disk-creator", "update-manager", "synaptic", "telegram", "tesseract", "tigervnc",
+                        "tmux", "transmission", "translate-shell", "trash-cli", "tree", "unzip", "udisks2", "vlc",
+                        "wine", "wireshark", "wget", "xdotool", "xsel", "yq"
                     ]
             elif self.operating_system == "Windows":
                 self.applications = ["Git.Git", "oh-my-posh"]
