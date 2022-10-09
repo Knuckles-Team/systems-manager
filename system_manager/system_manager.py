@@ -41,7 +41,7 @@ class SystemManager:
         self.set_features(features=self.windows_features)
         self.ubuntu_clean_command = [['trash-empty']]
         self.windows_clean_command = [['cleanmgr', '/lowdisk']]
-        self.ubuntu_optimize_command = [['apt', 'autoremove', '-y']]
+        self.ubuntu_optimize_command = [['apt', 'autoremove', '-y'], ['apt', 'autoclean']]
         self.windows_optimize_command = [['cleanmgr', '/lowdisk']]
         self.python_modules = None
         self.install_python_modules_command = [['python', '-m', 'pip', 'install', '--upgrade', 'pip']]
@@ -468,6 +468,9 @@ class SystemManager:
             self.ubuntu_install_command.append(['apt', 'install', '-y', f'{application}'])
             self.windows_install_command.append(['winget', 'install', '-y', f'{application}'])
 
+    def get_features(self):
+        return self.windows_features
+
     def set_features(self, features):
         if features is None or len(features) == 0:
             self.windows_features = [
@@ -541,11 +544,13 @@ def system_manager(argv):
     except getopt.GetoptError:
         usage()
         print(f"Applications Available: {system_manager_instance.get_applications()}")
+        print(f"Windows Features Available: {system_manager_instance.get_features()}")
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             usage()
             print(f"Applications Available: {system_manager_instance.get_applications()}")
+            print(f"Windows Features Available: {system_manager_instance.get_features()}")
             sys.exit()
         elif opt in ("-c", "--clean"):
             clean = True
