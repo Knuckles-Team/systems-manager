@@ -418,20 +418,19 @@ class SystemManager:
             if self.operating_system == "Ubuntu":
                 self.applications = ["discord", "dos2unix", "python3"]
             elif self.operating_system == "Windows":
-                self.applications = ["python"]
+                self.applications = ["Python.Python.3"]
         elif applications == "all":
             if self.operating_system == "Ubuntu":
                 self.applications = [
                     "atomicparsley", "audacity", "curl", "dialog", "discord", "containerd", "docker.io",
-                    "docker-compose",
-                    "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git", "gnome-shell", "ubuntu-gnome-desktop",
-                    "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi", "kvm", "mediainfo",
-                    "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools", "openjdk-8-jdk",
-                    "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3", "python3-is-python", "pycharm", "rygel",
-                    "scrcpy", "sysstat", "net-tools", "numactl", "linux-tools-common", "steam",
-                    "startup-disk-creator", "update-manager", "synaptic", "telegram", "tesseract", "tigervnc",
-                    "tmux", "transmission", "translate-shell", "trash-cli", "tree", "unzip", "udisks2", "vlc",
-                    "wine", "wireshark", "wget", "xdotool", "xsel", "yq"
+                    "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git", "gnome-shell",
+                    "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
+                    "kvm", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
+                    "openjdk-8-jdk", "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3",
+                    "python3-is-python", "pycharm", "rygel", "scrcpy", "sysstat", "net-tools", "numactl",
+                    "linux-tools-common", "steam", "startup-disk-creator", "update-manager", "synaptic", "telegram",
+                    "tesseract", "tigervnc", "tmux", "transmission", "translate-shell", "trash-cli", "tree", "unzip",
+                    "udisks2", "vlc", "wine", "wireshark", "wget", "xdotool", "xsel", "yq"
                 ]
             elif self.operating_system == "Windows":
                 self.applications = [
@@ -440,33 +439,27 @@ class SystemManager:
                     "Microsoft.Teams", "Oracle.VirtualBox", "ParadoxInteractive.ParadoxLauncher",
                     "Nvidia.GeForceExperience", "Zoom.Zoom", "Mojang.MinecraftLauncher", "Microsoft.VisualStudioCode",
                     "Samsung.DeX", "TheDocumentFoundation.LibreOffice", "Adobe.Acrobat.Reader.64-bit",
-                    "Famatech.AdvancedIPScanner",
-                    "GitHub.Atom", "Audacity.Audacity", "Lexikos.AutoHotkey", "BraveSoftware.BraveBrowser",
-                    "Google.Chrome",
-                    "TorProject.TorBrowser", "voidtools.Everything --source winget", "Balena.Etcher", "Mozilla.Firefox",
-                    "GIMP.GIMP",
+                    "Famatech.AdvancedIPScanner", "GitHub.Atom", "Audacity.Audacity", "Lexikos.AutoHotkey",
+                    "BraveSoftware.BraveBrowser", "Google.Chrome", "TorProject.TorBrowser",
+                    "voidtools.Everything --source winget", "Balena.Etcher", "Mozilla.Firefox", "GIMP.GIMP",
                     "DuongDieuPhap.ImageGlass", "AdoptOpenJDK.OpenJDK.8", "AdoptOpenJDK.OpenJDK.16", "Oracle.JDK.18",
-                    "JetBrains.Toolbox",
-                    "OpenJS.NodeJS", "OpenJS.NodeJS.LTS", "clsid2.mpc-hc", "Notepad++.Notepad++", "Microsoft.PowerToys",
-                    "PuTTY.PuTTY",
-                    "Python.Python.3", "7zip.7zip", "Python.Python.3", "Rustlang.Rust.MSVC", "SublimeHQ.SublimeText.4",
+                    "JetBrains.Toolbox", "OpenJS.NodeJS", "OpenJS.NodeJS.LTS", "clsid2.mpc-hc", "Notepad++.Notepad++",
+                    "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC", "SublimeHQ.SublimeText.4",
                     "SumatraPDF.SumatraPDF", "Microsoft.WindowsTerminal", "ShareX.ShareX",
-                    "Tonec.InternetDownloadManager",
-                    "Alacritty.Alacritty", "VideoLAN.VLC", "KDE.Kdenlive", "Microsoft.VisualStudioCode --source winget",
-                    "VSCodium.VSCodium", "WinSCP.WinSCP", "Bitwarden.Bitwarden", "AnyDeskSoftwareGmbH.AnyDesk",
-                    "BlenderFoundation.Blender", "CPUID.CPU-Z", "eloston.ungoogled-chromium",
-                    "File-New-Project.EarTrumpet",
-                    "EpicGames.EpicGamesLauncher", "Flameshot.Flameshot", "PeterPawlowski.foobar2000", "GOG.Galaxy",
-                    "TechPowerUp.GPU-Z", "Glarysoft.GlaryUtilities", "Greenshot.Greenshot", "HandBrake.HandBrake",
-                    "HexChat.HexChat", "REALiX.HWiNFO", "Inkscape.Inkscape", "KeePassXCTeam.KeePassXC",
-                    "LibreWolf.LibreWolf", "Malwarebytes.Malwarebytes", "Element.Element", "mRemoteNG.mRemoteNG",
-                    "TechPowerUp.NVCleanstall", "OBSProject.OBSStudio", "Obsidian.Obsidian",
-                    "RevoUninstaller.RevoUninstaller", "Rufus.Rufus", "OpenWhisperSystems.Signal", "Microsoft.Skype",
-                    "SlackTechnologies.Slack", "Spotify.Spotify", "Valve.Steam", "TeamViewer.TeamViewer",
-                    "Microsoft.Teams", "JAMSoftware.TreeSize.Free", "Microsoft.VisualStudio.2022.Community",
-                    "VivaldiTechnologies.Vivaldi", "VB-Audio.Voicemeeter", "WinDirStat.WinDirStat",
-                    "AntibodySoftware.WizTree", "WiresharkFoundation.Wireshark", "Henry++.simplewall", "Zoom.Zoom",
-                    "Viber.Viber", "xanderfrangos.twinkletray"
+                    "Tonec.InternetDownloadManager","Alacritty.Alacritty", "VideoLAN.VLC", "KDE.Kdenlive",
+                    "Microsoft.VisualStudioCode --source winget", "VSCodium.VSCodium", "WinSCP.WinSCP",
+                    "Bitwarden.Bitwarden", "AnyDeskSoftwareGmbH.AnyDesk", "BlenderFoundation.Blender", "CPUID.CPU-Z",
+                    "eloston.ungoogled-chromium", "File-New-Project.EarTrumpet","EpicGames.EpicGamesLauncher",
+                    "Flameshot.Flameshot", "PeterPawlowski.foobar2000", "GOG.Galaxy", "TechPowerUp.GPU-Z",
+                    "Glarysoft.GlaryUtilities", "Greenshot.Greenshot", "HandBrake.HandBrake", "HexChat.HexChat",
+                    "REALiX.HWiNFO", "Inkscape.Inkscape", "KeePassXCTeam.KeePassXC", "LibreWolf.LibreWolf",
+                    "Malwarebytes.Malwarebytes", "Element.Element", "mRemoteNG.mRemoteNG", "TechPowerUp.NVCleanstall",
+                    "OBSProject.OBSStudio", "Obsidian.Obsidian", "RevoUninstaller.RevoUninstaller", "Rufus.Rufus",
+                    "OpenWhisperSystems.Signal", "Microsoft.Skype", "SlackTechnologies.Slack", "Spotify.Spotify",
+                    "Valve.Steam", "TeamViewer.TeamViewer", "Microsoft.Teams", "JAMSoftware.TreeSize.Free",
+                    "Microsoft.VisualStudio.2022.Community", "VivaldiTechnologies.Vivaldi", "VB-Audio.Voicemeeter",
+                    "WinDirStat.WinDirStat", "AntibodySoftware.WizTree", "WiresharkFoundation.Wireshark",
+                    "Henry++.simplewall", "Zoom.Zoom", "Viber.Viber", "xanderfrangos.twinkletray"
                 ]
         else:
             self.applications = applications
@@ -547,10 +540,12 @@ def system_manager(argv):
                                    ["help", "clean", "font", "silent", "theme", "update", "enable-features=", "install=", "python="])
     except getopt.GetoptError:
         usage()
+        print(f"Applications Available: {system_manager_instance.get_applications()}")
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             usage()
+            print(f"Applications Available: {system_manager_instance.get_applications()}")
             sys.exit()
         elif opt in ("-c", "--clean"):
             clean = True
