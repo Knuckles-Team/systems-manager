@@ -430,7 +430,7 @@ class SystemManager:
                     "python3-is-python", "pycharm", "rygel", "scrcpy", "sysstat", "net-tools", "numactl",
                     "linux-tools-common", "steam", "startup-disk-creator", "update-manager", "synaptic", "telegram",
                     "tesseract", "tigervnc", "tmux", "transmission", "translate-shell", "trash-cli", "tree", "unzip",
-                    "udisks2", "vlc", "wine", "wireshark", "wget", "xdotool", "xsel", "yq"
+                    "udisks2", "vlc", "wine", "wireshark", "wget", "xdotool", "xpaint", "xsel", "yq"
                 ]
             elif self.operating_system == "Windows":
                 self.applications = [
