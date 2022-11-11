@@ -21,6 +21,12 @@ System-Manager will update your system and upgrade your applications. You can al
 system-manager --font --update --clean --theme --python 'geniusbot' --install 'python3'
 ```
 
+#### Install Instructions
+Install Python Package
+
+```bash
+python -m pip install system-manager TBD!!!!!!!!!
+```
 
 #### Build Instructions
 Build Python Package
