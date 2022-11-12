@@ -423,7 +423,7 @@ class SystemManager:
             if self.operating_system == "Ubuntu":
                 self.applications = [
                     "atomicparsley", "audacity", "curl", "dialog", "discord", "containerd", "docker.io",
-                    "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git", "gnome-shell",
+                    "ddclient", "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git", "gnome-shell",
                     "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
                     "kvm", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
                     "openjdk-8-jdk", "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3",
