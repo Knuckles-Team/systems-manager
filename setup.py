@@ -13,7 +13,7 @@ readme = re.sub(r"Version: [0-9]*\.[0-9]*\.[0-9][0-9]*", f"Version: {version}", 
 print(f"README: {readme}")
 with open("README.md", "w") as readme_file:
     readme_file.write(readme)
-description = 'Synchronize your subtitle files by shifting the subtitle time (+/-)'
+description = 'System-Manager will update your system and install/upgrade applications.'
 
 setup(
     name='system-manager',
