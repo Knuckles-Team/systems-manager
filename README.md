@@ -1,7 +1,7 @@
 # System-Manager
 *Version: 0.0.1*
 
-System-Manager will update your system and upgrade your applications. You can also install applications as well!
+System-Manager will update your system and install/upgrade applications.
 
 ### Usage:
 | Short Flag | Long Flag         | Description                                   |
