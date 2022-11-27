@@ -12,7 +12,7 @@ import glob
 import json
 
 
-class SystemManager:
+class SystemsManager:
     def __init__(self, silent=False):
         self.system = platform.system()
         self.release = platform.release()
@@ -22,19 +22,25 @@ class SystemManager:
         self.get_operating_system()
         self.silent = silent
         self.applications = None
+        self.bash_profile = ""
         self.ubuntu_install_command = []
         self.windows_install_command = []
         self.set_applications(self.applications)
         self.ubuntu_update_command = [['apt', 'update'], ['apt', 'upgrade', '-y'], ['apt', 'autoremove', '-y']]
         if os.path.isfile(os.path.expanduser("~\AppData\Local\Microsoft\WindowsApps\winget.exe")):
-            self.windows_update_command = [['winget', 'upgrade', '--all'], ["powershell.exe", 'Install-Module', 'PSWindowsUpdate', 'Force'],
-                                           ["powershell.exe", 'Get-WindowsUpdate'], ["powershell.exe", 'Install-WindowsUpdate']]
+            self.windows_update_command = [
+                ['winget', 'upgrade', '--all'], ["powershell.exe", 'Install-Module', 'PSWindowsUpdate', 'Force'],
+                ["powershell.exe", 'Get-WindowsUpdate'], ["powershell.exe", 'Install-WindowsUpdate']
+            ]
         else:
-            self.windows_update_command = [["powershell.exe", 'Start-Process', '"ms-appinstaller:?source=https://aka.ms/getwinget"'],
-                                           ["powershell.exe", '$nid', '=', '(Get-Process AppInstaller).Id'],
-                                           ["powershell.exe", 'Wait-Process', '-Id', '$nid'], ['winget', 'upgrade', '--all'],
-                                           ["powershell.exe", 'Install-Module', 'PSWindowsUpdate', 'Force'], ["powershell.exe", 'Get-WindowsUpdate'],
-                                           ["powershell.exe", 'Install-WindowsUpdate']]
+            self.windows_update_command = [
+                ["powershell.exe", 'Start-Process', '"ms-appinstaller:?source=https://aka.ms/getwinget"'],
+                ["powershell.exe", '$nid', '=', '(Get-Process AppInstaller).Id'],
+                ["powershell.exe", 'Wait-Process', '-Id', '$nid'], ['winget', 'upgrade', '--all'],
+                ["powershell.exe", 'Install-Module', 'PSWindowsUpdate', 'Force'],
+                ["powershell.exe", 'Get-WindowsUpdate'],
+                ["powershell.exe", 'Install-WindowsUpdate']
+            ]
         self.windows_features = None
         self.enable_windows_features_command = [
             ['Enable-WindowsOptionalFeature', '-Online', '-FeatureName', f'<FEATURE>', '-NoRestart']]
@@ -106,18 +112,22 @@ class SystemManager:
             meslo_file_name = 'Meslo.zip'
             url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + meslo_file_name
             r = requests.get(url)
-            open(meslo_file_name , 'wb').write(r.content)
+            open(meslo_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(meslo_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
             hack_file_name = 'Hack.zip'
             url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + hack_file_name
             r = requests.get(url)
-            open(hack_file_name , 'wb').write(r.content)
+            open(hack_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(hack_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
-            self.run_command(command=[['pushd', f'{os.path.expanduser("~/.fonts/Meslo")}'], ['fc-cache', '-fv'], ['popd']])
+            self.run_command(command=[['pushd', f'{os.path.expanduser("~/.fonts/Meslo")}'],
+                                      ['fc-cache', '-fv'],
+                                      ['popd']])
             print(self.result.returncode, self.result.stdout, self.result.stderr)
-            self.run_command(command=[['pushd', f'{os.path.expanduser("~/.fonts/Hack")}'], ['fc-cache', '-fv'], ['popd']])
+            self.run_command(command=[['pushd', f'{os.path.expanduser("~/.fonts/Hack")}'],
+                                      ['fc-cache', '-fv'],
+                                      ['popd']])
             print(self.result.returncode, self.result.stdout, self.result.stderr)
         elif self.operating_system == "Windows":
             font_path = os.path.expanduser(r'c:\windows\fonts')
@@ -127,13 +137,13 @@ class SystemManager:
             meslo_file_name = 'Meslo.zip'
             url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + meslo_file_name
             r = requests.get(url)
-            open(meslo_file_name , 'wb').write(r.content)
+            open(meslo_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(meslo_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
             hack_file_name = 'Hack.zip'
             url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + hack_file_name
             r = requests.get(url)
-            open(hack_file_name , 'wb').write(r.content)
+            open(hack_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(hack_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
             font_files = glob.glob('./*/*.ttf')
@@ -147,7 +157,7 @@ class SystemManager:
             oh_my_posh_file = '/usr/local/bin/oh-my-posh'
             url = "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64"
             r = requests.get(url)
-            open(oh_my_posh_file , 'wb').write(r.content)
+            open(oh_my_posh_file, 'wb').write(r.content)
             themes_file = os.path.expanduser(r'~/.poshthemes/themes.zip')
             theme_path = os.path.expanduser(r'~/.poshthemes')
             extract_path = theme_path
@@ -155,7 +165,7 @@ class SystemManager:
                 os.makedirs(theme_path)
             url = "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip"
             r = requests.get(url)
-            open(themes_file , 'wb').write(r.content)
+            open(themes_file, 'wb').write(r.content)
             with zipfile.ZipFile(themes_file, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
             os.remove(themes_file)
@@ -163,21 +173,24 @@ class SystemManager:
             with open(self.bash_profile, "r+") as file:
                 for line in file:
                     if 'eval "$(oh-my-posh --init --shell bash --config ' in line:
-                       break
+                        break
                 else:
                     file.write('eval "$(oh-my-posh --init --shell bash --config ~/.poshthemes/takuya.omp.json)"')
-            self.run_command(command=[['chmod', '+x', '/usr/local/bin/oh-my-posh'], ['chmod', 'u+rw', '~/.poshthemes/*.json'], ['source', '~/.bashrc']])
+            self.run_command(command=[['chmod', '+x', '/usr/local/bin/oh-my-posh'],
+                                      ['chmod', 'u+rw', '~/.poshthemes/*.json'],
+                                      ['source', '~/.bashrc']])
             print(self.result.returncode, self.result.stdout, self.result.stderr)
         elif self.operating_system == "Windows":
-            self.run_command(command=[['powershell.exe', 'Install-PackageProvider', '-Name', 'NuGet', '-Force'],
-                                      ['winget', 'install', 'oh-my-posh'],
-                                      ['powershell.exe', 'Install-Module', 'Terminal-Icons', '-Repository', 'PSGallery', '-Force'],
-                                      ['powershell.exe', 'Install-Module', '-Name', 'z', '-Force', '-AllowClobber'],
-                                      ['powershell.exe', 'Install-Module', '-Name', 'PSReadLine', '-Force', '-SkipPublisherCheck'],
-                                      ['powershell.exe', 'Install-Module', '-Name', 'PSFzf', '-Force'],
-                                      ['powershell.exe', 'New-Item', '-ItemType', 'SymbolicLink', '-Path', '(Join-Path', '-Path', '$Env:USERPROFILE',
-                                       '-ChildPath', 'Documents)', '-Name', 'PowerShell', '-Target', '(Join-Path', '-Path',
-                                       '$Env:USERPROFILE', '-ChildPath', 'Documents\WindowsPowerShell)']])
+            self.run_command(command=[
+                ['powershell.exe', 'Install-PackageProvider', '-Name', 'NuGet', '-Force'],
+                ['winget', 'install', 'oh-my-posh'],
+                ['powershell.exe', 'Install-Module', 'Terminal-Icons', '-Repository', 'PSGallery', '-Force'],
+                ['powershell.exe', 'Install-Module', '-Name', 'z', '-Force', '-AllowClobber'],
+                ['powershell.exe', 'Install-Module', '-Name', 'PSReadLine', '-Force', '-SkipPublisherCheck'],
+                ['powershell.exe', 'Install-Module', '-Name', 'PSFzf', '-Force'],
+                ['powershell.exe', 'New-Item', '-ItemType', 'SymbolicLink', '-Path', '(Join-Path', '-Path',
+                 '$Env:USERPROFILE', '-ChildPath', 'Documents)', '-Name', 'PowerShell', '-Target', '(Join-Path',
+                 '-Path', '$Env:USERPROFILE', '-ChildPath', 'Documents\WindowsPowerShell)']])
             print(self.result.returncode, self.result.stdout, self.result.stderr)
             config_path = os.path.expanduser("~/.config")
             if not os.path.exists(config_path):
@@ -212,155 +225,160 @@ class SystemManager:
             '  Get-Command -Name $command -ErrorAction SilentlyContinue |\n'
             '    Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue\n'
             '}'
-            open(user_profile_file , 'w').write(user_profile_content)
+            open(user_profile_file, 'w').write(user_profile_content)
 
             takuya_omp_data = {
-              "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-              "blocks": [
-                {
-                  "alignment": "left",
-                  "segments": [
+                "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+                "blocks": [
                     {
-                      "background": "#0077c2",
-                      "foreground": "#ffffff",
-                      "leading_diamond": "\u256d\u2500\ue0b6",
-                      "style": "diamond",
-                      "template": " {{ .Name }} ",
-                      "type": "shell"
+                        "alignment": "left",
+                        "segments": [
+                            {
+                                "background": "#0077c2",
+                                "foreground": "#ffffff",
+                                "leading_diamond": "\u256d\u2500\ue0b6",
+                                "style": "diamond",
+                                "template": " {{ .Name }} ",
+                                "type": "shell"
+                            },
+                            {
+                                "background": "#ef5350",
+                                "foreground": "#FFFB38",
+                                "properties": {
+                                    "root_icon": "\uf292"
+                                },
+                                "style": "diamond",
+                                "template": "<parentBackground>\ue0b0</> \uf0e7 ",
+                                "type": "root"
+                            },
+                            {
+                                "background": "#444444",
+                                "foreground": "#E4E4E4",
+                                "powerline_symbol": "\ue0b0",
+                                "properties": {
+                                    "style": "full"
+                                },
+                                "style": "powerline",
+                                "template": " {{ .Path }} ",
+                                "type": "path"
+                            },
+                            {
+                                "background": "#FFFB38",
+                                "background_templates": [
+                                    "{{ if or (.Working.Changed) (.Staging.Changed) }}#ffeb95{{ end }}",
+                                    "{{ if and (gt .Ahead 0) (gt .Behind 0) }}#c5e478{{ end }}",
+                                    "{{ if gt .Ahead 0 }}#C792EA{{ end }}",
+                                    "{{ if gt .Behind 0 }}#C792EA{{ end }}"
+                                ],
+                                "foreground": "#011627",
+                                "powerline_symbol": "\ue0b0",
+                                "properties": {
+                                    "branch_icon": "\ue725 ",
+                                    "fetch_status": True,
+                                    "fetch_upstream_icon": True
+                                },
+                                "style": "powerline",
+                                "template": " {{ .HEAD }} {{ if .Working.Changed }}{{ .Working.String }}{{ end }}"
+                                            "{{ if and (.Working.Changed) (.Staging.Changed) }} "
+                                            "|{{ end }}{{ if .Staging.Changed }}<#ef5350> \uf046 "
+                                            "{{ .Staging.String }}</>{{ end }} ",
+                                "type": "git"
+                            }
+                        ],
+                        "type": "prompt"
                     },
                     {
-                      "background": "#ef5350",
-                      "foreground": "#FFFB38",
-                      "properties": {
-                        "root_icon": "\uf292"
-                      },
-                      "style": "diamond",
-                      "template": "<parentBackground>\ue0b0</> \uf0e7 ",
-                      "type": "root"
+                        "alignment": "right",
+                        "segments": [
+                            {
+                                "background": "#303030",
+                                "foreground": "#3C873A",
+                                "leading_diamond": " \ue0b6",
+                                "properties": {
+                                    "fetch_package_manager": True,
+                                    "npm_icon": " <#cc3a3a>\ue5fa</> ",
+                                    "yarn_icon": " <#348cba>\uf61a</>"
+                                },
+                                "style": "diamond",
+                                "template": "\ue718 {{ if .PackageManagerIcon }}{{ .PackageManagerIcon }} "
+                                            "{{ end }}{{ .Full }}",
+                                "trailing_diamond": "\ue0b4",
+                                "type": "node"
+                            },
+                            {
+                                "background": "#40c4ff",
+                                "foreground": "#ffffff",
+                                "invert_powerline": True,
+                                "leading_diamond": " \ue0b6",
+                                "style": "diamond",
+                                "template": " \uf5ef {{ .CurrentDate | date .Format }} ",
+                                "trailing_diamond": "\ue0b4",
+                                "type": "time"
+                            }
+                        ],
+                        "type": "prompt"
                     },
                     {
-                      "background": "#444444",
-                      "foreground": "#E4E4E4",
-                      "powerline_symbol": "\ue0b0",
-                      "properties": {
-                        "style": "full"
-                      },
-                      "style": "powerline",
-                      "template": " {{ .Path }} ",
-                      "type": "path"
-                    },
-                    {
-                      "background": "#FFFB38",
-                      "background_templates": [
-                        "{{ if or (.Working.Changed) (.Staging.Changed) }}#ffeb95{{ end }}",
-                        "{{ if and (gt .Ahead 0) (gt .Behind 0) }}#c5e478{{ end }}",
-                        "{{ if gt .Ahead 0 }}#C792EA{{ end }}",
-                        "{{ if gt .Behind 0 }}#C792EA{{ end }}"
-                      ],
-                      "foreground": "#011627",
-                      "powerline_symbol": "\ue0b0",
-                      "properties": {
-                        "branch_icon": "\ue725 ",
-                        "fetch_status": True,
-                        "fetch_upstream_icon": True
-                      },
-                      "style": "powerline",
-                      "template": " {{ .HEAD }} {{ if .Working.Changed }}{{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}<#ef5350> \uf046 {{ .Staging.String }}</>{{ end }} ",
-                      "type": "git"
+                        "alignment": "left",
+                        "newline": True,
+                        "segments": [
+                            {
+                                "foreground": "#21c7c7",
+                                "style": "plain",
+                                "template": "\u2570\u2500",
+                                "type": "text"
+                            },
+                            {
+                                "foreground": "#e0f8ff",
+                                "foreground_templates": [
+                                    "{{ if gt .Code 0 }}#ef5350{{ end }}"
+                                ],
+                                "properties": {
+                                    "always_enabled": True
+                                },
+                                "style": "plain",
+                                "template": "\u276f{{ if gt .Code 0 }}\uf00d{{ else }}\uf42e{{ end }} ",
+                                "type": "exit"
+                            }
+                        ],
+                        "type": "prompt"
                     }
-                  ],
-                  "type": "prompt"
-                },
-                {
-                  "alignment": "right",
-                  "segments": [
-                    {
-                      "background": "#303030",
-                      "foreground": "#3C873A",
-                      "leading_diamond": " \ue0b6",
-                      "properties": {
-                        "fetch_package_manager": True,
-                        "npm_icon": " <#cc3a3a>\ue5fa</> ",
-                        "yarn_icon": " <#348cba>\uf61a</>"
-                      },
-                      "style": "diamond",
-                      "template": "\ue718 {{ if .PackageManagerIcon }}{{ .PackageManagerIcon }} {{ end }}{{ .Full }}",
-                      "trailing_diamond": "\ue0b4",
-                      "type": "node"
-                    },
-                    {
-                      "background": "#40c4ff",
-                      "foreground": "#ffffff",
-                      "invert_powerline": True,
-                      "leading_diamond": " \ue0b6",
-                      "style": "diamond",
-                      "template": " \uf5ef {{ .CurrentDate | date .Format }} ",
-                      "trailing_diamond": "\ue0b4",
-                      "type": "time"
-                    }
-                  ],
-                  "type": "prompt"
-                },
-                {
-                  "alignment": "left",
-                  "newline": True,
-                  "segments": [
-                    {
-                      "foreground": "#21c7c7",
-                      "style": "plain",
-                      "template": "\u2570\u2500",
-                      "type": "text"
-                    },
-                    {
-                      "foreground": "#e0f8ff",
-                      "foreground_templates": [
-                        "{{ if gt .Code 0 }}#ef5350{{ end }}"
-                      ],
-                      "properties": {
-                        "always_enabled": True
-                      },
-                      "style": "plain",
-                      "template": "\u276f{{ if gt .Code 0 }}\uf00d{{ else }}\uf42e{{ end }} ",
-                      "type": "exit"
-                    }
-                  ],
-                  "type": "prompt"
-                }
-              ],
-              "osc99": True,
-              "version": 2
+                ],
+                "osc99": True,
+                "version": 2
             }
 
             with open(config_path + "/powershell/takuya.omp.json", 'w') as f:
                 json.dump(takuya_omp_data, f, indent=4)
 
-            windows_terminal_settings_file = os.path.expanduser("~\AppData\Local\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json")
+            windows_terminal_settings_file = os.path.expanduser(
+                "~\AppData\Local\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json")
 
             with open(windows_terminal_settings_file, 'r') as f:
                 windows_terminal_settings_json = json.load(f)
 
             smooth_blues_data = {
-              "background": "#001B26",
-              "black": "#282C34",
-              "blue": "#61AFEF",
-              "brightBlack": "#5A6374",
-              "brightBlue": "#61AFEF",
-              "brightCyan": "#56B6C2",
-              "brightGreen": "#98C379",
-              "brightPurple": "#C678DD",
-              "brightRed": "#E06C75",
-              "brightWhite": "#DCDFE4",
-              "brightYellow": "#E5C07B",
-              "cursorColor": "#FFFFFF",
-              "cyan": "#56B6C2",
-              "foreground": "#DCDFE4",
-              "green": "#98C379",
-              "name": "Smooth Blues",
-              "purple": "#C678DD",
-              "red": "#E06C75",
-              "selectionBackground": "#FFFFFF",
-              "white": "#DCDFE4",
-              "yellow": "#E5C07B"
+                "background": "#001B26",
+                "black": "#282C34",
+                "blue": "#61AFEF",
+                "brightBlack": "#5A6374",
+                "brightBlue": "#61AFEF",
+                "brightCyan": "#56B6C2",
+                "brightGreen": "#98C379",
+                "brightPurple": "#C678DD",
+                "brightRed": "#E06C75",
+                "brightWhite": "#DCDFE4",
+                "brightYellow": "#E5C07B",
+                "cursorColor": "#FFFFFF",
+                "cyan": "#56B6C2",
+                "foreground": "#DCDFE4",
+                "green": "#98C379",
+                "name": "Smooth Blues",
+                "purple": "#C678DD",
+                "red": "#E06C75",
+                "selectionBackground": "#FFFFFF",
+                "white": "#DCDFE4",
+                "yellow": "#E5C07B"
             }
 
             windows_terminal_settings_json['schemes'].append(smooth_blues_data)
@@ -374,7 +392,7 @@ class SystemManager:
             with open(os.environ['PROFILE'], "r+") as file:
                 for line in file:
                     if r'. $env:USERPROFILE\.config\powershell\user_profile.ps1' in line:
-                       break
+                        break
                 else:
                     file.write(r'. $env:USERPROFILE\.config\powershell\user_profile.ps1')
 
@@ -383,7 +401,10 @@ class SystemManager:
             self.run_command(command=[['echo', 'Set Startup Program?']])
             print(self.result.returncode, self.result.stdout, self.result.stderr)
         elif self.operating_system == "Windows":
-            self.run_command(command=[['powershell.exe', 'Copy-Item', 'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager', '-Destination', '%SystemDrive%\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup']])
+            self.run_command(command=[['powershell.exe', 'Copy-Item',
+                                       'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager',
+                                       '-Destination',
+                                       '%SystemDrive%\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup']])
             print(self.result.returncode, self.result.stdout, self.result.stderr)
 
     def run_command(self, command):
@@ -423,7 +444,8 @@ class SystemManager:
             if self.operating_system == "Ubuntu":
                 self.applications = [
                     "atomicparsley", "audacity", "curl", "dialog", "discord", "containerd", "docker.io",
-                    "ddclient", "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git", "gnome-shell",
+                    "ddclient", "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
+                    "gnome-shell",
                     "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
                     "kvm", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
                     "openjdk-8-jdk", "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3",
@@ -447,10 +469,10 @@ class SystemManager:
                     "JetBrains.Toolbox", "OpenJS.NodeJS", "OpenJS.NodeJS.LTS", "clsid2.mpc-hc", "Notepad++.Notepad++",
                     "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC", "SublimeHQ.SublimeText.4",
                     "SumatraPDF.SumatraPDF", "Microsoft.WindowsTerminal", "ShareX.ShareX",
-                    "Tonec.InternetDownloadManager","Alacritty.Alacritty", "VideoLAN.VLC", "KDE.Kdenlive",
+                    "Tonec.InternetDownloadManager", "Alacritty.Alacritty", "VideoLAN.VLC", "KDE.Kdenlive",
                     "Microsoft.VisualStudioCode --source winget", "VSCodium.VSCodium", "WinSCP.WinSCP",
                     "Bitwarden.Bitwarden", "AnyDeskSoftwareGmbH.AnyDesk", "BlenderFoundation.Blender", "CPUID.CPU-Z",
-                    "eloston.ungoogled-chromium", "File-New-Project.EarTrumpet","EpicGames.EpicGamesLauncher",
+                    "eloston.ungoogled-chromium", "File-New-Project.EarTrumpet", "EpicGames.EpicGamesLauncher",
                     "Flameshot.Flameshot", "PeterPawlowski.foobar2000", "GOG.Galaxy", "TechPowerUp.GPU-Z",
                     "Glarysoft.GlaryUtilities", "Greenshot.Greenshot", "HandBrake.HandBrake", "HexChat.HexChat",
                     "REALiX.HWiNFO", "Inkscape.Inkscape", "KeePassXCTeam.KeePassXC", "LibreWolf.LibreWolf",
@@ -495,7 +517,8 @@ class SystemManager:
             self.windows_features = features
 
         for feature in self.windows_features:
-            self.enable_windows_features_command.append(['Enable-WindowsOptionalFeature', '-Online', '-FeatureName', f'{feature}', '-NoRestart'])
+            self.enable_windows_features_command.append(
+                ['Enable-WindowsOptionalFeature', '-Online', '-FeatureName', f'{feature}', '-NoRestart'])
 
     def set_python_modules(self, modules):
         if modules is None or len(modules) == 0:
@@ -521,11 +544,11 @@ def usage():
           f"-t | --theme           [ Apply Takuyuma Terminal Theme ]\n"
           f"-u | --update          [ Update your applications and Operating System ]\n"
           f"Example: \n"
-          f"system-manager --font --update --clean --theme --python 'geniusbot' --install 'python3'\n")
+          f"systems-manager --font --update --clean --theme --python 'geniusbot' --install 'python3'\n")
 
 
-def system_manager(argv):
-    system_manager_instance = SystemManager()
+def systems_manager(argv):
+    system_manager_instance = SystemsManager()
     applications = []
     features = []
     python_modules = []
@@ -541,7 +564,8 @@ def system_manager(argv):
     start_up = False
     try:
         opts, args = getopt.getopt(argv, "hcstue:f:i:p:",
-                                   ["help", "clean", "font", "silent", "theme", "update", "enable-features=", "install=", "python="])
+                                   ["help", "clean", "font", "silent", "theme", "update",
+                                    "enable-features=", "install=", "python="])
     except getopt.GetoptError:
         usage()
         print(f"Applications Available: {system_manager_instance.get_applications()}")
@@ -632,11 +656,11 @@ def main():
     if len(sys.argv) < 2:
         usage()
         sys.exit(2)
-    system_manager(sys.argv[1:])
+    systems_manager(sys.argv[1:])
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         usage()
         sys.exit(2)
-    system_manager(sys.argv[1:])
+    systems_manager(sys.argv[1:])

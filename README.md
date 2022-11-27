@@ -1,7 +1,7 @@
-# System-Manager
+# Systems-Manager
 *Version: 0.0.1*
 
-System-Manager will update your system and install/upgrade applications.
+Systems-Manager will update your system and install/upgrade applications.
 
 ### Usage:
 | Short Flag | Long Flag         | Description                                   |
@@ -18,14 +18,14 @@ System-Manager will update your system and install/upgrade applications.
 
 ### Example:
 ```bash
-system-manager --font --update --clean --theme --python 'geniusbot' --install 'python3'
+systems-manager --font --update --clean --theme --python 'geniusbot' --install 'python3'
 ```
 
 #### Install Instructions
 Install Python Package
 
 ```bash
-python -m pip install system-manager TBD!!!!!!!!!
+python -m pip install systems-manager
 ```
 
 #### Build Instructions

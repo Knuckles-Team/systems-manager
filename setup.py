@@ -2,7 +2,7 @@
 # coding: utf-8
 
 from setuptools import setup
-from system_manager.version import __version__, __author__
+from systems_manager.version import __version__, __author__
 from pathlib import Path
 import re
 
@@ -13,10 +13,10 @@ readme = re.sub(r"Version: [0-9]*\.[0-9]*\.[0-9][0-9]*", f"Version: {version}", 
 print(f"README: {readme}")
 with open("README.md", "w") as readme_file:
     readme_file.write(readme)
-description = 'System-Manager will update your system and install/upgrade applications.'
+description = 'Systems-Manager will update your system and install/upgrade applications.'
 
 setup(
-    name='system-manager',
+    name='systems-manager',
     version=f"{version}",
     description=description,
     long_description=f'{readme}',
@@ -25,11 +25,11 @@ setup(
     author=__author__,
     author_email='knucklessg1@gmail.com',
     license='Unlicense',
-    packages=['system_manager'],
+    packages=['systems_manager'],
     include_package_data=True,
     install_requires=[],
-    py_modules=['system_manager'],
-    package_data={'system_manager': ['system_manager']},
+    py_modules=['systems_manager'],
+    package_data={'systems_manager': ['systems_manager']},
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: Public Domain',
@@ -38,5 +38,5 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
     ],
-    entry_points={'console_scripts': ['system-manager = system_manager.system_manager:main']},
+    entry_points={'console_scripts': ['systems-manager = systems_manager.systems_manager:main']},
 )
