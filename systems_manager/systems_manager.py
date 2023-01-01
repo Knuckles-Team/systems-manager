@@ -154,6 +154,7 @@ class SystemsManager:
 
     def theme(self):
         if self.operating_system == "Ubuntu":
+            self.run_command(command=[['apt', 'install', '-y', 'fontconfig', 'unzip']])
             oh_my_posh_file = '/usr/local/bin/oh-my-posh'
             url = "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64"
             r = requests.get(url)
