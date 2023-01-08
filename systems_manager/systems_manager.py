@@ -448,7 +448,7 @@ class SystemsManager:
                     "ddclient", "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
                     "gnome-shell",
                     "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
-                    "kvm", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
+                    "kvm", "lm-sensors", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
                     "openjdk-8-jdk", "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3",
                     "python3-is-python", "pycharm", "rygel", "samba", "samba-common", "smbclient samba-common-bin",
                     "smbclient", "cifs-utils", "scrcpy", "sysstat", "net-tools", "numactl",
