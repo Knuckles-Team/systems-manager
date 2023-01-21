@@ -446,7 +446,7 @@ class SystemsManager:
                 self.applications = [
                     "atomicparsley", "audacity", "curl", "dialog", "discord", "containerd", "docker.io",
                     "ddclient", "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
-                    "gnome-shell",
+                    "gnome-shell", "rustc",
                     "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
                     "kvm", "lm-sensors", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
                     "openjdk-8-jdk", "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3",
@@ -469,7 +469,7 @@ class SystemsManager:
                     "DuongDieuPhap.ImageGlass", "AdoptOpenJDK.OpenJDK.8", "AdoptOpenJDK.OpenJDK.16", "Oracle.JDK.18",
                     "JetBrains.Toolbox", "OpenJS.NodeJS", "OpenJS.NodeJS.LTS", "clsid2.mpc-hc", "Notepad++.Notepad++",
                     "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC", "SublimeHQ.SublimeText.4",
-                    "SumatraPDF.SumatraPDF", "Microsoft.WindowsTerminal", "ShareX.ShareX",
+                    "SumatraPDF.SumatraPDF", "Microsoft.WindowsTerminal", "ShareX.ShareX", "Rustlang.Rust.GNU",
                     "Tonec.InternetDownloadManager", "Alacritty.Alacritty", "VideoLAN.VLC", "KDE.Kdenlive",
                     "Microsoft.VisualStudioCode --source winget", "VSCodium.VSCodium", "WinSCP.WinSCP",
                     "Bitwarden.Bitwarden", "AnyDeskSoftwareGmbH.AnyDesk", "BlenderFoundation.Blender", "CPUID.CPU-Z",
