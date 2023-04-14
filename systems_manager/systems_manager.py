@@ -467,7 +467,7 @@ class SystemsManager:
                     "Rustlang.Rust.GNU", "VideoLAN.VLC", "VSCodium.VSCodium", "BlenderFoundation.Blender", "Element.Element", 
                     "mRemoteNG.mRemoteNG", "TechPowerUp.NVCleanstall", "OBSProject.OBSStudio", "Obsidian.Obsidian", 
                     "RevoUninstaller.RevoUninstaller", "Valve.Steam", "WiresharkFoundation.Wireshark", 
-                    "Emulationstation.Emulationstation"
+                    "Emulationstation.Emulationstation", "Libretro.RetroArch"
                 ]
         else:
             self.applications = applications
