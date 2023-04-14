@@ -1,5 +1,5 @@
 # Systems-Manager
-*Version: 0.5.0*
+*Version: 0.6.0*
 
 Systems-Manager will update your system and install/upgrade applications.
 
