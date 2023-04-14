@@ -466,7 +466,8 @@ class SystemsManager:
                     "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC", "Microsoft.WindowsTerminal", 
                     "Rustlang.Rust.GNU", "VideoLAN.VLC", "VSCodium.VSCodium", "BlenderFoundation.Blender", "Element.Element", 
                     "mRemoteNG.mRemoteNG", "TechPowerUp.NVCleanstall", "OBSProject.OBSStudio", "Obsidian.Obsidian", 
-                    "RevoUninstaller.RevoUninstaller", "Rufus.Rufus", "Valve.Steam", "WiresharkFoundation.Wireshark"
+                    "RevoUninstaller.RevoUninstaller", "Valve.Steam", "WiresharkFoundation.Wireshark", 
+                    "Emulationstation.Emulationstation"
                 ]
         else:
             self.applications = applications
