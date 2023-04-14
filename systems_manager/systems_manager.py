@@ -29,7 +29,7 @@ class SystemsManager:
         self.ubuntu_update_command = [['apt', 'update'], ['apt', 'upgrade', '-y'], ['apt', 'autoremove', '-y']]
         if os.path.isfile(os.path.expanduser("~\AppData\Local\Microsoft\WindowsApps\winget.exe")):
             self.windows_update_command = [
-                ['winget', 'upgrade', '--all'], ["powershell.exe", 'Install-Module', 'PSWindowsUpdate', 'Force'],
+                ['winget', 'upgrade', '--all', '--silent', '--accept-package-agreements', '--accept-source-agreements'], ["powershell.exe", 'Install-Module', 'PSWindowsUpdate', 'Force'],
                 ["powershell.exe", 'Get-WindowsUpdate'], ["powershell.exe", 'Install-WindowsUpdate']
             ]
         else:
@@ -458,39 +458,22 @@ class SystemsManager:
                 ]
             elif self.operating_system == "Windows":
                 self.applications = [
-                    "Git.Git", "oh-my-posh", "Discord.Discord", "Google.Chrome",
-                    "Microsoft.VCRedist.2015+.x64", "Microsoft.VCRedist.2015+.x86", "Microsoft.VCRedist.2013.x64",
-                    "Microsoft.Teams", "Oracle.VirtualBox", "ParadoxInteractive.ParadoxLauncher",
-                    "Nvidia.GeForceExperience", "Zoom.Zoom", "Mojang.MinecraftLauncher", "Microsoft.VisualStudioCode",
-                    "Samsung.DeX", "TheDocumentFoundation.LibreOffice", "Adobe.Acrobat.Reader.64-bit",
-                    "Famatech.AdvancedIPScanner", "GitHub.Atom", "Audacity.Audacity", "Lexikos.AutoHotkey",
-                    "BraveSoftware.BraveBrowser", "Google.Chrome", "TorProject.TorBrowser",
-                    "voidtools.Everything --source winget", "Balena.Etcher", "Mozilla.Firefox", "GIMP.GIMP",
-                    "DuongDieuPhap.ImageGlass", "AdoptOpenJDK.OpenJDK.8", "AdoptOpenJDK.OpenJDK.16", "Oracle.JDK.18",
+                    "Git.Git", "oh-my-posh", "Discord.Discord", "Microsoft.VCRedist.2015+.x64", "Microsoft.VCRedist.2015+.x86", 
+                    "Microsoft.VCRedist.2013.x64", "Microsoft.VisualStudioCode", "TheDocumentFoundation.LibreOffice", 
+                    "Adobe.Acrobat.Reader.64-bit", "Audacity.Audacity", "Google.Chrome", "Balena.Etcher", "Mozilla.Firefox", 
+                    "GIMP.GIMP", "AdoptOpenJDK.OpenJDK.8", "AdoptOpenJDK.OpenJDK.16", "Oracle.JDK.18",
                     "JetBrains.Toolbox", "OpenJS.NodeJS", "OpenJS.NodeJS.LTS", "clsid2.mpc-hc", "Notepad++.Notepad++",
-                    "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC", "SublimeHQ.SublimeText.4",
-                    "SumatraPDF.SumatraPDF", "Microsoft.WindowsTerminal", "ShareX.ShareX", "Rustlang.Rust.GNU",
-                    "Tonec.InternetDownloadManager", "Alacritty.Alacritty", "VideoLAN.VLC", "KDE.Kdenlive",
-                    "Microsoft.VisualStudioCode --source winget", "VSCodium.VSCodium", "WinSCP.WinSCP",
-                    "Bitwarden.Bitwarden", "AnyDeskSoftwareGmbH.AnyDesk", "BlenderFoundation.Blender", "CPUID.CPU-Z",
-                    "eloston.ungoogled-chromium", "File-New-Project.EarTrumpet", "EpicGames.EpicGamesLauncher",
-                    "Flameshot.Flameshot", "PeterPawlowski.foobar2000", "GOG.Galaxy", "TechPowerUp.GPU-Z",
-                    "Glarysoft.GlaryUtilities", "Greenshot.Greenshot", "HandBrake.HandBrake", "HexChat.HexChat",
-                    "REALiX.HWiNFO", "Inkscape.Inkscape", "KeePassXCTeam.KeePassXC", "LibreWolf.LibreWolf",
-                    "Malwarebytes.Malwarebytes", "Element.Element", "mRemoteNG.mRemoteNG", "TechPowerUp.NVCleanstall",
-                    "OBSProject.OBSStudio", "Obsidian.Obsidian", "RevoUninstaller.RevoUninstaller", "Rufus.Rufus",
-                    "OpenWhisperSystems.Signal", "Microsoft.Skype", "SlackTechnologies.Slack", "Spotify.Spotify",
-                    "Valve.Steam", "TeamViewer.TeamViewer", "Microsoft.Teams", "JAMSoftware.TreeSize.Free",
-                    "Microsoft.VisualStudio.2022.Community", "VivaldiTechnologies.Vivaldi", "VB-Audio.Voicemeeter",
-                    "WinDirStat.WinDirStat", "AntibodySoftware.WizTree", "WiresharkFoundation.Wireshark",
-                    "Henry++.simplewall", "Zoom.Zoom", "Viber.Viber", "xanderfrangos.twinkletray"
+                    "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC", "Microsoft.WindowsTerminal", 
+                    "Rustlang.Rust.GNU", "VideoLAN.VLC", "VSCodium.VSCodium", "BlenderFoundation.Blender", "Element.Element", 
+                    "mRemoteNG.mRemoteNG", "TechPowerUp.NVCleanstall", "OBSProject.OBSStudio", "Obsidian.Obsidian", 
+                    "RevoUninstaller.RevoUninstaller", "Rufus.Rufus", "Valve.Steam", "WiresharkFoundation.Wireshark"
                 ]
         else:
             self.applications = applications
 
         for application in self.applications:
             self.ubuntu_install_command.append(['apt', 'install', '-y', f'{application}'])
-            self.windows_install_command.append(['winget', 'install', '-y', f'{application}'])
+            self.windows_install_command.append(['winget', 'install', '--accept-package-agreements', '--accept-source-agreements', f'{application}'])
 
     def get_features(self):
         return self.windows_features
