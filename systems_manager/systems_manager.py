@@ -10,6 +10,7 @@ import requests
 import zipfile
 import glob
 import json
+from systems_manager.version import __version__, __author__, __credits__
 
 
 class SystemsManager:
@@ -518,7 +519,11 @@ class SystemsManager:
 
 
 def usage():
-    print(f"Usage: \n"
+    print(f'Systems-Manager: A tool to manage your systems software!\n'
+          f'Version: {__version__}\n'
+          f'Author: {__author__}\n'
+          f'Credits: {__credits__}\n'
+          f"\nUsage: \n"
           f"-h | --help            [ See usage for script ]\n"
           f"-c | --clean           [ Clean Recycle/Trash bin ]\n"
           f"-e | --enable-features [ Enable Window Features ]\n"
@@ -528,7 +533,7 @@ def usage():
           f"-s | --silent          [ Don't print to stdout ]\n"
           f"-t | --theme           [ Apply Takuyuma Terminal Theme ]\n"
           f"-u | --update          [ Update your applications and Operating System ]\n"
-          f"Example: \n"
+          f"\nExample: \n"
           f"systems-manager --font --update --clean --theme --python 'geniusbot' --install 'python3'\n")
 
 
