@@ -454,8 +454,7 @@ class SystemsManager:
             if self.operating_system == "Ubuntu":
                 print("Set all apps")
                 self.applications = [
-                    "atomicparsley", "audacity", "curl", "dialog", "discord", "containerd", "docker.io",
-                    "ddclient", "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
+                    "atomicparsley", "audacity", "curl", "dialog", "discord", "containerd", "docker.io", "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
                     "gnome-shell", "rustc",
                     "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
                     "kvm", "lm-sensors", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
