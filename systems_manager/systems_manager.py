@@ -48,7 +48,7 @@ class SystemsManager:
         self.enable_windows_features_command = [
             ['Enable-WindowsOptionalFeature', '-Online', '-FeatureName', f'<FEATURE>', '-NoRestart']]
         self.set_features(features=self.windows_features)
-        self.ubuntu_clean_command = [['trash-empty']]
+        self.ubuntu_clean_command = [['apt', 'install', '-y', 'trash-cli'], ['trash-empty']]
         self.windows_clean_command = [['cleanmgr', '/lowdisk']]
         self.ubuntu_optimize_command = [['apt', 'autoremove', '-y'], ['apt', 'autoclean']]
         self.windows_optimize_command = [['cleanmgr', '/lowdisk']]
@@ -450,8 +450,9 @@ class SystemsManager:
                 self.applications = ["discord", "dos2unix", "python3"]
             elif self.operating_system == "Windows":
                 self.applications = ["Python.Python.3"]
-        elif applications == "all":
+        elif applications == "all" or "all" in applications:
             if self.operating_system == "Ubuntu":
+                print("Set all apps")
                 self.applications = [
                     "atomicparsley", "audacity", "curl", "dialog", "discord", "containerd", "docker.io",
                     "ddclient", "docker-compose", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
@@ -474,7 +475,7 @@ class SystemsManager:
                     "JetBrains.Toolbox", "OpenJS.NodeJS", "OpenJS.NodeJS.LTS", "clsid2.mpc-hc", "Notepad++.Notepad++",
                     "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC", "Microsoft.WindowsTerminal", 
                     "Rustlang.Rust.GNU", "VideoLAN.VLC", "VSCodium.VSCodium", "BlenderFoundation.Blender", "Element.Element", 
-                    "mRemoteNG.mRemoteNG", "TechPowerUp.NVCleanstall", "OBSProject.OBSStudio", "Obsidian.Obsidian", 
+                    "mRemoteNG.mRemoteNG", "TechPowerUp.NVstall", "OBSProject.OBSStudio", "Obsidian.Obsidian", 
                     "RevoUninstaller.RevoUninstaller", "Valve.Steam", "WiresharkFoundation.Wireshark", 
                     "Emulationstation.Emulationstation", "Libretro.RetroArch"
                 ]
