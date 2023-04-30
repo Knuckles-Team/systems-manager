@@ -10,8 +10,10 @@ import requests
 import zipfile
 import glob
 import json
-from systems_manager.version import __version__, __author__, __credits__
-
+try:
+    from systems_manager.version import __version__, __author__, __credits__
+except:
+    from version import __version__, __author__, __credits__
 
 class SystemsManager:
     def __init__(self, silent=False):
@@ -106,30 +108,36 @@ class SystemsManager:
 
     def font(self):
         if self.operating_system == "Ubuntu":
-            font_path = os.path.expanduser(r'~/.fonts')
+            font_path = os.path.expanduser('~/.fonts')
             extract_path = font_path
             if not os.path.exists(font_path):
                 os.makedirs(font_path)
             meslo_file_name = 'Meslo.zip'
             url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + meslo_file_name
             r = requests.get(url)
-            open(meslo_file_name, 'wb').write(r.content)
+            try:
+                open(meslo_file_name, 'wb').write(r.content)
+            except Exception as e:
+                meslo_file_name = os.path.expanduser('~/Downloads/Meslo.zip')
+                open(meslo_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(meslo_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
             hack_file_name = 'Hack.zip'
             url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + hack_file_name
             r = requests.get(url)
-            open(hack_file_name, 'wb').write(r.content)
+            
+            try:
+                open(hack_file_name, 'wb').write(r.content)
+            except Exception as e:
+                hack_file_name = os.path.expanduser('~/Downloads/Hack.zip')
+                open(hack_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(hack_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
-            self.run_command(command=[['pushd', f'{os.path.expanduser("~/.fonts/Meslo")}'],
-                                      ['fc-cache', '-fv'],
-                                      ['popd']])
+                
+            font_command=['fc-cache', '-fv']
+            self.run_command(font_command)
             print(self.result.returncode, self.result.stdout, self.result.stderr)
-            self.run_command(command=[['pushd', f'{os.path.expanduser("~/.fonts/Hack")}'],
-                                      ['fc-cache', '-fv'],
-                                      ['popd']])
-            print(self.result.returncode, self.result.stdout, self.result.stderr)
+                
         elif self.operating_system == "Windows":
             font_path = os.path.expanduser(r'c:\windows\fonts')
             extract_path = "."
