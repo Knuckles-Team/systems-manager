@@ -48,8 +48,7 @@ class SystemsManager:
                 ["powershell.exe", 'Install-WindowsUpdate']
             ]
         self.windows_features = None
-        self.enable_windows_features_command = [
-            ['Enable-WindowsOptionalFeature', '-Online', '-FeatureName', f'<FEATURE>', '-NoRestart']]
+        self.enable_windows_features_command = []
         self.set_features(features=self.windows_features)
         self.ubuntu_clean_command = [['apt', 'install', '-y', 'trash-cli'], ['trash-empty']]
         self.windows_clean_command = [['cleanmgr', '/lowdisk']]
@@ -189,12 +188,15 @@ class SystemsManager:
                         break
                 else:
                     file.write('eval "$(oh-my-posh --init --shell bash --config ~/.poshthemes/takuya.omp.json)"')
-            self.run_command(command=[['chmod', '+x', '/usr/local/bin/oh-my-posh'],
-                                      ['chmod', 'u+rw', '~/.poshthemes/*.json'],
-                                      ['source', '~/.bashrc']])
-            print(self.result.returncode, self.result.stdout, self.result.stderr)
+            theme_commands = [['chmod', '+x', '/usr/local/bin/oh-my-posh'],
+                             ['chmod', 'u+rw', '~/.poshthemes/*.json'],
+                             ['source', '~/.bashrc']]
+            for theme_command in theme_commands:
+                self.run_command(theme_command)
+                print(self.result.returncode, self.result.stdout, self.result.stderr)
+
         elif self.operating_system == "Windows":
-            self.run_command(command=[
+            theme_commands = [
                 ['powershell.exe', 'Install-PackageProvider', '-Name', 'NuGet', '-Force'],
                 ['winget', 'install', 'oh-my-posh'],
                 ['powershell.exe', 'Install-Module', 'Terminal-Icons', '-Repository', 'PSGallery', '-Force'],
@@ -203,8 +205,10 @@ class SystemsManager:
                 ['powershell.exe', 'Install-Module', '-Name', 'PSFzf', '-Force'],
                 ['powershell.exe', 'New-Item', '-ItemType', 'SymbolicLink', '-Path', '(Join-Path', '-Path',
                  '$Env:USERPROFILE', '-ChildPath', 'Documents)', '-Name', 'PowerShell', '-Target', '(Join-Path',
-                 '-Path', '$Env:USERPROFILE', '-ChildPath', 'Documents\WindowsPowerShell)']])
-            print(self.result.returncode, self.result.stdout, self.result.stderr)
+                 '-Path', '$Env:USERPROFILE', '-ChildPath', 'Documents\WindowsPowerShell)']]
+            for theme_command in theme_commands:
+                self.run_command(theme_command)
+                print(self.result.returncode, self.result.stdout, self.result.stderr)
             config_path = os.path.expanduser("~/.config")
             if not os.path.exists(config_path):
                 os.makedirs(config_path)
