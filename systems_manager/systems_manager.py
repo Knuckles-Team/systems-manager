@@ -483,7 +483,7 @@ class SystemsManager:
 
         for application in self.applications:
             if application.lower() == "docker" and self.operating_system == "Ubuntu":
-            	ubuntu_install_command = [['apt', 'remove', 'docker', 'docker-engine', 'docker.io', 'containerd', 'runc'],
+            	ubuntu_install_commands = [['apt', 'remove', 'docker', 'docker-engine', 'docker.io', 'containerd', 'runc'],
             	                          ['apt', 'update'],
             	                          ['apt', 'install', '-y', 'ca-certificates', 'curl', 'gnupg'],
             	                          ['install', '-m', '0755', '-d', '/etc/apt/keyrings'],
@@ -491,11 +491,15 @@ class SystemsManager:
             	                          ['chmod', 'a+r', '/etc/apt/keyrings/docker.gpg'],
             	                          ['echo', '"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME")" stable"', '|', 'tee', '/etc/apt/sources.list.d/docker.list', '>', '/dev/null'],
             	                          ['apt', 'update'],
-            	                          ['apt', 'install', '-y', 'docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin'],
-            elif application.lower() != "docker" and self.operating_system == "Ubuntu":
-    	    	ubuntu_install_command = ['apt', 'install', '-y', f'{application}']
-    	    
-    	    self.ubuntu_install_command.append(ubuntu_install_command)
+            	                          ['apt', 'install', '-y', 'docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin']]
+            elif application.lower() == "wireshark" and self.operating_system == "Ubuntu":
+    	    	ubuntu_install_commands = [['echo', '"wireshark-common wireshark-common/install-setuid boolean true"', '|', 'debconf-set-selections'],
+    	    	                          ['DEBIAN_FRONTEND=noninteractive', 'apt', '-y', 'install', 'wireshark']]
+            elif self.operating_system == "Ubuntu":
+    	    	ubuntu_install_commands = ['apt', 'install', '-y', f'{application}']
+    	    	
+    	    for ubuntu_install_command in ubuntu_install_commands:    	    
+    	        self.ubuntu_install_command.append(ubuntu_install_command)
             self.windows_install_command.append(['winget', 'install', '--accept-package-agreements', '--accept-source-agreements', f'{application}'])
 
     def get_features(self):
