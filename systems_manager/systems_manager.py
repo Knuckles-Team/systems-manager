@@ -10,10 +10,12 @@ import requests
 import zipfile
 import glob
 import json
+
 try:
     from systems_manager.version import __version__, __author__, __credits__
 except:
     from version import __version__, __author__, __credits__
+
 
 class SystemsManager:
     def __init__(self, silent=False):
@@ -32,7 +34,8 @@ class SystemsManager:
         self.ubuntu_update_command = [['apt', 'update'], ['apt', 'upgrade', '-y'], ['apt', 'autoremove', '-y']]
         if os.path.isfile(os.path.expanduser("~\AppData\Local\Microsoft\WindowsApps\winget.exe")):
             self.windows_update_command = [
-                ['winget', 'upgrade', '--all', '--silent', '--accept-package-agreements', '--accept-source-agreements'], ["powershell.exe", 'Install-Module', 'PSWindowsUpdate', 'Force'],
+                ['winget', 'upgrade', '--all', '--silent', '--accept-package-agreements', '--accept-source-agreements'],
+                ["powershell.exe", 'Install-Module', 'PSWindowsUpdate', 'Force'],
                 ["powershell.exe", 'Get-WindowsUpdate'], ["powershell.exe", 'Install-WindowsUpdate']
             ]
         else:
@@ -125,7 +128,7 @@ class SystemsManager:
             hack_file_name = 'Hack.zip'
             url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + hack_file_name
             r = requests.get(url)
-            
+
             try:
                 open(hack_file_name, 'wb').write(r.content)
             except Exception as e:
@@ -133,11 +136,11 @@ class SystemsManager:
                 open(hack_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(hack_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
-                
-            font_command=['fc-cache', '-fv']
+
+            font_command = ['fc-cache', '-fv']
             self.run_command(font_command)
             print(self.result.returncode, self.result.stdout, self.result.stderr)
-                
+
         elif self.operating_system == "Windows":
             font_path = os.path.expanduser(r'c:\windows\fonts')
             extract_path = "."
@@ -454,10 +457,12 @@ class SystemsManager:
             if self.operating_system == "Ubuntu":
                 print("Set all apps")
                 self.applications = [
-                    "atomicparsley", "audacity", "curl", "dialog", "discord", "docker", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
+                    "atomicparsley", "audacity", "curl", "dialog", "discord", "docker", "dos2unix", "enscript",
+                    "ffmpeg", "fstab", "gimp", "git",
                     "gnome-shell", "rustc",
                     "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
-                    "kvm", "lm-sensors", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
+                    "kvm", "lm-sensors", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server",
+                    "net-tools",
                     "openjdk-8-jdk", "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3",
                     "python3-is-python", "pycharm", "rygel", "samba", "samba-common", "smbclient samba-common-bin",
                     "smbclient", "cifs-utils", "scrcpy", "sysstat", "net-tools", "numactl",
@@ -467,40 +472,53 @@ class SystemsManager:
                 ]
             elif self.operating_system == "Windows":
                 self.applications = [
-                    "Git.Git", "oh-my-posh", "Discord.Discord", "Microsoft.VCRedist.2015+.x64", "Microsoft.VCRedist.2015+.x86", 
-                    "Microsoft.VCRedist.2013.x64", "Microsoft.VisualStudioCode", "TheDocumentFoundation.LibreOffice", 
-                    "Adobe.Acrobat.Reader.64-bit", "Audacity.Audacity", "Google.Chrome", "Balena.Etcher", "Mozilla.Firefox", 
+                    "Git.Git", "oh-my-posh", "Discord.Discord", "Microsoft.VCRedist.2015+.x64",
+                    "Microsoft.VCRedist.2015+.x86",
+                    "Microsoft.VCRedist.2013.x64", "Microsoft.VisualStudioCode", "TheDocumentFoundation.LibreOffice",
+                    "Adobe.Acrobat.Reader.64-bit", "Audacity.Audacity", "Google.Chrome", "Balena.Etcher",
+                    "Mozilla.Firefox",
                     "GIMP.GIMP", "AdoptOpenJDK.OpenJDK.8", "AdoptOpenJDK.OpenJDK.16", "Oracle.JDK.18",
                     "JetBrains.Toolbox", "OpenJS.NodeJS", "OpenJS.NodeJS.LTS", "clsid2.mpc-hc", "Notepad++.Notepad++",
-                    "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC", "Microsoft.WindowsTerminal", 
-                    "Rustlang.Rust.GNU", "VideoLAN.VLC", "VSCodium.VSCodium", "BlenderFoundation.Blender", "Element.Element", 
-                    "mRemoteNG.mRemoteNG", "TechPowerUp.NVstall", "OBSProject.OBSStudio", "Obsidian.Obsidian", 
-                    "RevoUninstaller.RevoUninstaller", "Valve.Steam", "WiresharkFoundation.Wireshark", 
+                    "Microsoft.PowerToys", "PuTTY.PuTTY", "7zip.7zip", "Rustlang.Rust.MSVC",
+                    "Microsoft.WindowsTerminal",
+                    "Rustlang.Rust.GNU", "VideoLAN.VLC", "VSCodium.VSCodium", "BlenderFoundation.Blender",
+                    "Element.Element",
+                    "mRemoteNG.mRemoteNG", "TechPowerUp.NVstall", "OBSProject.OBSStudio", "Obsidian.Obsidian",
+                    "RevoUninstaller.RevoUninstaller", "Valve.Steam", "WiresharkFoundation.Wireshark",
                     "Emulationstation.Emulationstation", "Libretro.RetroArch"
                 ]
         else:
             self.applications = applications
 
         for application in self.applications:
+            ubuntu_install_commands = ['apt', 'install', '-y', f'{application}']
             if application.lower() == "docker" and self.operating_system == "Ubuntu":
-            	ubuntu_install_commands = [['apt', 'remove', 'docker', 'docker-engine', 'docker.io', 'containerd', 'runc'],
-            	                          ['apt', 'update'],
-            	                          ['apt', 'install', '-y', 'ca-certificates', 'curl', 'gnupg'],
-            	                          ['install', '-m', '0755', '-d', '/etc/apt/keyrings'],
-            	                          ['curl', '-fsSL', 'https://download.docker.com/linux/ubuntu/gpg', '|', 'gpg', '--dearmor', '-o', '/etc/apt/keyrings/docker.gpg'],
-            	                          ['chmod', 'a+r', '/etc/apt/keyrings/docker.gpg'],
-            	                          ['echo', '"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME")" stable"', '|', 'tee', '/etc/apt/sources.list.d/docker.list', '>', '/dev/null'],
-            	                          ['apt', 'update'],
-            	                          ['apt', 'install', '-y', 'docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin']]
+                ubuntu_install_commands = [
+                    ['apt', 'remove', 'docker', 'docker-engine', 'docker.io', 'containerd', 'runc'],
+                    ['apt', 'update'],
+                    ['apt', 'install', '-y', 'ca-certificates', 'curl', 'gnupg'],
+                    ['install', '-m', '0755', '-d', '/etc/apt/keyrings'],
+                    ['curl', '-fsSL', 'https://download.docker.com/linux/ubuntu/gpg', '|', 'gpg', '--dearmor', '-o',
+                     '/etc/apt/keyrings/docker.gpg'],
+                    ['chmod', 'a+r', '/etc/apt/keyrings/docker.gpg'],
+                    ['echo',
+                     '"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME")" stable"',
+                     '|', 'tee', '/etc/apt/sources.list.d/docker.list', '>', '/dev/null'],
+                    ['apt', 'update'],
+                    ['apt', 'install', '-y', 'docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin',
+                     'docker-compose-plugin']]
             elif application.lower() == "wireshark" and self.operating_system == "Ubuntu":
-    	    	ubuntu_install_commands = [['echo', '"wireshark-common wireshark-common/install-setuid boolean true"', '|', 'debconf-set-selections'],
-    	    	                          ['DEBIAN_FRONTEND=noninteractive', 'apt', '-y', 'install', 'wireshark']]
+                ubuntu_install_commands = [
+                    ['echo', '"wireshark-common wireshark-common/install-setuid boolean true"', '|',
+                     'debconf-set-selections'],
+                    ['DEBIAN_FRONTEND=noninteractive', 'apt', '-y', 'install', 'wireshark']]
             elif self.operating_system == "Ubuntu":
-    	    	ubuntu_install_commands = ['apt', 'install', '-y', f'{application}']
-    	    	
-    	    for ubuntu_install_command in ubuntu_install_commands:    	    
-    	        self.ubuntu_install_command.append(ubuntu_install_command)
-            self.windows_install_command.append(['winget', 'install', '--accept-package-agreements', '--accept-source-agreements', f'{application}'])
+                ubuntu_install_commands = ['apt', 'install', '-y', f'{application}']
+
+            for ubuntu_install_command in ubuntu_install_commands:
+                self.ubuntu_install_command.append(ubuntu_install_command)
+            self.windows_install_command.append(
+                ['winget', 'install', '--accept-package-agreements', '--accept-source-agreements', f'{application}'])
 
     def get_features(self):
         return self.windows_features
