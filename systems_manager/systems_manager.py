@@ -454,7 +454,7 @@ class SystemsManager:
             if self.operating_system == "Ubuntu":
                 print("Set all apps")
                 self.applications = [
-                    "atomicparsley", "audacity", "curl", "dialog", "discord", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
+                    "atomicparsley", "audacity", "curl", "dialog", "discord", "docker", "dos2unix", "enscript", "ffmpeg", "fstab", "gimp", "git",
                     "gnome-shell", "rustc",
                     "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
                     "kvm", "lm-sensors", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server", "net-tools",
@@ -482,7 +482,20 @@ class SystemsManager:
             self.applications = applications
 
         for application in self.applications:
-            self.ubuntu_install_command.append(['apt', 'install', '-y', f'{application}'])
+            if application.lower() == "docker" and self.operating_system == "Ubuntu":
+            	ubuntu_install_command = [['apt', 'remove', 'docker', 'docker-engine', 'docker.io', 'containerd', 'runc'],
+            	                          ['apt', 'update'],
+            	                          ['apt', 'install', '-y', 'ca-certificates', 'curl', 'gnupg'],
+            	                          ['install', '-m', '0755', '-d', '/etc/apt/keyrings'],
+            	                          ['curl', '-fsSL', 'https://download.docker.com/linux/ubuntu/gpg', '|', 'gpg', '--dearmor', '-o', '/etc/apt/keyrings/docker.gpg'],
+            	                          ['chmod', 'a+r', '/etc/apt/keyrings/docker.gpg'],
+            	                          ['echo', '"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME")" stable"', '|', 'tee', '/etc/apt/sources.list.d/docker.list', '>', '/dev/null'],
+            	                          ['apt', 'update'],
+            	                          ['apt', 'install', '-y', 'docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin', 'docker-compose-plugin'],
+            elif application.lower() != "docker" and self.operating_system == "Ubuntu":
+    	    	ubuntu_install_command = ['apt', 'install', '-y', f'{application}']
+    	    
+    	    self.ubuntu_install_command.append(ubuntu_install_command)
             self.windows_install_command.append(['winget', 'install', '--accept-package-agreements', '--accept-source-agreements', f'{application}'])
 
     def get_features(self):
