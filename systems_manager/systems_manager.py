@@ -10,6 +10,7 @@ import requests
 import zipfile
 import glob
 import json
+import shutil
 
 try:
     from systems_manager.version import __version__, __author__, __credits__
@@ -48,7 +49,7 @@ class SystemsManager:
                 ["powershell.exe", 'Install-WindowsUpdate']
             ]
         self.windows_features = None
-        self.enable_windows_features_command = []
+        self.enable_windows_features_command = [['powershell.exe', 'Set-ExecutionPolicy', '-ExecutionPolicy', 'RemoteSigned', '-Scope', 'CurrentUser']]
         self.set_features(features=self.windows_features)
         self.ubuntu_clean_command = [['apt', 'install', '-y', 'trash-cli'], ['trash-empty']]
         self.windows_clean_command = [['cleanmgr', '/lowdisk']]
@@ -141,25 +142,30 @@ class SystemsManager:
             print(self.result.returncode, self.result.stdout, self.result.stderr)
 
         elif self.operating_system == "Windows":
-            font_path = os.path.expanduser(r'c:\windows\fonts')
+            font_path = os.path.expanduser(r'C:\Windows\Fonts')
             extract_path = "."
             if not os.path.exists(font_path):
                 os.makedirs(font_path)
             meslo_file_name = 'Meslo.zip'
-            url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + meslo_file_name
+            url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.0/' + meslo_file_name
             r = requests.get(url)
             open(meslo_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(meslo_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
             hack_file_name = 'Hack.zip'
-            url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/' + hack_file_name
+            url = 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.0/' + hack_file_name
             r = requests.get(url)
             open(hack_file_name, 'wb').write(r.content)
             with zipfile.ZipFile(hack_file_name, 'r') as zip_ref:
                 zip_ref.extractall(extract_path)
-            font_files = glob.glob('./*/*.ttf')
+            font_files = glob.glob('./*.ttf')
+            font_files = font_files + glob.glob('./*/*.ttf')
+            print(f"All font files: {font_files}")
             for font_file in font_files:
-                os.rename(font_file, font_path + os.path.basename(font_file))
+                print(f"Moving font {os.path.normpath(font_file)} "
+                      f"to: {os.path.normpath(os.path.join(font_path, os.path.basename(font_file)))}")
+                shutil.move(os.path.normpath(font_file),
+                            os.path.normpath(os.path.join(font_path, os.path.basename(font_file))))
             os.remove(meslo_file_name)
             os.remove(hack_file_name)
 
@@ -189,8 +195,8 @@ class SystemsManager:
                 else:
                     file.write('eval "$(oh-my-posh --init --shell bash --config ~/.poshthemes/takuya.omp.json)"')
             theme_commands = [['chmod', '+x', '/usr/local/bin/oh-my-posh'],
-                             ['chmod', 'u+rw', '~/.poshthemes/*.json'],
-                             ['source', '~/.bashrc']]
+                              ['chmod', 'u+rw', '~/.poshthemes/*.json'],
+                              ['source', '~/.bashrc']]
             for theme_command in theme_commands:
                 self.run_command(theme_command)
                 print(self.result.returncode, self.result.stdout, self.result.stderr)
@@ -198,7 +204,8 @@ class SystemsManager:
         elif self.operating_system == "Windows":
             theme_commands = [
                 ['powershell.exe', 'Install-PackageProvider', '-Name', 'NuGet', '-Force'],
-                ['winget', 'install', 'oh-my-posh'],
+                ['winget', 'install', '--accept-package-agreements', '--accept-source-agreements', 'JanDeDobbeleer.OhMyPosh', '-s', 'winget'],
+                ['winget', 'install', '--accept-package-agreements', '--accept-source-agreements', 'fzf'],
                 ['powershell.exe', 'Install-Module', 'Terminal-Icons', '-Repository', 'PSGallery', '-Force'],
                 ['powershell.exe', 'Install-Module', '-Name', 'z', '-Force', '-AllowClobber'],
                 ['powershell.exe', 'Install-Module', '-Name', 'PSReadLine', '-Force', '-SkipPublisherCheck'],
@@ -209,40 +216,43 @@ class SystemsManager:
             for theme_command in theme_commands:
                 self.run_command(theme_command)
                 print(self.result.returncode, self.result.stdout, self.result.stderr)
-            config_path = os.path.expanduser("~/.config")
+            config_path = os.path.normpath(os.path.expanduser("~/.config"))
             if not os.path.exists(config_path):
                 os.makedirs(config_path)
                 os.makedirs(config_path + "/powershell")
 
-            user_profile_file = config_path + "/powershell/user_profile.ps1"
-            user_profile_content = '# set PowerShell to UTF-8\n'
-            '[console]::InputEncoding = [console]::OutputEncoding = New-Object System.Text.UTF8Encoding\n\n'
-            '$omp_config = Join-Path $PSScriptRoot ".\takuya.omp.json"\n'
-            'oh-my-posh init pwsh --config $omp_config | Invoke-Expression\n\n'
-            'Import-Module -Name Terminal-Icons\n\n'
-            '# PSReadLine\n'
-            'Set-PSReadLineOption -EditMode Emacs\n'
-            'Set-PSReadLineOption -BellStyle None\n'
-            'Set-PSReadLineKeyHandler -Chord "Ctrl+d" -Function DeleteChar\n'
-            'Set-PSReadLineOption -PredictionSource History\n\n'
-            '# Fzf\n'
-            'Import-Module PSFzf\n'
-            'Set-PsFzfOption -PSReadlineChordProvider "Ctrl+f" -PSReadlineChordReverseHistory "Ctrl+r"\n\n'
-            '# Env\n'
-            r'$env:GIT_SSH = "C:\Windows\system32\OpenSSH\ssh.exe"\n\n'
-            '# Alias\n'
-            'Set-Alias -Name vim -Value nvim\n'
-            'Set-Alias ll ls\n'
-            'Set-Alias g git\n'
-            'Set-Alias grep findstr\n'
-            r'Set-Alias tig "C:\Program Files\Git\usr\bin\tig.exe"\n'
-            r'Set-Alias less "C:\Program Files\Git\usr\bin\less.exe"\n\n'
-            '# Utilities\n'
-            'function which ($command) {\n'
-            '  Get-Command -Name $command -ErrorAction SilentlyContinue |\n'
-            '    Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue\n'
-            '}'
-            open(user_profile_file, 'w').write(user_profile_content)
+            user_profile_file = os.path.normpath(os.path.join(config_path, "powershell", "user_profile.ps1"))
+            user_profile_content = r'''# set PowerShell to UTF-8
+[console]::InputEncoding = [console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+$omp_config = Join-Path $PSScriptRoot ".\takuya.omp.json"
+oh-my-posh init pwsh --config $omp_config | Invoke-Expression
+Import-Module -Name Terminal-Icons
+# PSReadLine
+Set-PSReadLineOption -EditMode Emacs
+Set-PSReadLineOption -BellStyle None
+Set-PSReadLineKeyHandler -Chord "Ctrl+d" -Function DeleteChar
+Set-PSReadLineOption -PredictionSource History
+# Fzf
+Import-Module PSFzf
+Set-PsFzfOption -PSReadlineChordProvider "Ctrl+f" -PSReadlineChordReverseHistory "Ctrl+r"
+# Env
+$env:GIT_SSH = "C:\Windows\system32\OpenSSH\ssh.exe"
+# Alias'
+Set-Alias -Name vim -Value nvim
+Set-Alias ll ls
+Set-Alias g git
+Set-Alias grep findstr
+Set-Alias tig "C:\Program Files\Git\usr\bin\tig.exe"
+Set-Alias less "C:\Program Files\Git\usr\bin\less.exe"
+# Utilities
+function which ($command) {
+Get-Command -Name $command -ErrorAction SilentlyContinue |
+Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
+}'''
+
+            print(f"Set User Profile: {user_profile_file}")
+            with open(user_profile_file, "w") as outfile:
+                outfile.write(user_profile_content)
 
             takuya_omp_data = {
                 "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
@@ -368,9 +378,14 @@ class SystemsManager:
             with open(config_path + "/powershell/takuya.omp.json", 'w') as f:
                 json.dump(takuya_omp_data, f, indent=4)
 
-            windows_terminal_settings_file = os.path.expanduser(
-                "~\AppData\Local\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json")
+            windows_terminal_settings_file = None
+            settings_file = "~\AppData\Local\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json"
+            for file in glob.glob(os.path.expanduser(settings_file)):
+                windows_terminal_settings_file = file
 
+            if not windows_terminal_settings_file:
+                print(f"File was not found: {windows_terminal_settings_file}")
+                return
             with open(windows_terminal_settings_file, 'r') as f:
                 windows_terminal_settings_json = json.load(f)
 
@@ -400,18 +415,26 @@ class SystemsManager:
 
             windows_terminal_settings_json['schemes'].append(smooth_blues_data)
             windows_terminal_settings_json['profiles']['defaults']['colorScheme'] = "Smooth Blues"
-            windows_terminal_settings_json['profiles']['defaults']['font']['face'] = "Hack NF"
+            windows_terminal_settings_json['profiles']['defaults']['font'] = {'face': 'Hack Nerd Font'}
             windows_terminal_settings_json['profiles']['defaults']['opacity'] = 35
             windows_terminal_settings_json['profiles']['defaults']['useAcrylic'] = True
+
             with open(windows_terminal_settings_file, 'w') as f:
                 json.dump(windows_terminal_settings_json, f, indent=4)
 
-            with open(os.environ['PROFILE'], "r+") as file:
-                for line in file:
-                    if r'. $env:USERPROFILE\.config\powershell\user_profile.ps1' in line:
-                        break
-                else:
-                    file.write(r'. $env:USERPROFILE\.config\powershell\user_profile.ps1')
+            user_profile_file = '~\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1'
+            with open(os.path.expanduser(user_profile_file), "w") as file:
+                try:
+                    for line in file:
+                        if r'. $env:USERPROFILE\.config\powershell\user_profile.ps1' in line:
+                            break
+                    else:
+                        file.write(r'. $env:USERPROFILE\.config\powershell\user_profile.ps1')
+                except Exception as e:
+                    try:
+                        file.write(r'. $env:USERPROFILE\.config\powershell\user_profile.ps1')
+                    except Exception as f:
+                        print(f"Error Saving Profile: \nError 1: {e} \nError 2: {f}")
 
     def set_startup_programs(self):
         if self.operating_system == "Ubuntu":
@@ -551,7 +574,7 @@ class SystemsManager:
 
         for feature in self.windows_features:
             self.enable_windows_features_command.append(
-                ['Enable-WindowsOptionalFeature', '-Online', '-FeatureName', f'{feature}', '-NoRestart'])
+                ['powershell.exe', 'Enable-WindowsOptionalFeature', '-Online', '-FeatureName', f'{feature}', '-NoRestart'])
 
     def set_python_modules(self, modules):
         if modules is None or len(modules) == 0:
@@ -574,7 +597,7 @@ def usage():
           f"-h | --help            [ See usage for script ]\n"
           f"-c | --clean           [ Clean Recycle/Trash bin ]\n"
           f"-e | --enable-features [ Enable Window Features ]\n"
-          f"-f | --font            [ Install Hack NF Font ]\n"
+          f"-f | --font            [ Install 'Hack Nerd Font' ]\n"
           f"-i | --install         [ Install applications ]\n"
           f"-p | --python          [ Install Python Modules ]\n"
           f"-s | --silent          [ Don't print to stdout ]\n"
