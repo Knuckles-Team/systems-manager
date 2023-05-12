@@ -481,6 +481,8 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
                 self.applications = ["discord", "dos2unix", "python3"]
             elif self.operating_system == "Windows":
                 self.applications = ["Python.Python.3"]
+            else:
+                self.applications = ["dos2unix", "python3"]
         elif applications == "all" or "all" in applications:
             if self.operating_system == "Ubuntu":
                 print("Set all apps")
