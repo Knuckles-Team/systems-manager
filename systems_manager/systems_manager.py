@@ -171,7 +171,7 @@ class SystemsManager:
 
     def theme(self):
         if self.operating_system == "Ubuntu":
-            self.run_command(command=[['apt', 'install', '-y', 'fontconfig', 'unzip']])
+            self.run_command(command=['apt', 'install', '-y', 'fontconfig', 'unzip'])
             oh_my_posh_file = '/usr/local/bin/oh-my-posh'
             url = "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64"
             r = requests.get(url)
@@ -438,13 +438,13 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
 
     def set_startup_programs(self):
         if self.operating_system == "Ubuntu":
-            self.run_command(command=[['echo', 'Set Startup Program?']])
+            self.run_command(command=['echo', 'Set Startup Program?'])
             print(self.result.returncode, self.result.stdout, self.result.stderr)
         elif self.operating_system == "Windows":
-            self.run_command(command=[['powershell.exe', 'Copy-Item',
+            self.run_command(command=['powershell.exe', 'Copy-Item',
                                        'C:\ProgramData\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager',
                                        '-Destination',
-                                       '%SystemDrive%\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup']])
+                                       '%SystemDrive%\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup'])
             print(self.result.returncode, self.result.stdout, self.result.stderr)
 
     def run_command(self, command):
