@@ -460,7 +460,7 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
             print(e.output)
 
     def get_operating_system(self):
-        if "ubuntu" in str(self.version).lower():
+        if "ubuntu" in str(self.version).lower() or "smp" in str(self.version).lower():
             self.operating_system = "Ubuntu"
         elif "windows" in str(self.system).lower() and ("10" in self.release or "11" in self.release):
             self.operating_system = "Windows"
