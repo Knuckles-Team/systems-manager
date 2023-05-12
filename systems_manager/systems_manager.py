@@ -111,6 +111,8 @@ class SystemsManager:
 
     def font(self):
         if self.operating_system == "Ubuntu":
+            install_dependencies_command = ['sudo', 'apt', 'install', '-y', 'fontconfig']
+            self.run_command(command=install_dependencies_command)
             font_path = os.path.expanduser('~/.fonts')
             extract_path = font_path
             if not os.path.exists(font_path):
