@@ -515,6 +515,22 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
                     "RevoUninstaller.RevoUninstaller", "Valve.Steam", "WiresharkFoundation.Wireshark",
                     "Emulationstation.Emulationstation", "Libretro.RetroArch"
                 ]
+            else:
+                print("Set all apps")
+                self.applications = [
+                    "atomicparsley", "audacity", "curl", "dialog", "discord", "docker", "dos2unix", "enscript",
+                    "ffmpeg", "fstab", "gimp", "git",
+                    "gnome-shell", "rustc",
+                    "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
+                    "kvm", "lm-sensors", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server",
+                    "net-tools",
+                    "openjdk-8-jdk", "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3",
+                    "python3-is-python", "pycharm", "rygel", "samba", "samba-common", "smbclient samba-common-bin",
+                    "smbclient", "cifs-utils", "scrcpy", "sysstat", "net-tools", "numactl",
+                    "linux-tools-common", "steam", "startup-disk-creator", "update-manager", "synaptic", "telegram",
+                    "tesseract", "tigervnc", "tmux", "transmission", "translate-shell", "trash-cli", "tree", "unzip",
+                    "udisks2", "vlc", "wine", "wireshark", "wget", "xdotool", "xpaint", "xsel", "yq"
+                ]
         else:
             self.applications = applications
 
