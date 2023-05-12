@@ -171,7 +171,7 @@ class SystemsManager:
 
     def theme(self):
         if self.operating_system == "Ubuntu":
-            install_dependencies_command = ['apt', 'install', '-y', 'fontconfig', 'unzip']
+            install_dependencies_command = ['sudo', 'apt', 'install', '-y', 'fontconfig', 'unzip']
             self.run_command(command=install_dependencies_command)
             oh_my_posh_file = '/usr/local/bin/oh-my-posh'
             url = "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64"
@@ -624,7 +624,7 @@ def systems_manager(argv):
     optimize = False
     start_up = False
     try:
-        opts, args = getopt.getopt(argv, "hcstue:f:i:p:",
+        opts, args = getopt.getopt(argv, "hcfstue:i:p:",
                                    ["help", "clean", "font", "silent", "theme", "update",
                                     "enable-features=", "install=", "python="])
     except getopt.GetoptError:
