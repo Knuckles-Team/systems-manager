@@ -601,7 +601,8 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
         if modules is None or len(modules) == 0:
             self.python_modules = ["geniusbot"]
         elif modules == "all":
-            self.python_modules = ["geniusbot"]
+            self.python_modules = ["geniusbot", "repository-manager", "subshift", "webarchiver", "report-manager",
+                                   "media-downloader", "media-manager"]
         else:
             self.python_modules = modules
 
