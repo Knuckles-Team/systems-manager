@@ -505,7 +505,7 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
             elif self.operating_system == "Windows":
                 self.applications = [
                     "Git.Git", "oh-my-posh", "Discord.Discord", "Microsoft.VCRedist.2015+.x64",
-                    "Microsoft.VCRedist.2015+.x86",
+                    "Microsoft.VCRedist.2015+.x86", "WireGuard.WireGuard",
                     "Microsoft.VCRedist.2013.x64", "Microsoft.VisualStudioCode", "TheDocumentFoundation.LibreOffice",
                     "Adobe.Acrobat.Reader.64-bit", "Audacity.Audacity", "Google.Chrome", "Balena.Etcher",
                     "Mozilla.Firefox",
