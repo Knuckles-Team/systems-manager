@@ -49,6 +49,7 @@ class SystemsManager:
                 ["powershell.exe", 'Install-WindowsUpdate']
             ]
         self.windows_features = None
+        self.script_path = os.path.normpath(os.path.dirname(__file__))
         self.enable_windows_features_command = [['powershell.exe', 'Set-ExecutionPolicy', '-ExecutionPolicy', 'RemoteSigned', '-Scope', 'CurrentUser']]
         self.set_features(features=self.windows_features)
         self.ubuntu_clean_command = [['apt', 'install', '-y', 'trash-cli'], ['trash-empty']]
@@ -71,7 +72,9 @@ class SystemsManager:
 
     def install_applications(self):
         if self.install_command:
+            print(f"FULL COMMAND: {self.install_command}")
             for install_single_command in self.install_command:
+                print(f"Single: {install_single_command}")
                 self.run_command(install_single_command)
                 if 'Try "snap install' in self.result.stdout:
                     install_single_command[0] = "snap"
@@ -492,7 +495,8 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
                     "atomicparsley", "audacity", "curl", "dialog", "discord", "docker", "dos2unix", "enscript",
                     "ffmpeg", "fstab", "gimp", "git",
                     "gnome-shell", "rustc",
-                    "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "kexi",
+                    "ubuntu-gnome-desktop", "gnome-theme", "gnucobol", "ghostscript", "gparted", "gramps", "jq", "k3s",
+                    "kexi",
                     "kvm", "lm-sensors", "mediainfo", "mkvtoolnix", "neofetch", "nfs-common", "nfs-kernel-server",
                     "net-tools",
                     "openjdk-8-jdk", "nmap", "openssh-server", "openvpn", "preload", "poppler-utils", "python3",
@@ -539,7 +543,7 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
             self.applications = applications
 
         for application in self.applications:
-            ubuntu_install_commands = ['apt', 'install', '-y', f'{application}']
+            ubuntu_install_commands = [['apt', 'install', '-y', f'{application}']]
             if application.lower() == "docker" and self.operating_system == "Ubuntu":
                 ubuntu_install_commands = [
                     ['apt', 'remove', 'docker', 'docker-engine', 'docker.io', 'containerd', 'runc'],
@@ -555,13 +559,19 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
                     ['apt', 'update'],
                     ['apt', 'install', '-y', 'docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-buildx-plugin',
                      'docker-compose-plugin']]
+            if application.lower() == "k3s" and self.operating_system == "Ubuntu":
+                    ubuntu_install_commands = [
+                        ['wget', '-O', f'{self.script_path}/k3s.sh', 'https://get.k3s.io'],
+                        ['bash', f'{self.script_path}/k3s.sh', '--write-kubeconfig-mode', '644'],
+                        ['rm', '-f', f'{self.script_path}/k3s.sh']
+                    ]
             elif application.lower() == "wireshark" and self.operating_system == "Ubuntu":
                 ubuntu_install_commands = [
                     ['echo', '"wireshark-common wireshark-common/install-setuid boolean true"', '|',
                      'debconf-set-selections'],
                     ['DEBIAN_FRONTEND=noninteractive', 'apt', '-y', 'install', 'wireshark']]
             elif self.operating_system == "Ubuntu":
-                ubuntu_install_commands = ['apt', 'install', '-y', f'{application}']
+                ubuntu_install_commands = [['apt', 'install', '-y', f'{application}']]
 
             for ubuntu_install_command in ubuntu_install_commands:
                 self.ubuntu_install_command.append(ubuntu_install_command)
