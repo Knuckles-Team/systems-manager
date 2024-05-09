@@ -6,6 +6,8 @@ import getopt
 import subprocess
 import os
 import platform
+from typing import List
+
 import requests
 import zipfile
 import glob
@@ -238,7 +240,7 @@ class SystemsManager:
             os.remove(meslo_file_name)
             os.remove(hack_file_name)
 
-    def theme(self):
+    def theme(self) -> None:
         if self.operating_system == "Ubuntu":
             install_dependencies_command = [
                 "sudo",
@@ -620,7 +622,7 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
         except subprocess.CalledProcessError as e:
             print(e.output)
 
-    def get_operating_system(self):
+    def get_operating_system(self) -> str:
         if "ubuntu" in str(self.version).lower() or "smp" in str(self.version).lower():
             self.operating_system = "Ubuntu"
         elif "windows" in str(self.system).lower() and (
@@ -629,13 +631,13 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
             self.operating_system = "Windows"
         return self.operating_system
 
-    def get_silent(self):
+    def get_silent(self) -> bool:
         return self.silent
 
     def set_silent(self, silent=False):
         self.silent = silent
 
-    def get_applications(self):
+    def get_applications(self) -> List[str]:
         return self.applications
 
     def set_applications(self, applications):
@@ -940,7 +942,7 @@ Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
                 ]
             )
 
-    def get_features(self):
+    def get_features(self) -> List[str]:
         return self.windows_features
 
     def set_features(self, features):
