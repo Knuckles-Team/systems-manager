@@ -12,8 +12,8 @@ from fastmcp import FastMCP, Context
 from pydantic import Field
 from systems_manager.systems_manager import (
     detect_and_create_manager,
-    setup_logging,
     WindowsManager,
+    setup_logging,
 )
 
 # Initialize logging for MCP server

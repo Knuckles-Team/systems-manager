@@ -18,23 +18,25 @@ from typing import List, Dict
 from abc import ABC, abstractmethod
 
 
+def setup_logging(log_file: str):
+    if not log_file:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        log_file = os.path.join(script_dir, "systems_manager.log")
+    logging.basicConfig(
+        filename=log_file,
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+    logger = logging.getLogger(__name__)
+    logger.info(f"Logging initialized to {log_file}")
+    return logger
+
+
 class SystemsManagerBase(ABC):
     def __init__(self, silent: bool = False, log_file: str = None):
         self.silent = silent
         self.result = None
-        self.setup_logging(log_file)
-
-    def setup_logging(self, log_file: str):
-        if not log_file:
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            log_file = os.path.join(script_dir, "systems_manager.log")
-        logging.basicConfig(
-            filename=log_file,
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-        )
-        self.logger = logging.getLogger(__name__)
-        self.logger.info(f"Logging initialized to {log_file}")
+        self.logger = setup_logging(log_file)
 
     def log_command(
         self,
