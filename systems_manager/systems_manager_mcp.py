@@ -10,7 +10,11 @@ from typing import Optional, List, Dict
 import requests
 from fastmcp import FastMCP, Context
 from pydantic import Field
-from systems_manager import detect_and_create_manager, setup_logging, WindowsManager
+from systems_manager.systems_manager import (
+    detect_and_create_manager,
+    setup_logging,
+    WindowsManager,
+)
 
 # Initialize logging for MCP server
 setup_logging(is_mcp_server=True, log_file="systems_manager_mcp.log")
