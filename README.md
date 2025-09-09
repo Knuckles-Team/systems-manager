@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 0.30.4*
+*Version: 0.30.5*
 
 Systems-Manager will update your system and install/upgrade applications.
 
