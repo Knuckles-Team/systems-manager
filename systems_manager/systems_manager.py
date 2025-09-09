@@ -6,1186 +6,646 @@ import getopt
 import subprocess
 import os
 import platform
-from typing import List
-
-import requests
-import zipfile
-import glob
 import json
 import shutil
+import zipfile
+import glob
+import requests
+import logging
+import distro
+import psutil
+from typing import List, Dict
+from abc import ABC, abstractmethod
 
-try:
-    from systems_manager.version import __version__, __author__, __credits__
-except:
-    from version import __version__, __author__, __credits__
 
-
-class SystemsManager:
-    def __init__(self, silent=False):
-        self.system = platform.system()
-        self.release = platform.release()
-        self.version = platform.version()
-        self.operating_system = None
-        self.result = None
-        self.get_operating_system()
+class SystemsManagerBase(ABC):
+    def __init__(self, silent: bool = False, log_file: str = None):
         self.silent = silent
-        self.applications = None
-        self.bash_profile = ""
-        self.ubuntu_install_command = []
-        self.windows_install_command = []
-        self.set_applications(self.applications)
-        self.ubuntu_update_command = [
-            ["apt", "update"],
-            ["apt", "upgrade", "-y"],
-            ["apt", "autoremove", "-y"],
-        ]
-        if os.path.isfile(
-            os.path.expanduser("~\AppData\Local\Microsoft\WindowsApps\winget.exe")
-        ):
-            self.windows_update_command = [
-                [
-                    "winget",
-                    "upgrade",
-                    "--all",
-                    "--silent",
-                    "--accept-package-agreements",
-                    "--accept-source-agreements",
-                ],
-                ["powershell.exe", "Install-Module", "PSWindowsUpdate", "Force"],
-                ["powershell.exe", "Get-WindowsUpdate"],
-                ["powershell.exe", "Install-WindowsUpdate"],
-            ]
-        else:
-            self.windows_update_command = [
-                [
-                    "powershell.exe",
-                    "Start-Process",
-                    '"ms-appinstaller:?source=https://aka.ms/getwinget"',
-                ],
-                ["powershell.exe", "$nid", "=", "(Get-Process AppInstaller).Id"],
-                ["powershell.exe", "Wait-Process", "-Id", "$nid"],
-                ["winget", "upgrade", "--all"],
-                ["powershell.exe", "Install-Module", "PSWindowsUpdate", "Force"],
-                ["powershell.exe", "Get-WindowsUpdate"],
-                ["powershell.exe", "Install-WindowsUpdate"],
-            ]
-        self.windows_features = None
-        self.script_path = os.path.normpath(os.path.dirname(__file__))
-        self.enable_windows_features_command = [
-            [
+        self.result = None
+        self.setup_logging(log_file)
+
+    def setup_logging(self, log_file: str):
+        if not log_file:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            log_file = os.path.join(script_dir, "systems_manager.log")
+        logging.basicConfig(
+            filename=log_file,
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+        )
+        self.logger = logging.getLogger(__name__)
+        self.logger.info(f"Logging initialized to {log_file}")
+
+    def log_command(
+        self,
+        command: List[str],
+        result: subprocess.CompletedProcess = None,
+        error: Exception = None,
+    ):
+        self.logger.info(f"Running command: {' '.join(command)}")
+        if result:
+            self.logger.info(f"Return code: {result.returncode}")
+            self.logger.info(f"Stdout: {result.stdout}")
+            self.logger.info(f"Stderr: {result.stderr}")
+        if error:
+            self.logger.error(f"Error: {str(error)}")
+
+    def run_command(
+        self, command: List[str], elevated: bool = False, shell: bool = False
+    ) -> subprocess.CompletedProcess:
+        if elevated and platform.system() == "Linux":
+            command = ["sudo"] + command
+        elif elevated and platform.system() == "Windows":
+            command = [
                 "powershell.exe",
-                "Set-ExecutionPolicy",
-                "-ExecutionPolicy",
-                "RemoteSigned",
-                "-Scope",
-                "CurrentUser",
+                "Start-Process",
+                "powershell",
+                "-Verb",
+                "runAs",
+                "-ArgumentList",
+                f"'{ ' '.join(command) }'",
             ]
-        ]
-        self.set_features(features=self.windows_features)
-        self.ubuntu_clean_command = [
-            ["apt", "install", "-y", "trash-cli"],
-            ["trash-empty"],
-        ]
-        self.windows_clean_command = [["cleanmgr", "/lowdisk"]]
-        self.ubuntu_optimize_command = [
-            ["apt", "autoremove", "-y"],
-            ["apt", "autoclean"],
-        ]
-        self.windows_optimize_command = [["cleanmgr", "/lowdisk"]]
-        self.python_modules = None
-        self.install_python_modules_command = [
-            ["python", "-m", "pip", "install", "--upgrade", "pip"]
-        ]
-        self.set_python_modules(self.python_modules)
-        if self.operating_system == "Ubuntu":
-            self.install_command = self.ubuntu_install_command
-            self.update_command = self.ubuntu_update_command
-            self.clean_command = self.ubuntu_clean_command
-            self.optimize_command = self.ubuntu_optimize_command
-        elif self.operating_system == "Windows":
-            self.install_command = self.windows_install_command
-            self.update_command = self.windows_update_command
-            self.clean_command = self.windows_clean_command
-            self.optimize_command = self.windows_optimize_command
-
-    def install_applications(self):
-        if self.install_command:
-            print(f"FULL COMMAND: {self.install_command}")
-            for install_single_command in self.install_command:
-                print(f"Single: {install_single_command}")
-                self.run_command(install_single_command)
-                if 'Try "snap install' in self.result.stdout:
-                    install_single_command[0] = "snap"
-                    install_single_command.remove("-y")
-                    self.run_command(install_single_command)
-                print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-    def install_python_modules(self):
-        if self.install_python_modules_command:
-            for (
-                install_single_python_module_command
-            ) in self.install_python_modules_command:
-                self.run_command(install_single_python_module_command)
-                print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-    def update(self):
-        if self.update_command:
-            for update_single_command in self.update_command:
-                self.run_command(update_single_command)
-                print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-    def clean(self):
-        if self.clean_command:
-            for clean_single_command in self.clean_command:
-                self.run_command(clean_single_command)
-                print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-    def enable_windows_features(self):
-        if self.enable_windows_features_command:
-            for (
-                enable_windows_features_single_command
-            ) in self.enable_windows_features_command:
-                self.run_command(enable_windows_features_single_command)
-                print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-    def optimize(self):
-        if self.optimize_command:
-            for optimize_single_command in self.optimize_command:
-                self.run_command(optimize_single_command)
-                print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-    def font(self):
-        if self.operating_system == "Ubuntu":
-            install_dependencies_command = [
-                "sudo",
-                "apt",
-                "install",
-                "-y",
-                "fontconfig",
-            ]
-            self.run_command(command=install_dependencies_command)
-            font_path = os.path.expanduser("~/.fonts")
-            extract_path = font_path
-            if not os.path.exists(font_path):
-                os.makedirs(font_path)
-            meslo_file_name = "Meslo.zip"
-            url = (
-                "https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/"
-                + meslo_file_name
-            )
-            r = requests.get(url)
-            try:
-                open(meslo_file_name, "wb").write(r.content)
-            except Exception:
-                meslo_file_name = os.path.expanduser("~/Downloads/Meslo.zip")
-                open(meslo_file_name, "wb").write(r.content)
-            with zipfile.ZipFile(meslo_file_name, "r") as zip_ref:
-                zip_ref.extractall(extract_path)
-            hack_file_name = "Hack.zip"
-            url = (
-                "https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/"
-                + hack_file_name
-            )
-            r = requests.get(url)
-
-            try:
-                open(hack_file_name, "wb").write(r.content)
-            except Exception:
-                hack_file_name = os.path.expanduser("~/Downloads/Hack.zip")
-                open(hack_file_name, "wb").write(r.content)
-            with zipfile.ZipFile(hack_file_name, "r") as zip_ref:
-                zip_ref.extractall(extract_path)
-
-            font_command = ["fc-cache", "-fv"]
-            self.run_command(font_command)
-            print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-        elif self.operating_system == "Windows":
-            font_path = os.path.expanduser(r"C:\Windows\Fonts")
-            extract_path = "."
-            if not os.path.exists(font_path):
-                os.makedirs(font_path)
-            meslo_file_name = "Meslo.zip"
-            url = (
-                "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.0/"
-                + meslo_file_name
-            )
-            r = requests.get(url)
-            open(meslo_file_name, "wb").write(r.content)
-            with zipfile.ZipFile(meslo_file_name, "r") as zip_ref:
-                zip_ref.extractall(extract_path)
-            hack_file_name = "Hack.zip"
-            url = (
-                "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.0/"
-                + hack_file_name
-            )
-            r = requests.get(url)
-            open(hack_file_name, "wb").write(r.content)
-            with zipfile.ZipFile(hack_file_name, "r") as zip_ref:
-                zip_ref.extractall(extract_path)
-            font_files = glob.glob("./*.ttf")
-            font_files = font_files + glob.glob("./*/*.ttf")
-            print(f"All font files: {font_files}")
-            for font_file in font_files:
-                print(
-                    f"Moving font {os.path.normpath(font_file)} "
-                    f"to: {os.path.normpath(os.path.join(font_path, os.path.basename(font_file)))}"
-                )
-                shutil.move(
-                    os.path.normpath(font_file),
-                    os.path.normpath(
-                        os.path.join(font_path, os.path.basename(font_file))
-                    ),
-                )
-            os.remove(meslo_file_name)
-            os.remove(hack_file_name)
-
-    def theme(self) -> None:
-        if self.operating_system == "Ubuntu":
-            install_dependencies_command = [
-                "sudo",
-                "apt",
-                "install",
-                "-y",
-                "fontconfig",
-                "unzip",
-            ]
-            self.run_command(command=install_dependencies_command)
-            oh_my_posh_file = "/usr/local/bin/oh-my-posh"
-            url = "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64"
-            r = requests.get(url)
-            open(oh_my_posh_file, "wb").write(r.content)
-            themes_file = os.path.expanduser(r"~/.poshthemes/themes.zip")
-            theme_path = os.path.expanduser(r"~/.poshthemes")
-            extract_path = theme_path
-            if not os.path.exists(theme_path):
-                os.makedirs(theme_path)
-            url = "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/themes.zip"
-            r = requests.get(url)
-            open(themes_file, "wb").write(r.content)
-            with zipfile.ZipFile(themes_file, "r") as zip_ref:
-                zip_ref.extractall(extract_path)
-            os.remove(themes_file)
-            self.bash_profile = os.path.expanduser(r"~/.bashrc")
-            with open(self.bash_profile, "r+") as file:
-                for line in file:
-                    if 'eval "$(oh-my-posh --init --shell bash --config ' in line:
-                        break
-                else:
-                    file.write(
-                        'eval "$(oh-my-posh --init --shell bash --config ~/.poshthemes/takuya.omp.json)"'
-                    )
-            theme_commands = [
-                ["chmod", "+x", "/usr/local/bin/oh-my-posh"],
-                ["chmod", "u+rw", "~/.poshthemes/*.json"],
-                ["source", "~/.bashrc"],
-            ]
-            for theme_command in theme_commands:
-                self.run_command(theme_command)
-                print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-        elif self.operating_system == "Windows":
-            theme_commands = [
-                [
-                    "powershell.exe",
-                    "Install-PackageProvider",
-                    "-Name",
-                    "NuGet",
-                    "-Force",
-                ],
-                [
-                    "winget",
-                    "install",
-                    "--accept-package-agreements",
-                    "--accept-source-agreements",
-                    "JanDeDobbeleer.OhMyPosh",
-                    "-s",
-                    "winget",
-                ],
-                [
-                    "winget",
-                    "install",
-                    "--accept-package-agreements",
-                    "--accept-source-agreements",
-                    "fzf",
-                ],
-                [
-                    "powershell.exe",
-                    "Install-Module",
-                    "Terminal-Icons",
-                    "-Repository",
-                    "PSGallery",
-                    "-Force",
-                ],
-                [
-                    "powershell.exe",
-                    "Install-Module",
-                    "-Name",
-                    "z",
-                    "-Force",
-                    "-AllowClobber",
-                ],
-                [
-                    "powershell.exe",
-                    "Install-Module",
-                    "-Name",
-                    "PSReadLine",
-                    "-Force",
-                    "-SkipPublisherCheck",
-                ],
-                ["powershell.exe", "Install-Module", "-Name", "PSFzf", "-Force"],
-                [
-                    "powershell.exe",
-                    "New-Item",
-                    "-ItemType",
-                    "SymbolicLink",
-                    "-Path",
-                    "(Join-Path",
-                    "-Path",
-                    "$Env:USERPROFILE",
-                    "-ChildPath",
-                    "Documents)",
-                    "-Name",
-                    "PowerShell",
-                    "-Target",
-                    "(Join-Path",
-                    "-Path",
-                    "$Env:USERPROFILE",
-                    "-ChildPath",
-                    "Documents\WindowsPowerShell)",
-                ],
-            ]
-            for theme_command in theme_commands:
-                self.run_command(theme_command)
-                print(self.result.returncode, self.result.stdout, self.result.stderr)
-            config_path = os.path.normpath(os.path.expanduser("~/.config"))
-            if not os.path.exists(config_path):
-                os.makedirs(config_path)
-                os.makedirs(config_path + "/powershell")
-
-            user_profile_file = os.path.normpath(
-                os.path.join(config_path, "powershell", "user_profile.ps1")
-            )
-            user_profile_content = r"""# set PowerShell to UTF-8
-[console]::InputEncoding = [console]::OutputEncoding = New-Object System.Text.UTF8Encoding
-$omp_config = Join-Path $PSScriptRoot ".\takuya.omp.json"
-oh-my-posh init pwsh --config $omp_config | Invoke-Expression
-Import-Module -Name Terminal-Icons
-# PSReadLine
-Set-PSReadLineOption -EditMode Emacs
-Set-PSReadLineOption -BellStyle None
-Set-PSReadLineKeyHandler -Chord "Ctrl+d" -Function DeleteChar
-Set-PSReadLineOption -PredictionSource History
-# Fzf
-Import-Module PSFzf
-Set-PsFzfOption -PSReadlineChordProvider "Ctrl+f" -PSReadlineChordReverseHistory "Ctrl+r"
-# Env
-$env:GIT_SSH = "C:\Windows\system32\OpenSSH\ssh.exe"
-# Alias'
-Set-Alias -Name vim -Value nvim
-Set-Alias ll ls
-Set-Alias g git
-Set-Alias grep findstr
-Set-Alias tig "C:\Program Files\Git\usr\bin\tig.exe"
-Set-Alias less "C:\Program Files\Git\usr\bin\less.exe"
-# Utilities
-function which ($command) {
-Get-Command -Name $command -ErrorAction SilentlyContinue |
-Select-Object -ExpandProperty Path -ErrorAction SilentlyContinue
-}"""
-
-            print(f"Set User Profile: {user_profile_file}")
-            with open(user_profile_file, "w") as outfile:
-                outfile.write(user_profile_content)
-
-            takuya_omp_data = {
-                "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-                "blocks": [
-                    {
-                        "alignment": "left",
-                        "segments": [
-                            {
-                                "background": "#0077c2",
-                                "foreground": "#ffffff",
-                                "leading_diamond": "\u256d\u2500\ue0b6",
-                                "style": "diamond",
-                                "template": " {{ .Name }} ",
-                                "type": "shell",
-                            },
-                            {
-                                "background": "#ef5350",
-                                "foreground": "#FFFB38",
-                                "properties": {"root_icon": "\uf292"},
-                                "style": "diamond",
-                                "template": "<parentBackground>\ue0b0</> \uf0e7 ",
-                                "type": "root",
-                            },
-                            {
-                                "background": "#444444",
-                                "foreground": "#E4E4E4",
-                                "powerline_symbol": "\ue0b0",
-                                "properties": {"style": "full"},
-                                "style": "powerline",
-                                "template": " {{ .Path }} ",
-                                "type": "path",
-                            },
-                            {
-                                "background": "#FFFB38",
-                                "background_templates": [
-                                    "{{ if or (.Working.Changed) (.Staging.Changed) }}#ffeb95{{ end }}",
-                                    "{{ if and (gt .Ahead 0) (gt .Behind 0) }}#c5e478{{ end }}",
-                                    "{{ if gt .Ahead 0 }}#C792EA{{ end }}",
-                                    "{{ if gt .Behind 0 }}#C792EA{{ end }}",
-                                ],
-                                "foreground": "#011627",
-                                "powerline_symbol": "\ue0b0",
-                                "properties": {
-                                    "branch_icon": "\ue725 ",
-                                    "fetch_status": True,
-                                    "fetch_upstream_icon": True,
-                                },
-                                "style": "powerline",
-                                "template": " {{ .HEAD }} {{ if .Working.Changed }}{{ .Working.String }}{{ end }}"
-                                "{{ if and (.Working.Changed) (.Staging.Changed) }} "
-                                "|{{ end }}{{ if .Staging.Changed }}<#ef5350> \uf046 "
-                                "{{ .Staging.String }}</>{{ end }} ",
-                                "type": "git",
-                            },
-                        ],
-                        "type": "prompt",
-                    },
-                    {
-                        "alignment": "right",
-                        "segments": [
-                            {
-                                "background": "#303030",
-                                "foreground": "#3C873A",
-                                "leading_diamond": " \ue0b6",
-                                "properties": {
-                                    "fetch_package_manager": True,
-                                    "npm_icon": " <#cc3a3a>\ue5fa</> ",
-                                    "yarn_icon": " <#348cba>\uf61a</>",
-                                },
-                                "style": "diamond",
-                                "template": "\ue718 {{ if .PackageManagerIcon }}{{ .PackageManagerIcon }} "
-                                "{{ end }}{{ .Full }}",
-                                "trailing_diamond": "\ue0b4",
-                                "type": "node",
-                            },
-                            {
-                                "background": "#40c4ff",
-                                "foreground": "#ffffff",
-                                "invert_powerline": True,
-                                "leading_diamond": " \ue0b6",
-                                "style": "diamond",
-                                "template": " \uf5ef {{ .CurrentDate | date .Format }} ",
-                                "trailing_diamond": "\ue0b4",
-                                "type": "time",
-                            },
-                        ],
-                        "type": "prompt",
-                    },
-                    {
-                        "alignment": "left",
-                        "newline": True,
-                        "segments": [
-                            {
-                                "foreground": "#21c7c7",
-                                "style": "plain",
-                                "template": "\u2570\u2500",
-                                "type": "text",
-                            },
-                            {
-                                "foreground": "#e0f8ff",
-                                "foreground_templates": [
-                                    "{{ if gt .Code 0 }}#ef5350{{ end }}"
-                                ],
-                                "properties": {"always_enabled": True},
-                                "style": "plain",
-                                "template": "\u276f{{ if gt .Code 0 }}\uf00d{{ else }}\uf42e{{ end }} ",
-                                "type": "exit",
-                            },
-                        ],
-                        "type": "prompt",
-                    },
-                ],
-                "osc99": True,
-                "version": 2,
-            }
-
-            with open(config_path + "/powershell/takuya.omp.json", "w") as f:
-                json.dump(takuya_omp_data, f, indent=4)
-
-            windows_terminal_settings_file = None
-            settings_file = "~\AppData\Local\Packages\Microsoft.WindowsTerminal_*\LocalState\settings.json"
-            for file in glob.glob(os.path.expanduser(settings_file)):
-                windows_terminal_settings_file = file
-
-            if not windows_terminal_settings_file:
-                print(f"File was not found: {windows_terminal_settings_file}")
-                return
-            with open(windows_terminal_settings_file, "r") as f:
-                windows_terminal_settings_json = json.load(f)
-
-            smooth_blues_data = {
-                "background": "#001B26",
-                "black": "#282C34",
-                "blue": "#61AFEF",
-                "brightBlack": "#5A6374",
-                "brightBlue": "#61AFEF",
-                "brightCyan": "#56B6C2",
-                "brightGreen": "#98C379",
-                "brightPurple": "#C678DD",
-                "brightRed": "#E06C75",
-                "brightWhite": "#DCDFE4",
-                "brightYellow": "#E5C07B",
-                "cursorColor": "#FFFFFF",
-                "cyan": "#56B6C2",
-                "foreground": "#DCDFE4",
-                "green": "#98C379",
-                "name": "Smooth Blues",
-                "purple": "#C678DD",
-                "red": "#E06C75",
-                "selectionBackground": "#FFFFFF",
-                "white": "#DCDFE4",
-                "yellow": "#E5C07B",
-            }
-
-            windows_terminal_settings_json["schemes"].append(smooth_blues_data)
-            windows_terminal_settings_json["profiles"]["defaults"][
-                "colorScheme"
-            ] = "Smooth Blues"
-            windows_terminal_settings_json["profiles"]["defaults"]["font"] = {
-                "face": "Hack Nerd Font"
-            }
-            windows_terminal_settings_json["profiles"]["defaults"]["opacity"] = 35
-            windows_terminal_settings_json["profiles"]["defaults"]["useAcrylic"] = True
-
-            with open(windows_terminal_settings_file, "w") as f:
-                json.dump(windows_terminal_settings_json, f, indent=4)
-
-            user_profile_file = (
-                "~\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1"
-            )
-            with open(os.path.expanduser(user_profile_file), "w") as file:
-                try:
-                    for line in file:
-                        if (
-                            r". $env:USERPROFILE\.config\powershell\user_profile.ps1"
-                            in line
-                        ):
-                            break
-                    else:
-                        file.write(
-                            r". $env:USERPROFILE\.config\powershell\user_profile.ps1"
-                        )
-                except Exception as e:
-                    try:
-                        file.write(
-                            r". $env:USERPROFILE\.config\powershell\user_profile.ps1"
-                        )
-                    except Exception as f:
-                        print(f"Error Saving Profile: \nError 1: {e} \nError 2: {f}")
-
-    def set_startup_programs(self):
-        if self.operating_system == "Ubuntu":
-            self.run_command(command=["echo", "Set Startup Program?"])
-            print(self.result.returncode, self.result.stdout, self.result.stderr)
-        elif self.operating_system == "Windows":
-            self.run_command(
-                command=[
-                    "powershell.exe",
-                    "Copy-Item",
-                    "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\System Tools\Task Manager",
-                    "-Destination",
-                    "%SystemDrive%\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup",
-                ]
-            )
-            print(self.result.returncode, self.result.stdout, self.result.stderr)
-
-    def run_command(self, command):
+            shell = True
         try:
             if self.silent:
-                self.result = subprocess.run(
+                result = subprocess.run(
                     command,
-                    stdout=open(os.devnull, "wb"),
-                    stderr=open(os.devnull, "wb"),
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    shell=shell,
+                    check=True,
                 )
             else:
-                print("Running Command: ", command)
-                self.result = subprocess.run(
+                print(f"Running: {' '.join(command)}")
+                result = subprocess.run(
                     command,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    universal_newlines=True,
+                    text=True,
+                    shell=shell,
+                    check=True,
                 )
+            self.log_command(command, result)
+            return result
         except subprocess.CalledProcessError as e:
-            print(e.output)
+            self.log_command(command, error=e)
+            print(f"Error: {e.stderr}")
+            raise
+        except Exception as e:
+            self.log_command(command, error=e)
+            raise
 
-    def get_operating_system(self) -> str:
-        if "ubuntu" in str(self.version).lower() or "smp" in str(self.version).lower():
-            self.operating_system = "Ubuntu"
-        elif "windows" in str(self.system).lower() and (
-            "10" in self.release or "11" in self.release
-        ):
-            self.operating_system = "Windows"
-        return self.operating_system
+    @abstractmethod
+    def install_applications(self, apps: List[str]):
+        pass
 
-    def get_silent(self) -> bool:
-        return self.silent
+    @abstractmethod
+    def update(self):
+        pass
 
-    def set_silent(self, silent=False):
-        self.silent = silent
+    @abstractmethod
+    def clean(self):
+        pass
 
-    def get_applications(self) -> List[str]:
-        return self.applications
+    @abstractmethod
+    def optimize(self):
+        pass
 
-    def set_applications(self, applications):
-        if applications is None or len(applications) == 0:
-            if self.operating_system == "Ubuntu":
-                self.applications = ["discord", "dos2unix", "python3"]
-            elif self.operating_system == "Windows":
-                self.applications = ["Python.Python.3"]
-            else:
-                self.applications = ["dos2unix", "python3"]
-        elif applications == "all" or "all" in applications:
-            if self.operating_system == "Ubuntu":
-                print("Set all apps")
-                self.applications = [
-                    "atomicparsley",
-                    "audacity",
-                    "curl",
-                    "dialog",
-                    "discord",
-                    "docker",
-                    "dos2unix",
-                    "enscript",
-                    "ffmpeg",
-                    "fstab",
-                    "gimp",
-                    "git",
-                    "gnome-shell",
-                    "rustc",
-                    "ubuntu-gnome-desktop",
-                    "gnome-theme",
-                    "gnucobol",
-                    "ghostscript",
-                    "gparted",
-                    "gramps",
-                    "jq",
-                    "k3s",
-                    "kexi",
-                    "kvm",
-                    "lm-sensors",
-                    "mediainfo",
-                    "mkvtoolnix",
-                    "neofetch",
-                    "nfs-common",
-                    "nfs-kernel-server",
-                    "net-tools",
-                    "openjdk-8-jdk",
-                    "nmap",
-                    "openssh-server",
-                    "openvpn",
-                    "preload",
-                    "poppler-utils",
-                    "python3",
-                    "python3-is-python",
-                    "pycharm",
-                    "rygel",
-                    "samba",
-                    "samba-common",
-                    "smbclient samba-common-bin",
-                    "smbclient",
-                    "cifs-utils",
-                    "scrcpy",
-                    "sysstat",
-                    "net-tools",
-                    "numactl",
-                    "linux-tools-common",
-                    "steam",
-                    "startup-disk-creator",
-                    "update-manager",
-                    "synaptic",
-                    "telegram",
-                    "tesseract",
-                    "tigervnc",
-                    "tmux",
-                    "transmission",
-                    "translate-shell",
-                    "trash-cli",
-                    "tree",
-                    "unzip",
-                    "udisks2",
-                    "vlc",
-                    "wine",
-                    "wireshark",
-                    "wget",
-                    "xdotool",
-                    "xpaint",
-                    "xsel",
-                    "yq",
-                ]
-            elif self.operating_system == "Windows":
-                self.applications = [
-                    "Git.Git",
-                    "oh-my-posh",
-                    "Discord.Discord",
-                    "Microsoft.VCRedist.2015+.x64",
-                    "Microsoft.VCRedist.2015+.x86",
-                    "WireGuard.WireGuard",
-                    "Microsoft.VCRedist.2013.x64",
-                    "Microsoft.VisualStudioCode",
-                    "TheDocumentFoundation.LibreOffice",
-                    "Adobe.Acrobat.Reader.64-bit",
-                    "Audacity.Audacity",
-                    "Google.Chrome",
-                    "Balena.Etcher",
-                    "Mozilla.Firefox",
-                    "GIMP.GIMP",
-                    "AdoptOpenJDK.OpenJDK.8",
-                    "AdoptOpenJDK.OpenJDK.16",
-                    "Oracle.JDK.18",
-                    "JetBrains.Toolbox",
-                    "OpenJS.NodeJS",
-                    "OpenJS.NodeJS.LTS",
-                    "clsid2.mpc-hc",
-                    "Notepad++.Notepad++",
-                    "Microsoft.PowerToys",
-                    "PuTTY.PuTTY",
-                    "7zip.7zip",
-                    "Rustlang.Rust.MSVC",
-                    "Microsoft.WindowsTerminal",
-                    "Rustlang.Rust.GNU",
-                    "VideoLAN.VLC",
-                    "VSCodium.VSCodium",
-                    "BlenderFoundation.Blender",
-                    "Element.Element",
-                    "mRemoteNG.mRemoteNG",
-                    "TechPowerUp.NVstall",
-                    "OBSProject.OBSStudio",
-                    "Obsidian.Obsidian",
-                    "RevoUninstaller.RevoUninstaller",
-                    "Valve.Steam",
-                    "WiresharkFoundation.Wireshark",
-                    "Emulationstation.Emulationstation",
-                    "Libretro.RetroArch",
-                ]
-            else:
-                print("Set all apps")
-                self.applications = [
-                    "atomicparsley",
-                    "audacity",
-                    "curl",
-                    "dialog",
-                    "discord",
-                    "docker",
-                    "dos2unix",
-                    "enscript",
-                    "ffmpeg",
-                    "fstab",
-                    "gimp",
-                    "git",
-                    "gnome-shell",
-                    "rustc",
-                    "ubuntu-gnome-desktop",
-                    "gnome-theme",
-                    "gnucobol",
-                    "ghostscript",
-                    "gparted",
-                    "gramps",
-                    "jq",
-                    "kexi",
-                    "kvm",
-                    "lm-sensors",
-                    "mediainfo",
-                    "mkvtoolnix",
-                    "neofetch",
-                    "nfs-common",
-                    "nfs-kernel-server",
-                    "net-tools",
-                    "openjdk-8-jdk",
-                    "nmap",
-                    "openssh-server",
-                    "openvpn",
-                    "preload",
-                    "poppler-utils",
-                    "python3",
-                    "python3-is-python",
-                    "pycharm",
-                    "rygel",
-                    "samba",
-                    "samba-common",
-                    "smbclient samba-common-bin",
-                    "smbclient",
-                    "cifs-utils",
-                    "scrcpy",
-                    "sysstat",
-                    "net-tools",
-                    "numactl",
-                    "linux-tools-common",
-                    "steam",
-                    "startup-disk-creator",
-                    "update-manager",
-                    "synaptic",
-                    "telegram",
-                    "tesseract",
-                    "tigervnc",
-                    "tmux",
-                    "transmission",
-                    "translate-shell",
-                    "trash-cli",
-                    "tree",
-                    "unzip",
-                    "udisks2",
-                    "vlc",
-                    "wine",
-                    "wireshark",
-                    "wget",
-                    "xdotool",
-                    "xpaint",
-                    "xsel",
-                    "yq",
-                ]
+    @abstractmethod
+    def install_snapd(self):
+        pass
+
+    def install_via_snap(self, app: str):
+        if shutil.which("snap") is None:
+            self.logger.info("Snap not found; installing snapd...")
+            self.install_snapd()
+            self.run_command(
+                ["systemctl", "enable", "--now", "snapd.socket"], elevated=True
+            )
+            # Optional: For distros needing /snap symlink (e.g., Fedora)
+            self.run_command(
+                ["ln", "-s", "/var/lib/snapd/snap", "/snap"], elevated=True
+            )
+        self.run_command(
+            ["snap", "install", app], elevated=True
+        )  # Add --classic if app requires it (check via snap info)
+
+    def install_python_modules(self, modules: List[str]):
+        commands = [["python", "-m", "pip", "install", "--upgrade", "pip"]]
+        for module in modules:
+            commands.append(["python", "-m", "pip", "install", "--upgrade", module])
+        for cmd in commands:
+            self.run_command(cmd)
+
+    def font(self, fonts: List[str] = None):
+        if not fonts:
+            fonts = ["Hack"]
+        api_url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest"
+        response = requests.get(api_url).json()
+        tag = response["tag_name"]
+        all_assets = [
+            a
+            for a in response["assets"]
+            if a["name"].endswith(".zip") and "FontPatcher" not in a["name"]
+        ]
+
+        # Check for "all" (case-insensitive)
+        if any(f.lower() == "all" for f in fonts):
+            assets = all_assets
         else:
-            self.applications = applications
+            # Filter assets to match requested fonts (case-insensitive)
+            assets = [
+                a
+                for a in all_assets
+                if any(f.lower() in a["name"].lower() for f in fonts)
+            ]
 
-        for application in self.applications:
-            ubuntu_install_commands = [["apt", "install", "-y", f"{application}"]]
-            if application.lower() == "docker" and self.operating_system == "Ubuntu":
-                ubuntu_install_commands = [
-                    [
-                        "apt",
-                        "remove",
-                        "docker",
-                        "docker-engine",
-                        "docker.io",
-                        "containerd",
-                        "runc",
-                    ],
-                    ["apt", "update"],
-                    ["apt", "install", "-y", "ca-certificates", "curl", "gnupg"],
-                    ["install", "-m", "0755", "-d", "/etc/apt/keyrings"],
-                    [
-                        "curl",
-                        "-fsSL",
-                        "https://download.docker.com/linux/ubuntu/gpg",
-                        "|",
-                        "gpg",
-                        "--dearmor",
-                        "-o",
-                        "/etc/apt/keyrings/docker.gpg",
-                    ],
-                    ["chmod", "a+r", "/etc/apt/keyrings/docker.gpg"],
-                    [
-                        "echo",
-                        '"deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME")" stable"',
-                        "|",
-                        "tee",
-                        "/etc/apt/sources.list.d/docker.list",
-                        ">",
-                        "/dev/null",
-                    ],
-                    ["apt", "update"],
-                    [
-                        "apt",
-                        "install",
-                        "-y",
-                        "docker-ce",
-                        "docker-ce-cli",
-                        "containerd.io",
-                        "docker-buildx-plugin",
-                        "docker-compose-plugin",
-                    ],
-                ]
-            if application.lower() == "k3s" and self.operating_system == "Ubuntu":
-                ubuntu_install_commands = [
-                    ["wget", "-O", f"{self.script_path}/k3s.sh", "https://get.k3s.io"],
-                    [
-                        "bash",
-                        f"{self.script_path}/k3s.sh",
-                        "--write-kubeconfig-mode",
-                        "644",
-                    ],
-                    ["rm", "-f", f"{self.script_path}/k3s.sh"],
-                ]
-            elif (
-                application.lower() == "wireshark" and self.operating_system == "Ubuntu"
-            ):
-                ubuntu_install_commands = [
-                    [
-                        "echo",
-                        '"wireshark-common wireshark-common/install-setuid boolean true"',
-                        "|",
-                        "debconf-set-selections",
-                    ],
-                    [
-                        "DEBIAN_FRONTEND=noninteractive",
-                        "apt",
-                        "-y",
-                        "install",
-                        "wireshark",
-                    ],
-                ]
-            elif self.operating_system == "Ubuntu":
-                ubuntu_install_commands = [["apt", "install", "-y", f"{application}"]]
+        if not assets:
+            raise ValueError(f"No matching fonts found for {fonts}")
 
-            for ubuntu_install_command in ubuntu_install_commands:
-                self.ubuntu_install_command.append(ubuntu_install_command)
-            self.windows_install_command.append(
+        if platform.system() == "Linux":
+            font_dir = os.path.expanduser("~/.local/share/fonts")
+            os.makedirs(font_dir, exist_ok=True)
+            extract_path = font_dir
+            elevated = True  # For fc-cache
+        elif platform.system() == "Windows":
+            font_dir = r"C:\Windows\Fonts"
+            extract_path = "."
+            elevated = True  # May need admin for copying to system fonts
+        else:
+            raise NotImplementedError("Unsupported OS for font installation")
+
+        for asset in assets:
+            zip_name = asset["name"]
+            url = asset["browser_download_url"]
+            self.logger.info(f"Downloading {zip_name} from {url}")
+            if not self.silent:
+                print(f"Downloading {zip_name} from {url}")
+            r = requests.get(url)
+            with open(zip_name, "wb") as f:
+                f.write(r.content)
+            with zipfile.ZipFile(zip_name, "r") as zip_ref:
+                zip_ref.extractall(extract_path)
+            os.remove(zip_name)
+
+        # Collect and install fonts
+        font_files = glob.glob(
+            os.path.join(extract_path, "**/*.ttf"), recursive=True
+        ) + glob.glob(os.path.join(extract_path, "**/*.otf"), recursive=True)
+        if platform.system() == "Windows":
+            for font in font_files:
+                dest = os.path.join(font_dir, os.path.basename(font))
+                self.logger.info(f"Moving {font} to {dest}")
+                if not self.silent:
+                    print(f"Moving {font} to {dest}")
+                shutil.move(font, dest)  # May require elevation
+        elif platform.system() == "Linux":
+            self.run_command(["fc-cache", "-fv"], elevated=elevated)
+
+    def get_os_stats(self) -> Dict:
+        return {
+            "system": platform.system(),
+            "release": platform.release(),
+            "version": platform.version(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+            "load_avg": os.getloadavg() if platform.system() != "Windows" else "N/A",
+        }
+
+    def get_hardware_stats(self) -> Dict:
+        return {
+            "cpu_percent": psutil.cpu_percent(interval=1),
+            "cpu_count": psutil.cpu_count(),
+            "memory": psutil.virtual_memory()._asdict(),
+            "disk_usage": psutil.disk_usage("/")._asdict(),
+            "network": psutil.net_io_counters()._asdict(),
+        }
+
+
+class AptManager(SystemsManagerBase):  # Ubuntu/Debian
+    def __init__(self, silent: bool = False, log_file: str = None):
+        super().__init__(silent, log_file)
+        self.not_found_msg = "Unable to locate package"
+
+    def install_applications(self, apps: List[str]):
+        self.run_command(["apt", "update"], elevated=True)
+        for app in apps:
+            try:
+                self.run_command(["apt", "install", "-y", app], elevated=True)
+            except subprocess.CalledProcessError as e:
+                if self.not_found_msg in e.stderr:
+                    if not self.silent:
+                        print(f"Falling back to Snap for {app}...")
+                    self.logger.info(
+                        f"Native install failed for {app}; falling back to Snap..."
+                    )
+                    self.install_via_snap(app)
+                else:
+                    raise  # Re-raise for other errors
+
+    def update(self):
+        self.run_command(["apt", "update"], elevated=True)
+        self.run_command(["apt", "upgrade", "-y"], elevated=True)
+
+    def clean(self):
+        self.run_command(["apt", "install", "-y", "trash-cli"], elevated=True)
+        self.run_command(["trash-empty"])
+
+    def optimize(self):
+        self.run_command(["apt", "autoremove", "-y"], elevated=True)
+        self.run_command(["apt", "autoclean"], elevated=True)
+
+    def install_snapd(self):
+        self.run_command(["apt", "install", "-y", "snapd"], elevated=True)
+
+
+class DnfManager(SystemsManagerBase):  # Red Hat, Oracle Linux
+    def __init__(self, silent: bool = False, log_file: str = None):
+        super().__init__(silent, log_file)
+        self.not_found_msg = "Unable to find a match"
+
+    def install_applications(self, apps: List[str]):
+        for app in apps:
+            try:
+                self.run_command(["dnf", "install", "-y", app], elevated=True)
+            except subprocess.CalledProcessError as e:
+                if self.not_found_msg in e.stderr:
+                    if not self.silent:
+                        print(f"Falling back to Snap for {app}...")
+                    self.logger.info(
+                        f"Native install failed for {app}; falling back to Snap..."
+                    )
+                    self.install_via_snap(app)
+                else:
+                    raise  # Re-raise for other errors
+
+    def update(self):
+        self.run_command(["dnf", "update", "-y"], elevated=True)
+
+    def clean(self):
+        self.run_command(["dnf", "clean", "all"], elevated=True)
+
+    def optimize(self):
+        self.run_command(["dnf", "autoremove", "-y"], elevated=True)
+
+    def install_snapd(self):
+        self.run_command(["dnf", "install", "-y", "snapd"], elevated=True)
+
+
+class ZypperManager(SystemsManagerBase):  # SLES
+    def __init__(self, silent: bool = False, log_file: str = None):
+        super().__init__(silent, log_file)
+        self.not_found_msg = "No provider of"
+
+    def install_applications(self, apps: List[str]):
+        for app in apps:
+            try:
+                self.run_command(["zypper", "install", "-y", app], elevated=True)
+            except subprocess.CalledProcessError as e:
+                if self.not_found_msg in e.stderr:
+                    if not self.silent:
+                        print(f"Falling back to Snap for {app}...")
+                    self.logger.info(
+                        f"Native install failed for {app}; falling back to Snap..."
+                    )
+                    self.install_via_snap(app)
+                else:
+                    raise  # Re-raise for other errors
+
+    def update(self):
+        self.run_command(["zypper", "update", "-y"], elevated=True)
+
+    def clean(self):
+        self.run_command(["zypper", "clean", "--all"], elevated=True)
+
+    def optimize(self):
+        self.run_command(["zypper", "rm", "-u"], elevated=True)  # Remove unneeded
+
+    def install_snapd(self):
+        self.run_command(["zypper", "install", "-y", "snapd"], elevated=True)
+
+
+class PacmanManager(SystemsManagerBase):  # Arch
+    def __init__(self, silent: bool = False, log_file: str = None):
+        super().__init__(silent, log_file)
+        self.not_found_msg = "target not found"
+
+    def install_applications(self, apps: List[str]):
+        for app in apps:
+            try:
+                self.run_command(["pacman", "-S", "--noconfirm", app], elevated=True)
+            except subprocess.CalledProcessError as e:
+                if self.not_found_msg in e.stderr:
+                    if not self.silent:
+                        print(f"Falling back to Snap for {app}...")
+                    self.logger.info(
+                        f"Native install failed for {app}; falling back to Snap..."
+                    )
+                    self.install_via_snap(app)
+                else:
+                    raise  # Re-raise for other errors
+
+    def update(self):
+        self.run_command(["pacman", "-Syu", "--noconfirm"], elevated=True)
+
+    def clean(self):
+        self.run_command(["pacman", "-Sc", "--noconfirm"], elevated=True)
+
+    def optimize(self):
+        self.run_command(
+            ["pacman", "-Rns", "$(pacman -Qdtq)", "--noconfirm"],
+            elevated=True,
+            shell=True,
+        )
+
+    def install_snapd(self):
+        self.run_command(["pacman", "-S", "--noconfirm", "snapd"], elevated=True)
+
+
+class WindowsManager(SystemsManagerBase):
+    def __init__(self, silent: bool = False, log_file: str = None):
+        super().__init__(silent, log_file)
+        # Ensure winget is available (simplified)
+        winget_path = os.path.expanduser(
+            r"~\AppData\Local\Microsoft\WindowsApps\winget.exe"
+        )
+        if not os.path.exists(winget_path):
+            print("Installing Winget...")
+            self.run_command(
+                [
+                    "powershell.exe",
+                    "Invoke-WebRequest",
+                    "-Uri",
+                    "https://aka.ms/getwinget",
+                    "-OutFile",
+                    "winget.msixbundle",
+                ]
+            )
+            self.run_command(
+                ["powershell.exe", "Add-AppPackage", "-Path", "winget.msixbundle"]
+            )
+
+    def install_applications(self, apps: List[str]):
+        for app in apps:
+            self.run_command(
                 [
                     "winget",
                     "install",
+                    "--id",
+                    app,
+                    "--silent",
                     "--accept-package-agreements",
                     "--accept-source-agreements",
-                    f"{application}",
                 ]
             )
 
-    def get_features(self) -> List[str]:
-        return self.windows_features
-
-    def set_features(self, features):
-        if features is None or len(features) == 0:
-            self.windows_features = [
-                "Microsoft-Hyper-V-All",
-                "Microsoft-Hyper-V",
-                "Microsoft-Hyper-V-Management-PowerShell",
-                "Microsoft-Hyper-V-Hypervisor",
-                "Microsoft-Hyper-V-Management-Clients",
-                "Microsoft-Hyper-V-Services",
-                "Microsoft-Hyper-V-Tools-All",
-                "ServicesForNFS-ClientOnly",
-                "ClientForNFS-Infrastructure",
-                "NFS-Administration",
-                "TFTP",
-                "Containers",
-                "SmbDirect",
-                "SMB1Protocol",
-                "SMB1Protocol-Client",
-                "SMB1Protocol-Server",
-                "SMB1Protocol-Deprecation",
-                "Containers-DisposableClientVM",
-                "HypervisorPlatform",
-                "VirtualMachinePlatform",
-                "Microsoft-Windows-Subsystem-Linux",
-                "MicrosoftWindowsPowerShellV2",
-                "MicrosoftWindowsPowerShellV2Root",
+    def update(self):
+        self.run_command(
+            [
+                "winget",
+                "upgrade",
+                "--all",
+                "--silent",
+                "--accept-package-agreements",
+                "--accept-source-agreements",
             ]
-        elif features == "all":
-            self.windows_features = [
-                "Microsoft-Hyper-V-All",
-                "Microsoft-Hyper-V",
-                "Microsoft-Hyper-V-Management-PowerShell",
-                "Microsoft-Hyper-V-Hypervisor",
-                "Microsoft-Hyper-V-Management-Clients",
-                "Microsoft-Hyper-V-Services",
-                "Microsoft-Hyper-V-Tools-All",
-                "ServicesForNFS-ClientOnly",
-                "ClientForNFS-Infrastructure",
-                "NFS-Administration",
-                "TFTP",
-                "Containers",
-                "SmbDirect",
-                "SMB1Protocol",
-                "SMB1Protocol-Client",
-                "SMB1Protocol-Server",
-                "SMB1Protocol-Deprecation",
-                "Containers-DisposableClientVM",
-                "HypervisorPlatform",
-                "VirtualMachinePlatform",
-                "Microsoft-Windows-Subsystem-Linux",
-                "MicrosoftWindowsPowerShellV2",
-                "MicrosoftWindowsPowerShellV2Root",
-            ]
-        else:
-            self.windows_features = features
+        )
+        self.run_command(
+            ["powershell.exe", "Install-Module", "PSWindowsUpdate", "-Force"]
+        )
+        self.run_command(
+            ["powershell.exe", "Install-WindowsUpdate", "-AcceptAll", "-AutoReboot"]
+        )
 
-        for feature in self.windows_features:
-            self.enable_windows_features_command.append(
+    def clean(self):
+        self.run_command(["cleanmgr", "/lowdisk"])
+
+    def optimize(self):
+        self.run_command(["cleanmgr", "/lowdisk"])
+        self.run_command(["defrag", "C:", "/O"])
+
+    def list_windows_features(self) -> List[Dict]:
+        result = self.run_command(
+            ["powershell.exe", "Get-WindowsOptionalFeature", "-Online"], shell=True
+        )
+        features = []
+        lines = result.stdout.splitlines()
+        current_feature = {}
+        for line in lines:
+            if line.strip() == "":
+                if current_feature:
+                    features.append(current_feature)
+                current_feature = {}
+            elif ":" in line:
+                key, value = line.split(":", 1)
+                current_feature[key.strip()] = value.strip()
+        if current_feature:
+            features.append(current_feature)
+        print(json.dumps(features, indent=2))
+        self.logger.info(f"Listed Windows features: {json.dumps(features)}")
+        return features
+
+    def enable_windows_features(self, features: List[str]):
+        for feature in features:
+            self.run_command(
                 [
                     "powershell.exe",
                     "Enable-WindowsOptionalFeature",
                     "-Online",
                     "-FeatureName",
-                    f"{feature}",
+                    feature,
                     "-NoRestart",
-                ]
+                ],
+                elevated=True,
             )
 
-    def set_python_modules(self, modules):
-        if modules is None or len(modules) == 0:
-            self.python_modules = ["geniusbot"]
-        elif modules == "all":
-            self.python_modules = [
-                "geniusbot",
-                "repository-manager",
-                "subshift",
-                "webarchiver",
-                "report-manager",
-                "media-downloader",
-                "media-manager",
-            ]
+    def disable_windows_features(self, features: List[str]):
+        for feature in features:
+            self.run_command(
+                [
+                    "powershell.exe",
+                    "Disable-WindowsOptionalFeature",
+                    "-Online",
+                    "-FeatureName",
+                    feature,
+                    "-NoRestart",
+                ],
+                elevated=True,
+            )
+
+    def install_snapd(self):
+        raise NotImplementedError("Snap not supported on Windows")
+
+
+def detect_and_create_manager(
+    silent: bool = False, log_file: str = None
+) -> SystemsManagerBase:
+    sys_name = platform.system()
+    if sys_name == "Windows":
+        return WindowsManager(silent, log_file)
+    elif sys_name == "Linux":
+        dist_id = distro.id()
+        if dist_id in ["ubuntu", "debian"]:
+            return AptManager(silent, log_file)
+        elif dist_id in ["rhel", "ol", "centos"]:  # Red Hat, Oracle, CentOS
+            return DnfManager(silent, log_file)
+        elif dist_id == "sles":
+            return ZypperManager(silent, log_file)
+        elif dist_id == "arch":
+            return PacmanManager(silent, log_file)
         else:
-            self.python_modules = modules
-
-        for module in self.python_modules:
-            self.install_python_modules_command.append(
-                ["python", "-m", "pip", "install", "--upgrade", f"{module}"]
-            )
+            raise NotImplementedError(f"Unsupported Linux distro: {dist_id}")
+    else:
+        raise NotImplementedError(f"Unsupported OS: {sys_name}")
 
 
 def usage():
     print(
-        f"Systems-Manager: A tool to manage your systems software!\n"
-        f"Version: {__version__}\n"
-        f"Author: {__author__}\n"
-        f"Credits: {__credits__}\n"
-        f"\nUsage: \n"
-        f"-h | --help            [ See usage for script ]\n"
-        f"-c | --clean           [ Clean Recycle/Trash bin ]\n"
-        f"-e | --enable-features [ Enable Window Features ]\n"
-        f"-f | --font            [ Install 'Hack Nerd Font' ]\n"
-        f"-i | --install         [ Install applications ]\n"
-        f"-p | --python          [ Install Python Modules ]\n"
-        f"-s | --silent          [ Don't print to stdout ]\n"
-        f"-t | --theme           [ Apply Takuyuma Terminal Theme ]\n"
-        f"-u | --update          [ Update your applications and Operating System ]\n"
-        f"\nExample: \n"
-        f"systems-manager --font --update --clean --theme --python 'geniusbot' --install 'python3'\n"
+        """
+Systems-Manager: A tool to manage your systems software!
+
+Usage:
+-h | --help            [ See usage for script ]
+-c | --clean           [ Clean system ]
+-e | --enable-features <features> [ Enable Windows features (Windows only), comma-separated ]
+-d | --disable-features <features> [ Disable Windows features (Windows only), comma-separated ]
+-l | --list-features   [ List all Windows features and their status (Windows only) ]
+-f | --fonts <fonts>   [ Install Nerd Fonts, comma-separated (e.g., Hack,Meslo) or 'all'; default: Hack ]
+-i | --install <apps>  [ Install apps, comma-separated (e.g., python3,git) ]
+-p | --python <mods>   [ Install Python modules, comma-separated ]
+-s | --silent          [ Suppress output ]
+-u | --update          [ Update system and apps ]
+-o | --optimize        [ Optimize system (autoremove, clean cache) ]
+--os-stats             [ Print OS stats ]
+--hw-stats             [ Print hardware stats ]
+--log-file <path>      [ Log to specified file (default: systems_manager.log in script dir) ]
+
+Example:
+systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install python3,git --enable-features Microsoft-Hyper-V-All,Containers --log-file /path/to/log.log
+"""
     )
 
 
-def systems_manager(argv):
-    system_manager_instance = SystemsManager()
-    applications = []
-    features = []
+def main(argv):
+    log_file = None
+    apps = []
     python_modules = []
+    enable_features_list = []
+    disable_features_list = []
+    fonts = ["Hack"]  # Default to Hack
     install = False
-    enable_features = False
-    silent = False
     font = False
-    theme = False
     update = False
     clean = False
-    install_python_modules = False
     optimize = False
-    start_up = False
+    install_python = False
+    os_stats = False
+    hw_stats = False
+    silent = False
+    list_features = False
+    enable_features = False
+    disable_features = False
+
     try:
-        opts, args = getopt.getopt(
+        opts, _ = getopt.getopt(
             argv,
-            "hcfstue:i:p:",
+            "hcfsi:p:uoeld:",
             [
                 "help",
                 "clean",
-                "font",
+                "fonts=",
                 "silent",
-                "theme",
                 "update",
-                "enable-features=",
                 "install=",
                 "python=",
+                "optimize",
+                "os-stats",
+                "hw-stats",
+                "enable-features=",
+                "disable-features=",
+                "list-features",
+                "log-file=",
             ],
         )
     except getopt.GetoptError:
         usage()
-        print(f"Applications Available: {system_manager_instance.get_applications()}")
-        print(f"Windows Features Available: {system_manager_instance.get_features()}")
         sys.exit(2)
+
     for opt, arg in opts:
         if opt in ("-h", "--help"):
             usage()
-            print(
-                f"Applications Available: {system_manager_instance.get_applications()}"
-            )
-            print(
-                f"Windows Features Available: {system_manager_instance.get_features()}"
-            )
             sys.exit()
         elif opt in ("-c", "--clean"):
             clean = True
-        elif opt in ("-e", "--enable-features"):
-            enable_features = True
-            features = arg.lower()
-            features = features.replace(" ", "")
-            features = features.split(",")
+        elif opt in ("-f", "--fonts"):
+            font = True
+            fonts = arg.split(",")
         elif opt in ("-i", "--install"):
             install = True
-            applications = arg.lower()
-            applications = applications.replace(" ", "")
-            applications = applications.split(",")
-        elif opt in ("-f", "--font"):
-            font = True
+            apps = arg.split(",")
         elif opt in ("-p", "--python"):
-            install_python_modules = True
-            python_modules = arg.lower()
-            python_modules = python_modules.replace(" ", "")
-            python_modules = python_modules.split(",")
+            install_python = True
+            python_modules = arg.split(",")
         elif opt in ("-s", "--silent"):
             silent = True
         elif opt in ("-u", "--update"):
             update = True
-        elif opt in ("-t", "--theme"):
-            theme = True
+        elif opt in ("-o", "--optimize"):
+            optimize = True
+        elif opt == "--os-stats":
+            os_stats = True
+        elif opt == "--hw-stats":
+            hw_stats = True
+        elif opt in ("-e", "--enable-features"):
+            enable_features = True
+            enable_features_list = arg.split(",")
+        elif opt in ("-d", "--disable-features"):
+            disable_features = True
+            disable_features_list = arg.split(",")
+        elif opt in ("-l", "--list-features"):
+            list_features = True
+        elif opt == "--log-file":
+            log_file = arg
 
-    if silent:
-        print("Setting Silent...")
-        system_manager_instance.set_silent(silent=silent)
+    manager = detect_and_create_manager(silent, log_file)
 
     if update:
-        print("Performing Update...")
-        system_manager_instance.update()
-
-    if enable_features:
-        print(f"Setting features: {features}")
-        system_manager_instance.set_features(features=features)
-        print("Enabling Windows Features...")
-        system_manager_instance.enable_windows_features()
-
+        manager.update()
     if install:
-        print(f"Setting applications: {applications}")
-        system_manager_instance.set_applications(applications=applications)
-        print("Installing...")
-        system_manager_instance.install_applications()
-
-    if install_python_modules:
-        print(f"Setting Python Modules: {python_modules}")
-        system_manager_instance.set_python_modules(modules=python_modules)
-        print("Installing Python Modules...")
-        system_manager_instance.install_python_modules()
-
+        manager.install_applications(apps)
+    if install_python:
+        manager.install_python_modules(python_modules)
     if font:
-        print("Setting Hack Font")
-        system_manager_instance.font()
-
-    if theme:
-        print("Setting Theme")
-        system_manager_instance.theme()
-
-    if optimize:
-        print("Optimize")
-        system_manager_instance.optimize()
-
-    if start_up:
-        print("Setting Start Up Applications")
-        system_manager_instance.set_startup_programs()
-
+        manager.font(fonts)
     if clean:
-        print("Cleaning Recycle/Trash Bin")
-        system_manager_instance.clean()
+        manager.clean()
+    if optimize:
+        manager.optimize()
+    if os_stats:
+        print(json.dumps(manager.get_os_stats(), indent=2))
+    if hw_stats:
+        print(json.dumps(manager.get_hardware_stats(), indent=2))
+    if list_features:
+        if isinstance(manager, WindowsManager):
+            manager.list_windows_features()
+        else:
+            print("Feature listing is only available on Windows.")
+    if enable_features:
+        if isinstance(manager, WindowsManager):
+            manager.enable_windows_features(enable_features_list)
+        else:
+            print("Feature enabling is only available on Windows.")
+    if disable_features:
+        if isinstance(manager, WindowsManager):
+            manager.disable_windows_features(disable_features_list)
+        else:
+            print("Feature disabling is only available on Windows.")
 
     print("Done!")
-
-
-def main():
-    if len(sys.argv) < 2:
-        usage()
-        sys.exit(2)
-    systems_manager(sys.argv[1:])
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         usage()
         sys.exit(2)
-    systems_manager(sys.argv[1:])
+    main(sys.argv[1:])
