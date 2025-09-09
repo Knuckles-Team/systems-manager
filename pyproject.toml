@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systems-manager"
-version = "1.0.0"
+version = "1.0.1"
 description = "Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server"
 readme = "README.md"
 authors = [{ name = "Audel Rouhi", email = "knucklessg1@gmail.com" }]
@@ -16,7 +16,7 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "requests>=2.28.1",
     "fastmcp>=2.11.3",
