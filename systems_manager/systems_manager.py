@@ -18,7 +18,9 @@ from typing import List, Dict
 from abc import ABC, abstractmethod
 
 
-def setup_logging(log_file: str):
+def setup_logging(
+    is_mcp_server: bool = False, log_file: str = "systems_manager_mcp.log"
+):
     if not log_file:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         log_file = os.path.join(script_dir, "systems_manager.log")
@@ -28,7 +30,7 @@ def setup_logging(log_file: str):
         format="%(asctime)s - %(levelname)s - %(message)s",
     )
     logger = logging.getLogger(__name__)
-    logger.info(f"Logging initialized to {log_file}")
+    logger.info(f"MCP server logging initialized to {log_file}")
     return logger
 
 
