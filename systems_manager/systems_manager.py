@@ -530,7 +530,7 @@ systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install
     )
 
 
-def main(argv):
+def systems_manager(argv):
     log_file = None
     apps = []
     python_modules = []
@@ -652,4 +652,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         usage()
         sys.exit(2)
-    main(sys.argv[1:])
+    systems_manager(sys.argv[1:])
