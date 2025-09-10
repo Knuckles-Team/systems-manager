@@ -440,17 +440,17 @@ async def list_windows_features(
     try:
         manager = detect_and_create_manager(silent, log_file)
         if not isinstance(manager, WindowsManager):
-            return {
+            return [{
                 "success": False,
                 "error": "Feature listing is only available on Windows",
             }
-
+]
         features = manager.list_windows_features()
         logger.debug(f"Windows features: {features}")
         return features
     except Exception as e:
         logger.error(f"Failed to list Windows features: {str(e)}")
-        return {"success": False, "error": f"Unexpected error: {str(e)}"}
+        return [{"success": False, "error": f"Unexpected error: {str(e)}"}]
 
 
 @mcp.tool(
