@@ -64,10 +64,13 @@ async def install_applications(
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
     ),
-) -> str:
+) -> Dict:
     """Installs applications using the native package manager with Snap fallback."""
     logger = logging.getLogger("SystemsManager")
     logger.debug(f"Installing apps: {apps}, silent: {silent}, log_file: {log_file}")
+
+    if not apps:
+        return {"success": False, "error": "No applications provided"}
 
     try:
         manager = detect_and_create_manager(silent, log_file)
@@ -77,20 +80,17 @@ async def install_applications(
         if ctx:
             await ctx.report_progress(progress=0, total=total_steps)
 
-        for app in apps:
-            manager.install_applications([app])
-            current_step += 1
-            if ctx:
-                await ctx.report_progress(progress=current_step, total=total_steps)
+        result = manager.install_applications(apps)
+        current_step = total_steps
 
         if ctx:
-            await ctx.report_progress(progress=total_steps, total=total_steps)
+            await ctx.report_progress(progress=current_step, total=total_steps)
 
-        logger.debug(f"Completed installing apps: {apps}")
-        return f"Installed {len(apps)} applications"
+        logger.debug(f"Completed installing apps: {apps}, result: {result}")
+        return result
     except Exception as e:
         logger.error(f"Failed to install applications: {str(e)}")
-        raise RuntimeError(f"Failed to install applications: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -113,7 +113,7 @@ async def update(
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
     ),
-) -> str:
+) -> Dict:
     """Updates the system and applications."""
     logger = logging.getLogger("SystemsManager")
     logger.debug(f"Updating system, silent: {silent}, log_file: {log_file}")
@@ -123,16 +123,16 @@ async def update(
         if ctx:
             await ctx.report_progress(progress=0, total=100)
 
-        manager.update()
+        result = manager.update()
 
         if ctx:
             await ctx.report_progress(progress=100, total=100)
 
         logger.debug("System update completed")
-        return "System updated successfully"
+        return result
     except Exception as e:
         logger.error(f"Failed to update system: {str(e)}")
-        raise RuntimeError(f"Failed to update system: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -155,7 +155,7 @@ async def clean(
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
     ),
-) -> str:
+) -> Dict:
     """Cleans system resources (e.g., trash/recycle bin)."""
     logger = logging.getLogger("SystemsManager")
     logger.debug(f"Cleaning system, silent: {silent}, log_file: {log_file}")
@@ -165,16 +165,16 @@ async def clean(
         if ctx:
             await ctx.report_progress(progress=0, total=100)
 
-        manager.clean()
+        result = manager.clean()
 
         if ctx:
             await ctx.report_progress(progress=100, total=100)
 
         logger.debug("System cleanup completed")
-        return "System cleaned successfully"
+        return result
     except Exception as e:
         logger.error(f"Failed to clean system: {str(e)}")
-        raise RuntimeError(f"Failed to clean system: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -197,7 +197,7 @@ async def optimize(
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
     ),
-) -> str:
+) -> Dict:
     """Optimizes system resources (e.g., autoremove, defrag)."""
     logger = logging.getLogger("SystemsManager")
     logger.debug(f"Optimizing system, silent: {silent}, log_file: {log_file}")
@@ -207,16 +207,16 @@ async def optimize(
         if ctx:
             await ctx.report_progress(progress=0, total=100)
 
-        manager.optimize()
+        result = manager.optimize()
 
         if ctx:
             await ctx.report_progress(progress=100, total=100)
 
         logger.debug("System optimization completed")
-        return "System optimized successfully"
+        return result
     except Exception as e:
         logger.error(f"Failed to optimize system: {str(e)}")
-        raise RuntimeError(f"Failed to optimize system: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -242,14 +242,14 @@ async def install_python_modules(
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
     ),
-) -> str:
+) -> Dict:
     """Installs Python modules via pip."""
     logger = logging.getLogger("SystemsManager")
     logger.debug(
         f"Installing Python modules: {modules}, silent: {silent}, log_file: {log_file}"
     )
     if not modules:
-        return f"No Python modules to install - {modules}"
+        return {"success": False, "error": "No Python modules provided"}
 
     try:
         manager = detect_and_create_manager(silent, log_file)
@@ -259,17 +259,17 @@ async def install_python_modules(
         if ctx:
             await ctx.report_progress(progress=0, total=total_steps)
 
-        manager.install_python_modules(modules)
-        current_step += total_steps
+        result = manager.install_python_modules(modules)
+        current_step = total_steps
 
         if ctx:
             await ctx.report_progress(progress=current_step, total=total_steps)
 
         logger.debug(f"Completed installing Python modules: {modules}")
-        return f"Installed {len(modules)} Python modules"
+        return result
     except Exception as e:
         logger.error(f"Failed to install Python modules: {str(e)}")
-        raise RuntimeError(f"Failed to install Python modules: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -296,15 +296,18 @@ async def install_fonts(
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
     ),
-) -> str:
+) -> Dict:
     """Installs specified Nerd Fonts or all available fonts if 'all' is specified."""
     logger = logging.getLogger("SystemsManager")
     logger.debug(f"Installing fonts: {fonts}, silent: {silent}, log_file: {log_file}")
 
+    if not fonts:
+        fonts = ["Hack"]
+
     try:
         manager = detect_and_create_manager(silent, log_file)
 
-        # Fetch font count for progress tracking
+        # Approximate steps based on fonts
         api_url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest"
         response = requests.get(api_url).json()
         all_assets = [
@@ -322,21 +325,21 @@ async def install_fonts(
                     if any(f.lower() in a["name"].lower() for f in fonts)
                 ]
             )
-        )
+        ) or 1
 
         if ctx:
             await ctx.report_progress(progress=0, total=total_steps)
 
-        manager.font(fonts)
+        result = manager.font(fonts)
 
         if ctx:
             await ctx.report_progress(progress=total_steps, total=total_steps)
 
         logger.debug(f"Font installation completed: {fonts}")
-        return f"Installed fonts: {fonts}"
+        return result
     except Exception as e:
         logger.error(f"Failed to install fonts: {str(e)}")
-        raise RuntimeError(f"Failed to install fonts: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -371,7 +374,7 @@ async def get_os_stats(
         return stats
     except Exception as e:
         logger.error(f"Failed to get OS stats: {str(e)}")
-        raise RuntimeError(f"Failed to get OS stats: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -406,7 +409,7 @@ async def get_hardware_stats(
         return stats
     except Exception as e:
         logger.error(f"Failed to get hardware stats: {str(e)}")
-        raise RuntimeError(f"Failed to get hardware stats: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -437,14 +440,17 @@ async def list_windows_features(
     try:
         manager = detect_and_create_manager(silent, log_file)
         if not isinstance(manager, WindowsManager):
-            raise RuntimeError("Feature listing is only available on Windows")
+            return {
+                "success": False,
+                "error": "Feature listing is only available on Windows",
+            }
 
         features = manager.list_windows_features()
         logger.debug(f"Windows features: {features}")
         return features
     except Exception as e:
         logger.error(f"Failed to list Windows features: {str(e)}")
-        raise RuntimeError(f"Failed to list Windows features: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -470,17 +476,23 @@ async def enable_windows_features(
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
     ),
-) -> str:
+) -> Dict:
     """Enables specified Windows features (Windows only)."""
     logger = logging.getLogger("SystemsManager")
     logger.debug(
         f"Enabling Windows features: {features}, silent: {silent}, log_file: {log_file}"
     )
 
+    if not features:
+        return {"success": False, "error": "No features provided"}
+
     try:
         manager = detect_and_create_manager(silent, log_file)
         if not isinstance(manager, WindowsManager):
-            raise RuntimeError("Feature enabling is only available on Windows")
+            return {
+                "success": False,
+                "error": "Feature enabling is only available on Windows",
+            }
 
         total_steps = len(features)
         current_step = 0
@@ -488,17 +500,17 @@ async def enable_windows_features(
         if ctx:
             await ctx.report_progress(progress=0, total=total_steps)
 
-        manager.enable_windows_features(features)
-        current_step += total_steps
+        result = manager.enable_windows_features(features)
+        current_step = total_steps
 
         if ctx:
             await ctx.report_progress(progress=current_step, total=total_steps)
 
         logger.debug(f"Completed enabling Windows features: {features}")
-        return f"Enabled {len(features)} Windows features"
+        return result
     except Exception as e:
         logger.error(f"Failed to enable Windows features: {str(e)}")
-        raise RuntimeError(f"Failed to enable Windows features: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 @mcp.tool(
@@ -524,7 +536,7 @@ async def disable_windows_features(
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
     ),
-) -> str:
+) -> Dict:
     """Disables specified Windows features (Windows only)."""
     logger = logging.getLogger("SystemsManager")
     logger.debug(
@@ -532,12 +544,15 @@ async def disable_windows_features(
     )
 
     if not features:
-        return "No Windows features disabled"
+        return {"success": True, "message": "No Windows features to disable"}
 
     try:
         manager = detect_and_create_manager(silent, log_file)
         if not isinstance(manager, WindowsManager):
-            raise RuntimeError("Feature disabling is only available on Windows")
+            return {
+                "success": False,
+                "error": "Feature disabling is only available on Windows",
+            }
 
         total_steps = len(features)
         current_step = 0
@@ -545,17 +560,17 @@ async def disable_windows_features(
         if ctx:
             await ctx.report_progress(progress=0, total=total_steps)
 
-        manager.disable_windows_features(features)
-        current_step += total_steps
+        result = manager.disable_windows_features(features)
+        current_step = total_steps
 
         if ctx:
             await ctx.report_progress(progress=current_step, total=total_steps)
 
         logger.debug(f"Completed disabling Windows features: {features}")
-        return f"Disabled {len(features)} Windows features"
+        return result
     except Exception as e:
         logger.error(f"Failed to disable Windows features: {str(e)}")
-        raise RuntimeError(f"Failed to disable Windows features: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
 def systems_manager_mcp(argv):

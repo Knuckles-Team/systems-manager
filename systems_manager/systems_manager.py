@@ -37,7 +37,6 @@ def setup_logging(
 class SystemsManagerBase(ABC):
     def __init__(self, silent: bool = False, log_file: str = None):
         self.silent = silent
-        self.result = None
         self.logger = setup_logging(log_file)
 
     def log_command(
@@ -56,10 +55,11 @@ class SystemsManagerBase(ABC):
 
     def run_command(
         self, command: List[str], elevated: bool = False, shell: bool = False
-    ) -> subprocess.CompletedProcess:
+    ) -> Dict:
         if elevated and platform.system() == "Linux":
             command = ["sudo"] + command
         elif elevated and platform.system() == "Windows":
+            arg_list = " ".join(f'"{c}"' if " " in c else c for c in command)
             command = [
                 "powershell.exe",
                 "Start-Process",
@@ -67,7 +67,8 @@ class SystemsManagerBase(ABC):
                 "-Verb",
                 "runAs",
                 "-ArgumentList",
-                f"'{ ' '.join(command) }'",
+                f'-Command "{arg_list}"',
+                "-Wait",
             ]
             shell = True
         try:
@@ -79,6 +80,8 @@ class SystemsManagerBase(ABC):
                     shell=shell,
                     check=True,
                 )
+                stdout = None
+                stderr = None
             else:
                 print(f"Running: {' '.join(command)}")
                 result = subprocess.run(
@@ -89,59 +92,107 @@ class SystemsManagerBase(ABC):
                     shell=shell,
                     check=True,
                 )
+                stdout = result.stdout
+                stderr = result.stderr
             self.log_command(command, result)
-            return result
+            return {
+                "success": True,
+                "returncode": result.returncode,
+                "stdout": stdout,
+                "stderr": stderr,
+            }
         except subprocess.CalledProcessError as e:
-            self.log_command(command, error=e)
-            print(f"Error: {e.stderr}")
-            raise
+            self.log_command(command, result=e, error=e)
+            if not self.silent:
+                print(f"Error: {e.stderr}")
+            return {
+                "success": False,
+                "returncode": e.returncode,
+                "stdout": e.stdout,
+                "stderr": e.stderr,
+                "error": str(e),
+            }
         except Exception as e:
             self.log_command(command, error=e)
-            raise
+            return {"success": False, "error": str(e)}
 
     @abstractmethod
-    def install_applications(self, apps: List[str]):
+    def install_applications(self, apps: List[str]) -> Dict:
         pass
 
     @abstractmethod
-    def update(self):
+    def update(self) -> Dict:
         pass
 
     @abstractmethod
-    def clean(self):
+    def clean(self) -> Dict:
         pass
 
     @abstractmethod
-    def optimize(self):
+    def optimize(self) -> Dict:
         pass
 
     @abstractmethod
-    def install_snapd(self):
+    def install_snapd(self) -> Dict:
         pass
 
-    def install_via_snap(self, app: str):
-        if shutil.which("snap") is None:
+    def install_via_snap(self, app: str) -> Dict:
+        snap_bin = shutil.which("snap")
+        if snap_bin is None:
             self.logger.info("Snap not found; installing snapd...")
-            self.install_snapd()
-            self.run_command(
+            snapd_result = self.install_snapd()
+            if not snapd_result["success"]:
+                return {
+                    "success": False,
+                    "error": "Failed to install snapd",
+                    "details": snapd_result,
+                }
+            enable_result = self.run_command(
                 ["systemctl", "enable", "--now", "snapd.socket"], elevated=True
             )
-            # Optional: For distros needing /snap symlink (e.g., Fedora)
-            self.run_command(
+            if not enable_result["success"]:
+                self.logger.warning("Failed to enable snapd.socket")
+            # Optional symlink
+            symlink_result = self.run_command(
                 ["ln", "-s", "/var/lib/snapd/snap", "/snap"], elevated=True
             )
-        self.run_command(
-            ["snap", "install", app], elevated=True
-        )  # Add --classic if app requires it (check via snap info)
+            if not symlink_result["success"]:
+                self.logger.warning("Failed to create /snap symlink")
+        install_result = self.run_command(["snap", "install", app], elevated=True)
+        return {
+            "success": install_result["success"],
+            "details": install_result,
+            "app": app,
+        }
 
-    def install_python_modules(self, modules: List[str]):
-        commands = [["python", "-m", "pip", "install", "--upgrade", "pip"]]
+    def install_python_modules(self, modules: List[str]) -> Dict:
+        results = {
+            "upgraded_pip": False,
+            "installed": [],
+            "failed": [],
+            "success": True,
+        }
+        pip_upgrade_cmd = ["python", "-m", "pip", "install", "--upgrade", "pip"]
+        pip_upgrade_result = self.run_command(pip_upgrade_cmd)
+        if pip_upgrade_result["success"]:
+            results["upgraded_pip"] = True
+        else:
+            results["success"] = False
+            self.logger.error("Failed to upgrade pip")
         for module in modules:
-            commands.append(["python", "-m", "pip", "install", "--upgrade", module])
-        for cmd in commands:
-            self.run_command(cmd)
+            install_cmd = ["python", "-m", "pip", "install", "--upgrade", module]
+            install_result = self.run_command(install_cmd)
+            if install_result["success"]:
+                results["installed"].append(module)
+            else:
+                results["failed"].append(module)
+                results["success"] = False
+                self.logger.error(
+                    f"Failed to install {module}: {install_result.get('error', 'Unknown error')}"
+                )
+        return results
 
-    def font(self, fonts: List[str] = None):
+    def font(self, fonts: List[str] = None) -> Dict:
         if not fonts:
             fonts = ["Hack"]
         api_url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest"
@@ -165,46 +216,82 @@ class SystemsManagerBase(ABC):
             ]
 
         if not assets:
-            raise ValueError(f"No matching fonts found for {fonts}")
+            return {"success": False, "error": f"No matching fonts found for {fonts}"}
 
         if platform.system() == "Linux":
             font_dir = os.path.expanduser("~/.local/share/fonts")
             os.makedirs(font_dir, exist_ok=True)
             extract_path = font_dir
-            elevated = True  # For fc-cache
         elif platform.system() == "Windows":
             font_dir = r"C:\Windows\Fonts"
             extract_path = "."
-            elevated = True  # May need admin for copying to system fonts
         else:
-            raise NotImplementedError("Unsupported OS for font installation")
+            return {"success": False, "error": "Unsupported OS for font installation"}
 
+        successful_downloads = []
         for asset in assets:
             zip_name = asset["name"]
             url = asset["browser_download_url"]
             self.logger.info(f"Downloading {zip_name} from {url}")
             if not self.silent:
                 print(f"Downloading {zip_name} from {url}")
-            r = requests.get(url)
-            with open(zip_name, "wb") as f:
-                f.write(r.content)
-            with zipfile.ZipFile(zip_name, "r") as zip_ref:
-                zip_ref.extractall(extract_path)
-            os.remove(zip_name)
+            try:
+                r = requests.get(url)
+                r.raise_for_status()
+                with open(zip_name, "wb") as f:
+                    f.write(r.content)
+                with zipfile.ZipFile(zip_name, "r") as zip_ref:
+                    zip_ref.extractall(extract_path)
+                os.remove(zip_name)
+                successful_downloads.append(zip_name)
+            except Exception as e:
+                self.logger.error(f"Failed to process {zip_name}: {e}")
+                continue
 
-        # Collect and install fonts
+        # Collect font files after all extractions
         font_files = glob.glob(
             os.path.join(extract_path, "**/*.ttf"), recursive=True
         ) + glob.glob(os.path.join(extract_path, "**/*.otf"), recursive=True)
+
+        installed_fonts = []
         if platform.system() == "Windows":
             for font in font_files:
                 dest = os.path.join(font_dir, os.path.basename(font))
                 self.logger.info(f"Moving {font} to {dest}")
                 if not self.silent:
                     print(f"Moving {font} to {dest}")
-                shutil.move(font, dest)  # May require elevation
+                copy_cmd = [
+                    "powershell.exe",
+                    "Copy-Item",
+                    "-Path",
+                    f'"{font}"',
+                    "-Destination",
+                    f'"{dest}"',
+                    "-Force",
+                ]
+                copy_result = self.run_command(copy_cmd, elevated=True)
+                if copy_result["success"]:
+                    installed_fonts.append(os.path.basename(font))
+                else:
+                    self.logger.error(
+                        f"Failed to copy {font}: {copy_result.get('error')}"
+                    )
         elif platform.system() == "Linux":
-            self.run_command(["fc-cache", "-fv"], elevated=elevated)
+            cache_result = self.run_command(["fc-cache", "-fv"], elevated=True)
+            if cache_result["success"]:
+                installed_fonts = [os.path.basename(f) for f in font_files]
+            else:
+                self.logger.error("Failed to update font cache")
+
+        overall_success = len(successful_downloads) > 0
+        return {
+            "success": overall_success,
+            "requested_fonts": fonts,
+            "downloaded": successful_downloads,
+            "installed_fonts": installed_fonts,
+            "total_fonts": len(font_files),
+            "os": platform.system(),
+        }
 
     def get_os_stats(self) -> Dict:
         return {
@@ -231,36 +318,106 @@ class AptManager(SystemsManagerBase):  # Ubuntu/Debian
         super().__init__(silent, log_file)
         self.not_found_msg = "Unable to locate package"
 
-    def install_applications(self, apps: List[str]):
-        self.run_command(["apt", "update"], elevated=True)
+    def install_applications(self, apps: List[str]) -> Dict:
+        results = {
+            "natively_installed": [],
+            "snap_installed": [],
+            "failed": [],
+            "success": True,
+        }
+        update_result = self.run_command(["apt", "update"], elevated=True)
+        if not update_result["success"]:
+            results["success"] = False
+            results["update_error"] = update_result.get("error")
+            self.logger.error("apt update failed")
         for app in apps:
-            try:
-                self.run_command(["apt", "install", "-y", app], elevated=True)
-            except subprocess.CalledProcessError as e:
-                if self.not_found_msg in e.stderr:
+            install_result = self.run_command(
+                ["apt", "install", "-y", app], elevated=True
+            )
+            if install_result["success"]:
+                results["natively_installed"].append(app)
+            else:
+                if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
                         print(f"Falling back to Snap for {app}...")
                     self.logger.info(
                         f"Native install failed for {app}; falling back to Snap..."
                     )
-                    self.install_via_snap(app)
+                    snap_result = self.install_via_snap(app)
+                    if snap_result["success"]:
+                        results["snap_installed"].append(app)
+                    else:
+                        results["failed"].append(app)
+                        results["success"] = False
+                        self.logger.error(
+                            f"Snap install failed for {app}: {snap_result.get('error')}"
+                        )
                 else:
-                    raise  # Re-raise for other errors
+                    results["failed"].append(app)
+                    results["success"] = False
+                    self.logger.error(
+                        f"Native install failed for {app}: {install_result.get('error')}"
+                    )
+        return results
 
-    def update(self):
-        self.run_command(["apt", "update"], elevated=True)
-        self.run_command(["apt", "upgrade", "-y"], elevated=True)
+    def update(self) -> Dict:
+        try:
+            update_result = self.run_command(["apt", "update"], elevated=True)
+            if not update_result["success"]:
+                return {
+                    "success": False,
+                    "error": "apt update failed",
+                    "details": update_result,
+                }
+            upgrade_result = self.run_command(["apt", "upgrade", "-y"], elevated=True)
+            if not upgrade_result["success"]:
+                return {
+                    "success": False,
+                    "error": "apt upgrade failed",
+                    "details": upgrade_result,
+                }
+            return {"success": True, "message": "System and packages updated"}
+        except Exception as e:
+            self.logger.error(f"Unexpected error in update: {e}")
+            return {"success": False, "error": str(e)}
 
-    def clean(self):
-        self.run_command(["apt", "install", "-y", "trash-cli"], elevated=True)
-        self.run_command(["trash-empty"])
+    def clean(self) -> Dict:
+        install_result = self.run_command(
+            ["apt", "install", "-y", "trash-cli"], elevated=True
+        )
+        if not install_result["success"]:
+            self.logger.warning("Failed to install trash-cli")
+        empty_result = self.run_command(["trash-empty"])
+        if empty_result["success"]:
+            return {"success": True, "message": "Trash emptied"}
+        else:
+            return {
+                "success": False,
+                "error": "Failed to empty trash",
+                "details": empty_result,
+            }
 
-    def optimize(self):
-        self.run_command(["apt", "autoremove", "-y"], elevated=True)
-        self.run_command(["apt", "autoclean"], elevated=True)
+    def optimize(self) -> Dict:
+        autoremove_result = self.run_command(["apt", "autoremove", "-y"], elevated=True)
+        autoclean_result = self.run_command(["apt", "autoclean"], elevated=True)
+        overall_success = autoremove_result["success"] and autoclean_result["success"]
+        return {
+            "success": overall_success,
+            "message": (
+                "System optimized" if overall_success else "Partial optimization"
+            ),
+            "details": {"autoremove": autoremove_result, "autoclean": autoclean_result},
+        }
 
-    def install_snapd(self):
-        self.run_command(["apt", "install", "-y", "snapd"], elevated=True)
+    def install_snapd(self) -> Dict:
+        result = self.run_command(["apt", "install", "-y", "snapd"], elevated=True)
+        return {
+            "success": result["success"],
+            "details": result,
+            "message": (
+                "snapd installed" if result["success"] else "Failed to install snapd"
+            ),
+        }
 
 
 class DnfManager(SystemsManagerBase):  # Red Hat, Oracle Linux
@@ -268,32 +425,74 @@ class DnfManager(SystemsManagerBase):  # Red Hat, Oracle Linux
         super().__init__(silent, log_file)
         self.not_found_msg = "Unable to find a match"
 
-    def install_applications(self, apps: List[str]):
+    def install_applications(self, apps: List[str]) -> Dict:
+        results = {
+            "natively_installed": [],
+            "snap_installed": [],
+            "failed": [],
+            "success": True,
+        }
+        # Optional: update repos before install
+        update_result = self.run_command(["dnf", "update", "-y"], elevated=True)
+        if not update_result["success"]:
+            self.logger.warning("dnf update failed before installs")
         for app in apps:
-            try:
-                self.run_command(["dnf", "install", "-y", app], elevated=True)
-            except subprocess.CalledProcessError as e:
-                if self.not_found_msg in e.stderr:
+            install_result = self.run_command(
+                ["dnf", "install", "-y", app], elevated=True
+            )
+            if install_result["success"]:
+                results["natively_installed"].append(app)
+            else:
+                if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
                         print(f"Falling back to Snap for {app}...")
                     self.logger.info(
                         f"Native install failed for {app}; falling back to Snap..."
                     )
-                    self.install_via_snap(app)
+                    snap_result = self.install_via_snap(app)
+                    if snap_result["success"]:
+                        results["snap_installed"].append(app)
+                    else:
+                        results["failed"].append(app)
+                        results["success"] = False
                 else:
-                    raise  # Re-raise for other errors
+                    results["failed"].append(app)
+                    results["success"] = False
+        return results
 
-    def update(self):
-        self.run_command(["dnf", "update", "-y"], elevated=True)
+    def update(self) -> Dict:
+        result = self.run_command(["dnf", "update", "-y"], elevated=True)
+        return {
+            "success": result["success"],
+            "message": "System updated" if result["success"] else "Update failed",
+            "details": result,
+        }
 
-    def clean(self):
-        self.run_command(["dnf", "clean", "all"], elevated=True)
+    def clean(self) -> Dict:
+        result = self.run_command(["dnf", "clean", "all"], elevated=True)
+        return {
+            "success": result["success"],
+            "message": "Cache cleaned" if result["success"] else "Clean failed",
+            "details": result,
+        }
 
-    def optimize(self):
-        self.run_command(["dnf", "autoremove", "-y"], elevated=True)
+    def optimize(self) -> Dict:
+        result = self.run_command(["dnf", "autoremove", "-y"], elevated=True)
+        return {
+            "success": result["success"],
+            "message": "Orphans removed" if result["success"] else "Optimize failed",
+            "details": result,
+        }
 
-    def install_snapd(self):
-        self.run_command(["dnf", "install", "-y", "snapd"], elevated=True)
+    def install_snapd(self) -> Dict:
+        result = self.run_command(["dnf", "install", "-y", "snapd"], elevated=True)
+        return {
+            "success": result["success"],
+            "details": result,
+            "message": (
+                "snapd installed" if result["success"] else "Failed to install snapd"
+            ),
+        }
 
 
 class ZypperManager(SystemsManagerBase):  # SLES
@@ -301,32 +500,70 @@ class ZypperManager(SystemsManagerBase):  # SLES
         super().__init__(silent, log_file)
         self.not_found_msg = "No provider of"
 
-    def install_applications(self, apps: List[str]):
+    def install_applications(self, apps: List[str]) -> Dict:
+        results = {
+            "natively_installed": [],
+            "snap_installed": [],
+            "failed": [],
+            "success": True,
+        }
         for app in apps:
-            try:
-                self.run_command(["zypper", "install", "-y", app], elevated=True)
-            except subprocess.CalledProcessError as e:
-                if self.not_found_msg in e.stderr:
+            install_result = self.run_command(
+                ["zypper", "install", "-y", app], elevated=True
+            )
+            if install_result["success"]:
+                results["natively_installed"].append(app)
+            else:
+                if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
                         print(f"Falling back to Snap for {app}...")
                     self.logger.info(
                         f"Native install failed for {app}; falling back to Snap..."
                     )
-                    self.install_via_snap(app)
+                    snap_result = self.install_via_snap(app)
+                    if snap_result["success"]:
+                        results["snap_installed"].append(app)
+                    else:
+                        results["failed"].append(app)
+                        results["success"] = False
                 else:
-                    raise  # Re-raise for other errors
+                    results["failed"].append(app)
+                    results["success"] = False
+        return results
 
-    def update(self):
-        self.run_command(["zypper", "update", "-y"], elevated=True)
+    def update(self) -> Dict:
+        result = self.run_command(["zypper", "update", "-y"], elevated=True)
+        return {
+            "success": result["success"],
+            "message": "System updated" if result["success"] else "Update failed",
+            "details": result,
+        }
 
-    def clean(self):
-        self.run_command(["zypper", "clean", "--all"], elevated=True)
+    def clean(self) -> Dict:
+        result = self.run_command(["zypper", "clean", "--all"], elevated=True)
+        return {
+            "success": result["success"],
+            "message": "Cache cleaned" if result["success"] else "Clean failed",
+            "details": result,
+        }
 
-    def optimize(self):
-        self.run_command(["zypper", "rm", "-u"], elevated=True)  # Remove unneeded
+    def optimize(self) -> Dict:
+        result = self.run_command(["zypper", "rm", "-u"], elevated=True)
+        return {
+            "success": result["success"],
+            "message": "Unneeded removed" if result["success"] else "Optimize failed",
+            "details": result,
+        }
 
-    def install_snapd(self):
-        self.run_command(["zypper", "install", "-y", "snapd"], elevated=True)
+    def install_snapd(self) -> Dict:
+        result = self.run_command(["zypper", "install", "-y", "snapd"], elevated=True)
+        return {
+            "success": result["success"],
+            "details": result,
+            "message": (
+                "snapd installed" if result["success"] else "Failed to install snapd"
+            ),
+        }
 
 
 class PacmanManager(SystemsManagerBase):  # Arch
@@ -334,36 +571,73 @@ class PacmanManager(SystemsManagerBase):  # Arch
         super().__init__(silent, log_file)
         self.not_found_msg = "target not found"
 
-    def install_applications(self, apps: List[str]):
+    def install_applications(self, apps: List[str]) -> Dict:
+        results = {
+            "natively_installed": [],
+            "snap_installed": [],
+            "failed": [],
+            "success": True,
+        }
         for app in apps:
-            try:
-                self.run_command(["pacman", "-S", "--noconfirm", app], elevated=True)
-            except subprocess.CalledProcessError as e:
-                if self.not_found_msg in e.stderr:
+            install_result = self.run_command(
+                ["pacman", "-S", "--noconfirm", app], elevated=True
+            )
+            if install_result["success"]:
+                results["natively_installed"].append(app)
+            else:
+                if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
                         print(f"Falling back to Snap for {app}...")
                     self.logger.info(
                         f"Native install failed for {app}; falling back to Snap..."
                     )
-                    self.install_via_snap(app)
+                    snap_result = self.install_via_snap(app)
+                    if snap_result["success"]:
+                        results["snap_installed"].append(app)
+                    else:
+                        results["failed"].append(app)
+                        results["success"] = False
                 else:
-                    raise  # Re-raise for other errors
+                    results["failed"].append(app)
+                    results["success"] = False
+        return results
 
-    def update(self):
-        self.run_command(["pacman", "-Syu", "--noconfirm"], elevated=True)
+    def update(self) -> Dict:
+        result = self.run_command(["pacman", "-Syu", "--noconfirm"], elevated=True)
+        return {
+            "success": result["success"],
+            "message": "System updated" if result["success"] else "Update failed",
+            "details": result,
+        }
 
-    def clean(self):
-        self.run_command(["pacman", "-Sc", "--noconfirm"], elevated=True)
+    def clean(self) -> Dict:
+        result = self.run_command(["pacman", "-Sc", "--noconfirm"], elevated=True)
+        return {
+            "success": result["success"],
+            "message": "Cache cleaned" if result["success"] else "Clean failed",
+            "details": result,
+        }
 
-    def optimize(self):
-        self.run_command(
-            ["pacman", "-Rns", "$(pacman -Qdtq)", "--noconfirm"],
-            elevated=True,
-            shell=True,
+    def optimize(self) -> Dict:
+        orphans_cmd = ["pacman", "-Rns", "$(pacman -Qdtq)", "--noconfirm"]
+        result = self.run_command(orphans_cmd, elevated=True, shell=True)
+        return {
+            "success": result["success"],
+            "message": "Orphans removed" if result["success"] else "Optimize failed",
+            "details": result,
+        }
+
+    def install_snapd(self) -> Dict:
+        result = self.run_command(
+            ["pacman", "-S", "--noconfirm", "snapd"], elevated=True
         )
-
-    def install_snapd(self):
-        self.run_command(["pacman", "-S", "--noconfirm", "snapd"], elevated=True)
+        return {
+            "success": result["success"],
+            "details": result,
+            "message": (
+                "snapd installed" if result["success"] else "Failed to install snapd"
+            ),
+        }
 
 
 class WindowsManager(SystemsManagerBase):
@@ -374,8 +648,10 @@ class WindowsManager(SystemsManagerBase):
             r"~\AppData\Local\Microsoft\WindowsApps\winget.exe"
         )
         if not os.path.exists(winget_path):
-            print("Installing Winget...")
-            self.run_command(
+            if not self.silent:
+                print("Installing Winget...")
+            self.logger.info("Installing Winget...")
+            download_result = self.run_command(
                 [
                     "powershell.exe",
                     "Invoke-WebRequest",
@@ -385,26 +661,42 @@ class WindowsManager(SystemsManagerBase):
                     "winget.msixbundle",
                 ]
             )
-            self.run_command(
-                ["powershell.exe", "Add-AppPackage", "-Path", "winget.msixbundle"]
-            )
+            if download_result["success"]:
+                install_result = self.run_command(
+                    ["powershell.exe", "Add-AppPackage", "-Path", "winget.msixbundle"]
+                )
+                if install_result["success"]:
+                    os.remove("winget.msixbundle")
+                else:
+                    self.logger.error("Failed to install Winget")
+            else:
+                self.logger.error("Failed to download Winget")
 
-    def install_applications(self, apps: List[str]):
+    def install_applications(self, apps: List[str]) -> Dict:
+        results = {"installed": [], "failed": [], "success": True}
         for app in apps:
-            self.run_command(
-                [
-                    "winget",
-                    "install",
-                    "--id",
-                    app,
-                    "--silent",
-                    "--accept-package-agreements",
-                    "--accept-source-agreements",
-                ]
-            )
+            install_cmd = [
+                "winget",
+                "install",
+                "--id",
+                app,
+                "--silent",
+                "--accept-package-agreements",
+                "--accept-source-agreements",
+            ]
+            install_result = self.run_command(install_cmd)
+            if install_result["success"]:
+                results["installed"].append(app)
+            else:
+                results["failed"].append(app)
+                results["success"] = False
+                self.logger.error(
+                    f"Failed to install {app}: {install_result.get('error')}"
+                )
+        return results
 
-    def update(self):
-        self.run_command(
+    def update(self) -> Dict:
+        winget_result = self.run_command(
             [
                 "winget",
                 "upgrade",
@@ -414,71 +706,113 @@ class WindowsManager(SystemsManagerBase):
                 "--accept-source-agreements",
             ]
         )
-        self.run_command(
-            ["powershell.exe", "Install-Module", "PSWindowsUpdate", "-Force"]
-        )
-        self.run_command(
-            ["powershell.exe", "Install-WindowsUpdate", "-AcceptAll", "-AutoReboot"]
-        )
+        # For Windows updates, use PSWindowsUpdate
+        wu_cmd = [
+            "powershell.exe",
+            "-Command",
+            "if (!(Get-Module -ListAvailable -Name PSWindowsUpdate)) { Install-Module PSWindowsUpdate -Force -Scope CurrentUser }; Import-Module PSWindowsUpdate; Get-WUList | Install-WUUpdate -AcceptAll -AutoReboot:$false",
+        ]
+        wu_result = self.run_command(wu_cmd, shell=True, elevated=True)
+        overall_success = winget_result["success"] and wu_result["success"]
+        return {
+            "success": overall_success,
+            "message": (
+                "System and apps updated" if overall_success else "Partial update"
+            ),
+            "details": {"winget": winget_result, "windows_update": wu_result},
+        }
 
-    def clean(self):
-        self.run_command(["cleanmgr", "/lowdisk"])
+    def clean(self) -> Dict:
+        # cleanmgr runs GUI, may not be ideal for automation; consider alternatives like Dism
+        result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)
+        return {
+            "success": result["success"],
+            "message": "Cleanup initiated" if result["success"] else "Cleanup failed",
+            "details": result,
+        }
 
-    def optimize(self):
-        self.run_command(["cleanmgr", "/lowdisk"])
-        self.run_command(["defrag", "C:", "/O"])
+    def optimize(self) -> Dict:
+        clean_result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)
+        defrag_result = self.run_command(
+            ["powershell.exe", "Optimize-Volume", "-DriveLetter", "C", "-Verbose"],
+            elevated=True,
+        )
+        overall_success = clean_result["success"] and defrag_result["success"]
+        return {
+            "success": overall_success,
+            "message": (
+                "System optimized" if overall_success else "Partial optimization"
+            ),
+            "details": {"cleanup": clean_result, "defrag": defrag_result},
+        }
 
     def list_windows_features(self) -> List[Dict]:
-        result = self.run_command(
-            ["powershell.exe", "Get-WindowsOptionalFeature", "-Online"], shell=True
-        )
-        features = []
-        lines = result.stdout.splitlines()
-        current_feature = {}
-        for line in lines:
-            if line.strip() == "":
-                if current_feature:
-                    features.append(current_feature)
-                current_feature = {}
-            elif ":" in line:
-                key, value = line.split(":", 1)
-                current_feature[key.strip()] = value.strip()
-        if current_feature:
-            features.append(current_feature)
-        print(json.dumps(features, indent=2))
-        self.logger.info(f"Listed Windows features: {json.dumps(features)}")
-        return features
+        cmd = [
+            "powershell.exe",
+            "-Command",
+            "Get-WindowsOptionalFeature -Online | ConvertTo-Json -Depth 3",
+        ]
+        result = self.run_command(cmd, shell=True)
+        if result["success"]:
+            try:
+                features = json.loads(result["stdout"])
+                if isinstance(features, list):
+                    return features
+                else:
+                    return [features]
+            except json.JSONDecodeError:
+                self.logger.error("Failed to parse features JSON")
+                return []
+        else:
+            self.logger.error("Failed to list features")
+            return []
 
-    def enable_windows_features(self, features: List[str]):
+    def enable_windows_features(self, features: List[str]) -> Dict:
+        results = {"enabled": [], "failed": [], "success": True}
         for feature in features:
-            self.run_command(
-                [
-                    "powershell.exe",
-                    "Enable-WindowsOptionalFeature",
-                    "-Online",
-                    "-FeatureName",
-                    feature,
-                    "-NoRestart",
-                ],
-                elevated=True,
-            )
+            cmd = [
+                "powershell.exe",
+                "Enable-WindowsOptionalFeature",
+                "-Online",
+                "-FeatureName",
+                feature,
+                "-NoRestart",
+            ]
+            enable_result = self.run_command(cmd, elevated=True)
+            if enable_result["success"]:
+                results["enabled"].append(feature)
+            else:
+                results["failed"].append(feature)
+                results["success"] = False
+                self.logger.error(
+                    f"Failed to enable {feature}: {enable_result.get('error')}"
+                )
+        return results
 
-    def disable_windows_features(self, features: List[str]):
+    def disable_windows_features(self, features: List[str]) -> Dict:
+        results = {"disabled": [], "failed": [], "success": True}
         for feature in features:
-            self.run_command(
-                [
-                    "powershell.exe",
-                    "Disable-WindowsOptionalFeature",
-                    "-Online",
-                    "-FeatureName",
-                    feature,
-                    "-NoRestart",
-                ],
-                elevated=True,
-            )
+            cmd = [
+                "powershell.exe",
+                "Disable-WindowsOptionalFeature",
+                "-Online",
+                "-FeatureName",
+                feature,
+                "-NoRestart",
+            ]
+            disable_result = self.run_command(cmd, elevated=True)
+            if disable_result["success"]:
+                results["disabled"].append(feature)
+            else:
+                results["failed"].append(feature)
+                results["success"] = False
+                self.logger.error(
+                    f"Failed to disable {feature}: {disable_result.get('error')}"
+                )
+        return results
 
-    def install_snapd(self):
-        raise NotImplementedError("Snap not supported on Windows")
+    def install_snapd(self) -> Dict:
+        return {"success": False, "error": "Snap not supported on Windows"}
 
 
 def detect_and_create_manager(
@@ -631,7 +965,8 @@ def systems_manager(argv):
         print(json.dumps(manager.get_hardware_stats(), indent=2))
     if list_features:
         if isinstance(manager, WindowsManager):
-            manager.list_windows_features()
+            features = manager.list_windows_features()
+            print(json.dumps(features, indent=2))
         else:
             print("Feature listing is only available on Windows.")
     if enable_features:
