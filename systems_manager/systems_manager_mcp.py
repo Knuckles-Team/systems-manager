@@ -344,7 +344,7 @@ async def install_fonts(
 
 @mcp.tool(
     annotations={
-        "title": "Get OS Stats",
+        "title": "Get OS Statistics",
         "readOnlyHint": True,
         "destructiveHint": False,
         "idempotentHint": True,
@@ -352,7 +352,7 @@ async def install_fonts(
     },
     tags={"system_management"},
 )
-async def get_os_stats(
+async def get_os_statistics(
     silent: Optional[bool] = Field(
         description="Suppress output", default=environment_silent
     ),
@@ -379,7 +379,7 @@ async def get_os_stats(
 
 @mcp.tool(
     annotations={
-        "title": "Get Hardware Stats",
+        "title": "Get Hardware Statistics",
         "readOnlyHint": True,
         "destructiveHint": False,
         "idempotentHint": True,
@@ -387,7 +387,7 @@ async def get_os_stats(
     },
     tags={"system_management"},
 )
-async def get_hardware_stats(
+async def get_hardware_statistics(
     silent: Optional[bool] = Field(
         description="Suppress output", default=environment_silent
     ),

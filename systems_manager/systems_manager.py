@@ -293,7 +293,7 @@ class SystemsManagerBase(ABC):
             "os": platform.system(),
         }
 
-    def get_os_stats(self) -> Dict:
+    def get_os_statistics(self) -> Dict:
         return {
             "system": platform.system(),
             "release": platform.release(),
@@ -303,7 +303,7 @@ class SystemsManagerBase(ABC):
             "load_avg": os.getloadavg() if platform.system() != "Windows" else "N/A",
         }
 
-    def get_hardware_stats(self) -> Dict:
+    def get_hardware_statistics(self) -> Dict:
         return {
             "cpu_percent": psutil.cpu_percent(interval=1),
             "cpu_count": psutil.cpu_count(),
@@ -960,9 +960,9 @@ def systems_manager(argv):
     if optimize:
         manager.optimize()
     if os_stats:
-        print(json.dumps(manager.get_os_stats(), indent=2))
+        print(json.dumps(manager.get_os_statistics(), indent=2))
     if hw_stats:
-        print(json.dumps(manager.get_hardware_stats(), indent=2))
+        print(json.dumps(manager.get_hardware_statistics(), indent=2))
     if list_features:
         if isinstance(manager, WindowsManager):
             features = manager.list_windows_features()
