@@ -135,6 +135,14 @@ class SystemsManagerBase(ABC):
     def install_snapd(self) -> Dict:
         pass
 
+    @abstractmethod
+    def add_repository(self, repo_url: str, name: str = None) -> Dict:
+        pass
+
+    @abstractmethod
+    def install_local_package(self, file_path: str) -> Dict:
+        pass
+
     def install_via_snap(self, app: str) -> Dict:
         snap_bin = shutil.which("snap")
         if snap_bin is None:
@@ -417,6 +425,30 @@ class AptManager(SystemsManagerBase):  # Ubuntu/Debian
             ),
         }
 
+    def add_repository(self, repo_url: str, name: str = None) -> Dict:
+        add_result = self.run_command(
+            ["add-apt-repository", "-y", repo_url], elevated=True
+        )
+        if add_result["success"]:
+            update_result = self.run_command(["apt", "update"], elevated=True)
+            return {
+                "success": update_result["success"],
+                "details": [add_result, update_result],
+            }
+        return add_result
+
+    def install_local_package(self, file_path: str) -> Dict:
+        if not file_path.endswith(".deb"):
+            return {"success": False, "error": "Not a .deb file"}
+        install_result = self.run_command(["dpkg", "-i", file_path], elevated=True)
+        if install_result["success"]:
+            fix_result = self.run_command(["apt", "install", "-f", "-y"], elevated=True)
+            return {
+                "success": fix_result["success"],
+                "details": [install_result, fix_result],
+            }
+        return install_result
+
 
 class DnfManager(SystemsManagerBase):  # Red Hat, Oracle Linux
     def __init__(self, silent: bool = False, log_file: str = None):
@@ -492,6 +524,22 @@ class DnfManager(SystemsManagerBase):  # Red Hat, Oracle Linux
             ),
         }
 
+    def add_repository(self, repo_url: str, name: str = None) -> Dict:
+        command = ["dnf", "config-manager", "--add-repo", repo_url]
+        add_result = self.run_command(command, elevated=True)
+        if add_result["success"]:
+            update_result = self.run_command(["dnf", "makecache"], elevated=True)
+            return {
+                "success": update_result["success"],
+                "details": [add_result, update_result],
+            }
+        return add_result
+
+    def install_local_package(self, file_path: str) -> Dict:
+        if not file_path.endswith(".rpm"):
+            return {"success": False, "error": "Not a .rpm file"}
+        return self.run_command(["dnf", "install", "-y", file_path], elevated=True)
+
 
 class ZypperManager(SystemsManagerBase):  # SLES
     def __init__(self, silent: bool = False, log_file: str = None):
@@ -562,6 +610,25 @@ class ZypperManager(SystemsManagerBase):  # SLES
                 "snapd installed" if result["success"] else "Failed to install snapd"
             ),
         }
+
+    def add_repository(self, repo_url: str, name: str = None) -> Dict:
+        if not name:
+            name = "custom"
+        add_result = self.run_command(
+            ["zypper", "addrepo", repo_url, name], elevated=True
+        )
+        if add_result["success"]:
+            refresh_result = self.run_command(["zypper", "refresh"], elevated=True)
+            return {
+                "success": refresh_result["success"],
+                "details": [add_result, refresh_result],
+            }
+        return add_result
+
+    def install_local_package(self, file_path: str) -> Dict:
+        if not file_path.endswith(".rpm"):
+            return {"success": False, "error": "Not a .rpm file"}
+        return self.run_command(["zypper", "install", "-y", file_path], elevated=True)
 
 
 class PacmanManager(SystemsManagerBase):  # Arch
@@ -636,6 +703,28 @@ class PacmanManager(SystemsManagerBase):  # Arch
                 "snapd installed" if result["success"] else "Failed to install snapd"
             ),
         }
+
+    def add_repository(self, repo_url: str, name: str = None) -> Dict:
+        if not name:
+            name = "custom"
+        conf = "/etc/pacman.conf"
+        content = f"\n[{name}]\nServer = {repo_url}\n"
+        echo_cmd = ["bash", "-c", f"echo '{content}' >> {conf}"]
+        add_result = self.run_command(echo_cmd, elevated=True, shell=True)
+        if add_result["success"]:
+            sync_result = self.run_command(
+                ["pacman", "-Sy", "--noconfirm"], elevated=True
+            )
+            return {
+                "success": sync_result["success"],
+                "details": [add_result, sync_result],
+            }
+        return add_result
+
+    def install_local_package(self, file_path: str) -> Dict:
+        return self.run_command(
+            ["pacman", "-U", "--noconfirm", file_path], elevated=True
+        )
 
 
 class WindowsManager(SystemsManagerBase):
@@ -812,6 +901,18 @@ class WindowsManager(SystemsManagerBase):
     def install_snapd(self) -> Dict:
         return {"success": False, "error": "Snap not supported on Windows"}
 
+    def add_repository(self, repo_url: str, name: str = None) -> Dict:
+        return {
+            "success": False,
+            "error": "Repository addition not supported on Windows",
+        }
+
+    def install_local_package(self, file_path: str) -> Dict:
+        return {
+            "success": False,
+            "error": "Local package installation not supported on Windows",
+        }
+
 
 def detect_and_create_manager(
     silent: bool = False, log_file: str = None
@@ -855,9 +956,11 @@ Usage:
 --os-stats             [ Print OS stats ]
 --hw-stats             [ Print hardware stats ]
 --log-file <path>      [ Log to specified file (default: systems_manager.log in script dir) ]
+--add-repo <url[:name]> [ Add upstream repository (Linux only) ]
+--install-local <files> [ Install local package files, comma-separated (Linux only) ]
 
 Example:
-systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install python3,git --enable-features Microsoft-Hyper-V-All,Containers --log-file /path/to/log.log
+systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install python3,git --enable-features Microsoft-Hyper-V-All,Containers --log-file /path/to/log.log --add-repo ppa:graphics-drivers/ppa --install-local /path/to/package.deb
 """
     )
 
@@ -912,6 +1015,14 @@ def systems_manager():
         help="List available features (Windows only)",
     )
     parser.add_argument("--log-file", type=str, help="Specify log file path")
+    parser.add_argument(
+        "--add-repo", type=str, help="Add upstream repository: url[:name] (Linux only)"
+    )
+    parser.add_argument(
+        "--install-local",
+        type=str,
+        help="Install local package files, comma-separated (Linux only)",
+    )
 
     args = parser.parse_args()
 
@@ -937,6 +1048,8 @@ def systems_manager():
     list_features = args.list_features
     enable_features = bool(args.enable_features)
     disable_features = bool(args.disable_features)
+    add_repo = args.add_repo
+    install_local = args.install_local
 
     manager = detect_and_create_manager(silent, log_file)
 
@@ -952,6 +1065,15 @@ def systems_manager():
         manager.clean()
     if optimize:
         manager.optimize()
+    if add_repo:
+        parts = add_repo.split(":")
+        url = parts[0]
+        name = parts[1] if len(parts) > 1 else None
+        manager.add_repository(url, name)
+    if install_local:
+        files = [f.strip() for f in install_local.split(",")]
+        for f in files:
+            manager.install_local_package(f)
     if os_stats:
         print(json.dumps(manager.get_os_statistics(), indent=2))
     if hw_stats:

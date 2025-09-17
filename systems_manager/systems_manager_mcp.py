@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import getopt
+import argparse
 import os
 import sys
 import logging
@@ -440,11 +440,12 @@ async def list_windows_features(
     try:
         manager = detect_and_create_manager(silent, log_file)
         if not isinstance(manager, WindowsManager):
-            return [{
-                "success": False,
-                "error": "Feature listing is only available on Windows",
-            }
-]
+            return [
+                {
+                    "success": False,
+                    "error": "Feature listing is only available on Windows",
+                }
+            ]
         features = manager.list_windows_features()
         logger.debug(f"Windows features: {features}")
         return features
@@ -573,36 +574,28 @@ async def disable_windows_features(
         return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
-def systems_manager_mcp(argv):
-    transport = "stdio"
-    host = "0.0.0.0"
-    port = 8000
-    try:
-        opts, args = getopt.getopt(
-            argv,
-            "ht:h:p:",
-            ["help", "transport=", "host=", "port="],
-        )
-    except getopt.GetoptError:
-        logger = logging.getLogger("SystemsManager")
-        logger.error("Incorrect arguments")
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            sys.exit()
-        elif opt in ("-t", "--transport"):
-            transport = arg
-        elif opt in ("-h", "--host"):
-            host = arg
-        elif opt in ("-p", "--port"):
-            try:
-                port = int(arg)
-                if not (0 <= port <= 65535):
-                    print(f"Error: Port {arg} is out of valid range (0-65535).")
-                    sys.exit(1)
-            except ValueError:
-                print(f"Error: Port {arg} is not a valid integer.")
-                sys.exit(1)
+def systems_manager_mcp():
+    parser = argparse.ArgumentParser(description="System Manager MCP Utility")
+    parser.add_argument(
+        "-t", "--transport", default="stdio", help="Transport method (stdio or http)"
+    )
+    parser.add_argument(
+        "-s", "--host", default="0.0.0.0", help="Host address for HTTP transport"
+    )
+    parser.add_argument(
+        "-p", "--port", type=int, default=8000, help="Port for HTTP transport"
+    )
+
+    args = parser.parse_args()
+
+    transport = args.transport
+    host = args.host
+    port = args.port
+
+    if not (0 <= port <= 65535):
+        print(f"Error: Port {port} is out of valid range (0-65535).")
+        sys.exit(1)
+
     if transport == "stdio":
         mcp.run(transport="stdio")
     elif transport == "http":
@@ -613,9 +606,5 @@ def systems_manager_mcp(argv):
         sys.exit(1)
 
 
-def main():
-    systems_manager_mcp(sys.argv[1:])
-
-
 if __name__ == "__main__":
-    systems_manager_mcp(sys.argv[1:])
+    systems_manager_mcp()
