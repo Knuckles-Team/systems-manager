@@ -8,7 +8,7 @@ from systems_manager.systems_manager import (
     detect_and_create_manager,
     setup_logging,
 )
-from systems_manager.systems_manager_mcp import main
+from systems_manager.systems_manager_mcp import systems_manager_mcp
 
 """
 system-manager
@@ -20,7 +20,7 @@ __all__ = [
     "SystemsManagerBase",
     "WindowsManager",
     "setup_logging",
-    "main",
+    "systems_manager_mcp",
     "systems_manager",
     "detect_and_create_manager",
 ]

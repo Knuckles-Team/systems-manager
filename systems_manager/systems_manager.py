@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import sys
-import getopt
+import argparse
 import subprocess
 import os
 import platform
@@ -197,7 +196,6 @@ class SystemsManagerBase(ABC):
             fonts = ["Hack"]
         api_url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest"
         response = requests.get(api_url).json()
-        tag = response["tag_name"]
         all_assets = [
             a
             for a in response["assets"]
@@ -864,86 +862,81 @@ systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install
     )
 
 
-def systems_manager(argv):
-    log_file = None
-    apps = []
-    python_modules = []
-    enable_features_list = []
-    disable_features_list = []
-    fonts = ["Hack"]  # Default to Hack
-    install = False
-    font = False
-    update = False
-    clean = False
-    optimize = False
-    install_python = False
-    os_stats = False
-    hw_stats = False
-    silent = False
-    list_features = False
-    enable_features = False
-    disable_features = False
+def systems_manager():
+    parser = argparse.ArgumentParser(description="System Manager Utility")
+    parser.add_argument(
+        "-c", "--clean", action="store_true", help="Clean system resources"
+    )
+    parser.add_argument(
+        "-f", "--fonts", type=str, help="Comma-separated list of fonts to install"
+    )
+    parser.add_argument(
+        "-s", "--silent", action="store_true", help="Run in silent mode"
+    )
+    parser.add_argument(
+        "-u", "--update", action="store_true", help="Update system packages"
+    )
+    parser.add_argument(
+        "-i",
+        "--install",
+        type=str,
+        help="Comma-separated list of applications to install",
+    )
+    parser.add_argument(
+        "-p",
+        "--python",
+        type=str,
+        help="Comma-separated list of Python modules to install",
+    )
+    parser.add_argument("-o", "--optimize", action="store_true", help="Optimize system")
+    parser.add_argument("--os-stats", action="store_true", help="Display OS statistics")
+    parser.add_argument(
+        "--hw-stats", action="store_true", help="Display hardware statistics"
+    )
+    parser.add_argument(
+        "-e",
+        "--enable-features",
+        type=str,
+        help="Comma-separated list of features to enable (Windows only)",
+    )
+    parser.add_argument(
+        "-d",
+        "--disable-features",
+        type=str,
+        help="Comma-separated list of features to disable (Windows only)",
+    )
+    parser.add_argument(
+        "-l",
+        "--list-features",
+        action="store_true",
+        help="List available features (Windows only)",
+    )
+    parser.add_argument("--log-file", type=str, help="Specify log file path")
 
-    try:
-        opts, _ = getopt.getopt(
-            argv,
-            "hcfsi:p:uoeld:",
-            [
-                "help",
-                "clean",
-                "fonts=",
-                "silent",
-                "update",
-                "install=",
-                "python=",
-                "optimize",
-                "os-stats",
-                "hw-stats",
-                "enable-features=",
-                "disable-features=",
-                "list-features",
-                "log-file=",
-            ],
-        )
-    except getopt.GetoptError:
-        usage()
-        sys.exit(2)
+    args = parser.parse_args()
 
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            usage()
-            sys.exit()
-        elif opt in ("-c", "--clean"):
-            clean = True
-        elif opt in ("-f", "--fonts"):
-            font = True
-            fonts = arg.split(",")
-        elif opt in ("-i", "--install"):
-            install = True
-            apps = arg.split(",")
-        elif opt in ("-p", "--python"):
-            install_python = True
-            python_modules = arg.split(",")
-        elif opt in ("-s", "--silent"):
-            silent = True
-        elif opt in ("-u", "--update"):
-            update = True
-        elif opt in ("-o", "--optimize"):
-            optimize = True
-        elif opt == "--os-stats":
-            os_stats = True
-        elif opt == "--hw-stats":
-            hw_stats = True
-        elif opt in ("-e", "--enable-features"):
-            enable_features = True
-            enable_features_list = arg.split(",")
-        elif opt in ("-d", "--disable-features"):
-            disable_features = True
-            disable_features_list = arg.split(",")
-        elif opt in ("-l", "--list-features"):
-            list_features = True
-        elif opt == "--log-file":
-            log_file = arg
+    log_file = args.log_file
+    apps = args.install.split(",") if args.install else []
+    python_modules = args.python.split(",") if args.python else []
+    enable_features_list = (
+        args.enable_features.split(",") if args.enable_features else []
+    )
+    disable_features_list = (
+        args.disable_features.split(",") if args.disable_features else []
+    )
+    fonts = args.fonts.split(",") if args.fonts else ["Hack"]  # Default to Hack
+    install = bool(args.install)
+    font = bool(args.fonts)
+    update = args.update
+    clean = args.clean
+    optimize = args.optimize
+    install_python = bool(args.python)
+    os_stats = args.os_stats
+    hw_stats = args.hw_stats
+    silent = args.silent
+    list_features = args.list_features
+    enable_features = bool(args.enable_features)
+    disable_features = bool(args.disable_features)
 
     manager = detect_and_create_manager(silent, log_file)
 
@@ -984,7 +977,4 @@ def systems_manager(argv):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        usage()
-        sys.exit(2)
-    systems_manager(sys.argv[1:])
+    systems_manager()
