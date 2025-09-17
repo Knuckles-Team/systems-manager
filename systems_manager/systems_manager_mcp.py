@@ -34,13 +34,6 @@ def to_boolean(string):
         raise ValueError(f"Cannot convert '{string}' to boolean")
 
 
-environment_silent = os.environ.get("SILENT", False)
-environment_log_file = os.environ.get("LOG_FILE", None)
-
-if environment_silent:
-    environment_silent = to_boolean(environment_silent)
-
-
 @mcp.tool(
     annotations={
         "title": "Install Applications",
@@ -56,10 +49,12 @@ async def install_applications(
         description="List of application names to install", default=None
     ),
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -105,10 +100,12 @@ async def install_applications(
 )
 async def update(
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -147,10 +144,12 @@ async def update(
 )
 async def clean(
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -189,10 +188,12 @@ async def clean(
 )
 async def optimize(
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -234,10 +235,12 @@ async def install_python_modules(
         description="List of Python modules to install", default=None
     ),
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -288,10 +291,12 @@ async def install_fonts(
         default=None,
     ),
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -354,10 +359,12 @@ async def install_fonts(
 )
 async def get_os_statistics(
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -369,7 +376,7 @@ async def get_os_statistics(
 
     try:
         manager = detect_and_create_manager(silent, log_file)
-        stats = manager.get_os_stats()
+        stats = manager.get_os_statistics()
         logger.debug(f"OS stats: {stats}")
         return stats
     except Exception as e:
@@ -389,10 +396,12 @@ async def get_os_statistics(
 )
 async def get_hardware_statistics(
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -404,7 +413,7 @@ async def get_hardware_statistics(
 
     try:
         manager = detect_and_create_manager(silent, log_file)
-        stats = manager.get_hardware_stats()
+        stats = manager.get_hardware_statistics()
         logger.debug(f"Hardware stats: {stats}")
         return stats
     except Exception as e:
@@ -424,10 +433,12 @@ async def get_hardware_statistics(
 )
 async def list_windows_features(
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -469,10 +480,12 @@ async def enable_windows_features(
         description="List of Windows features to enable", default=None
     ),
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -529,10 +542,12 @@ async def disable_windows_features(
         description="List of Windows features to disable", default=None
     ),
     silent: Optional[bool] = Field(
-        description="Suppress output", default=environment_silent
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
     ),
     log_file: Optional[str] = Field(
-        description="Path to log file", default=environment_log_file
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
     ),
     ctx: Context = Field(
         description="MCP context for progress reporting", default=None
@@ -571,6 +586,131 @@ async def disable_windows_features(
         return result
     except Exception as e:
         logger.error(f"Failed to disable Windows features: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
+
+@mcp.tool(
+    annotations={
+        "title": "Add Repository",
+        "readOnlyHint": False,
+        "destructiveHint": True,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    },
+    tags={"system_management", "linux"},
+)
+async def add_repository(
+    repo_url: str = Field(description="URL of the repository to add", default=None),
+    name: Optional[str] = Field(
+        description="Name of the repository (optional, auto-generated if not provided)",
+        default=None,
+    ),
+    silent: Optional[bool] = Field(
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+    ),
+    log_file: Optional[str] = Field(
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+    ),
+    ctx: Context = Field(
+        description="MCP context for progress reporting", default=None
+    ),
+) -> Dict:
+    """Adds an upstream repository to the package manager repository list (Linux only)."""
+    logger = logging.getLogger("SystemsManager")
+    logger.debug(
+        f"Adding repository: {repo_url}, name: {name}, silent: {silent}, log_file: {log_file}"
+    )
+
+    if not repo_url:
+        return {"success": False, "error": "No repository URL provided"}
+
+    try:
+        manager = detect_and_create_manager(silent, log_file)
+        if isinstance(manager, WindowsManager):
+            return {
+                "success": False,
+                "error": "Repository addition is only available on Linux",
+            }
+
+        total_steps = 2  # add and refresh/update
+        current_step = 0
+
+        if ctx:
+            await ctx.report_progress(progress=0, total=total_steps)
+
+        result = manager.add_repository(repo_url, name)
+        current_step = total_steps
+
+        if ctx:
+            await ctx.report_progress(progress=current_step, total=total_steps)
+
+        logger.debug(f"Repository addition completed: {repo_url}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to add repository: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
+
+@mcp.tool(
+    annotations={
+        "title": "Install Local Package",
+        "readOnlyHint": False,
+        "destructiveHint": True,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    },
+    tags={"system_management", "linux"},
+)
+async def install_local_package(
+    file_path: str = Field(
+        description="Path to the local package file to install (.deb or .rpm)",
+        default=None,
+    ),
+    silent: Optional[bool] = Field(
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+    ),
+    log_file: Optional[str] = Field(
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+    ),
+    ctx: Context = Field(
+        description="MCP context for progress reporting", default=None
+    ),
+) -> Dict:
+    """Installs a local Linux package file using the appropriate tool (dpkg/rpm/dnf/zypper/pacman). (Linux only)"""
+    logger = logging.getLogger("SystemsManager")
+    logger.debug(
+        f"Installing local package: {file_path}, silent: {silent}, log_file: {log_file}"
+    )
+
+    if not file_path:
+        return {"success": False, "error": "No package file path provided"}
+
+    try:
+        manager = detect_and_create_manager(silent, log_file)
+        if isinstance(manager, WindowsManager):
+            return {
+                "success": False,
+                "error": "Local package installation is only available on Linux",
+            }
+
+        total_steps = 1
+
+        if ctx:
+            await ctx.report_progress(progress=0, total=total_steps)
+
+        result = manager.install_local_package(file_path)
+
+        if ctx:
+            await ctx.report_progress(progress=total_steps, total=total_steps)
+
+        logger.debug(f"Local package installation completed: {file_path}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to install local package: {str(e)}")
         return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
