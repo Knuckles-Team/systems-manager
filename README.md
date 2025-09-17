@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 1.0.10*
+*Version: 1.1.0*
 
 Systems-Manager is a powerful CLI and MCP server tool to manage your system across multiple operating systems. It supports updating, installing, and optimizing applications, managing Windows features, installing Nerd Fonts, and retrieving system and hardware statistics. It now supports Ubuntu, Debian, Red Hat, Oracle Linux, SLES, Arch, and Windows, with Snap fallback for Linux application installations.
 
@@ -107,8 +107,8 @@ Configure `mcp.json` to integrate with AI systems:
         "systems-manager-mcp"
       ],
       "env": {
-        "SILENT": "False",
-        "LOG_FILE": "~/Documents/systems_manager_mcp.log"
+        "SYSTEMS_MANAGER_SILENT": "False",
+        "SYSTEMS_MANAGER_LOG_FILE": "~/Documents/systems_manager_mcp.log"
       },
       "timeout": 200000
     }
