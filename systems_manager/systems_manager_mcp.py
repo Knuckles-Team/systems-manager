@@ -5,7 +5,7 @@ import argparse
 import os
 import sys
 import logging
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 
 import requests
 from fastmcp import FastMCP, Context
@@ -22,7 +22,11 @@ setup_logging(is_mcp_server=True, log_file="systems_manager_mcp.log")
 mcp = FastMCP(name="SystemsManagerServer")
 
 
-def to_boolean(string):
+def to_boolean(string: Union[str, bool] = None) -> bool:
+    if isinstance(string, bool):
+        return string
+    if not string:
+        return False
     normalized = str(string).strip().lower()
     true_values = {"t", "true", "y", "yes", "1"}
     false_values = {"f", "false", "n", "no", "0"}
