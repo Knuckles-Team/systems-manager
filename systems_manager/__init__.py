@@ -1,26 +1,31 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from systems_manager.systems_manager import (
-    SystemsManagerBase,
-    systems_manager,
-    WindowsManager,
-    detect_and_create_manager,
-    setup_logging,
-)
-from systems_manager.systems_manager_mcp import systems_manager_mcp
+import importlib
+import inspect
+
+# List of modules to import from
+MODULES = [
+    "systems_manager.systems_manager",
+    "systems_manager.systems_manager_mcp",
+]
+
+# Initialize __all__ to expose all public classes and functions
+__all__ = []
+
+# Dynamically import all classes and functions from the specified modules
+for module_name in MODULES:
+    module = importlib.import_module(module_name)
+    for name, obj in inspect.getmembers(module):
+        # Include only classes and functions, excluding private (starting with '_')
+        if (inspect.isclass(obj) or inspect.isfunction(obj)) and not name.startswith(
+            "_"
+        ):
+            globals()[name] = obj
+            __all__.append(name)
 
 """
 system-manager
 
 Install/Update/Clean/Manage your System!
 """
-
-__all__ = [
-    "SystemsManagerBase",
-    "WindowsManager",
-    "setup_logging",
-    "systems_manager_mcp",
-    "systems_manager",
-    "detect_and_create_manager",
-]
