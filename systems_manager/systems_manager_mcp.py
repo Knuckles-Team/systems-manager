@@ -718,6 +718,72 @@ async def install_local_package(
         return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
+@mcp.tool(
+    annotations={
+        "title": "Install Local Package",
+        "readOnlyHint": False,
+        "destructiveHint": True,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    },
+    tags={"system_management", "linux"},
+)
+async def run_command(
+    command: str = Field(
+        description="Command to run on the system",
+        default=None,
+    ),
+    elevated: bool = Field(
+        description="Elevate the shell to root or administrator privileges",
+        default=to_boolean(string="false"),
+    ),
+    shell: bool = Field(
+        description="Optionally execute in shell",
+        default=to_boolean(string="false"),
+    ),
+    silent: Optional[bool] = Field(
+        description="Suppress output",
+        default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+    ),
+    log_file: Optional[str] = Field(
+        description="Path to log file",
+        default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+    ),
+    ctx: Context = Field(
+        description="MCP context for progress reporting", default=None
+    ),
+) -> Dict:
+    """Runs a command on the host. Can run elevated for administrator or root privileges."""
+    logger = logging.getLogger("SystemsManager")
+    logger.debug(
+        f"Running command: {command}, elevated: {elevated}, shell: {shell}, silent: {silent}, log_file: {log_file}"
+    )
+
+    try:
+        manager = detect_and_create_manager(silent, log_file)
+        if isinstance(manager, WindowsManager):
+            return {
+                "success": False,
+                "error": "Local package installation is only available on Linux",
+            }
+
+        total_steps = 1
+
+        if ctx:
+            await ctx.report_progress(progress=0, total=total_steps)
+
+        result = manager.run_command(command=command, elevated=elevated, shell=shell)
+
+        if ctx:
+            await ctx.report_progress(progress=total_steps, total=total_steps)
+
+        logger.debug(f"Command run completed: {command}\nResult: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Failed to install local package: {str(e)}")
+        return {"success": False, "error": f"Unexpected error: {str(e)}"}
+
+
 def systems_manager_mcp():
     parser = argparse.ArgumentParser(description="System Manager MCP Utility")
     parser.add_argument(

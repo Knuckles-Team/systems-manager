@@ -13,7 +13,7 @@ import requests
 import logging
 import distro
 import psutil
-from typing import List, Dict
+from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 
 
@@ -40,10 +40,12 @@ class SystemsManagerBase(ABC):
 
     def log_command(
         self,
-        command: List[str],
+        command: Union[List[str], str],
         result: subprocess.CompletedProcess = None,
         error: Exception = None,
     ):
+        if isinstance(command, str):
+            command = command.split()
         self.logger.info(f"Running command: {' '.join(command)}")
         if result:
             self.logger.info(f"Return code: {result.returncode}")
@@ -53,8 +55,13 @@ class SystemsManagerBase(ABC):
             self.logger.error(f"Error: {str(error)}")
 
     def run_command(
-        self, command: List[str], elevated: bool = False, shell: bool = False
+        self,
+        command: Union[List[str], str],
+        elevated: bool = False,
+        shell: bool = False,
     ) -> Dict:
+        if isinstance(command, str):
+            command = command.split()
         if elevated and platform.system() == "Linux":
             command = ["sudo"] + command
         elif elevated and platform.system() == "Windows":
