@@ -8,6 +8,6 @@ ENV PORT=${PORT}
 ENV TRANSPORT=${TRANSPORT}
 ENV PATH="/usr/local/bin:${PATH}"
 RUN pip install uv \
-    && uv pip install --system --upgrade systems-manager>=1.1.8
+    && uv pip install --system --upgrade systems-manager>=1.1.9
 
 ENTRYPOINT exec systems-manager-mcp --transport "${TRANSPORT}" --host "${HOST}" --port "${PORT}"
