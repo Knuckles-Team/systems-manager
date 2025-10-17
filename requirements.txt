@@ -1,4 +1,4 @@
 requests>=2.28.1
-fastmcp>=2.11.3
+fastmcp>=2.12.4
 psutil>=7.0.0
 distro>=1.9.0
