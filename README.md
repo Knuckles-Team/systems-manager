@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 1.1.9*
+*Version: 1.1.10*
 
 Systems-Manager is a powerful CLI and MCP server tool to manage your system across multiple operating systems. It supports updating, installing, and optimizing applications, managing Windows features, installing Nerd Fonts, and retrieving system and hardware statistics. It now supports Ubuntu, Debian, Red Hat, Oracle Linux, SLES, Arch, and Windows, with Snap fallback for Linux application installations.
 
@@ -36,6 +36,20 @@ This repository is actively maintained - Contributions are welcome!
 - **System and Hardware Stats**: Retrieve detailed OS and hardware information using `psutil`.
 - **Logging**: Optional logging to a specified file or default `systems_manager.log` in the script directory.
 - **FastMCP Server**: Expose all functionality via a Model Context Protocol (MCP) server over stdio or HTTP for integration with AI or automation systems.
+
+## Available MCP tools:
+- `install_applications`: Install applications with Snap fallback (Linux).
+- `update`: Update system and applications.
+- `clean`: Clean system resources (e.g., trash/recycle bin).
+- `optimize`: Optimize system (e.g., autoremove, defrag on Windows).
+- `install_python_modules`: Install Python modules via pip.
+- `install_fonts`: Install specified Nerd Fonts (default: Hack) or all fonts.
+- `get_os_stats`: Retrieve OS statistics.
+- `get_hardware_stats`: Retrieve hardware statistics.
+- `list_windows_features`: List Windows features (Windows only).
+- `enable_windows_features`: Enable Windows features (Windows only).
+- `disable_windows_features`: Disable Windows features (Windows only).
+- `run_command`: Run elevated commands on shell (Enable at your own risk).
 
 <details>
   <summary><b>Usage:</b></summary>
@@ -57,31 +71,52 @@ This repository is actively maintained - Contributions are welcome!
 |            | --hw-stats          | Print hardware statistics (e.g., CPU, memory, disk)       |
 |            | --log-file          | Log to specified file (default: systems_manager.log)      |
 
-</details>
-
-<details>
-  <summary><b>Example:</b></summary>
-
 ```bash
 systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install python3,git --enable-features Microsoft-Hyper-V-All,Containers --log-file /path/to/log.log
 ```
 
-</details>
+### MCP CLI
 
-<details>
-  <summary><b>Installation Instructions:</b></summary>
+| Short Flag | Long Flag                          | Description                                                                 |
+|------------|------------------------------------|-----------------------------------------------------------------------------|
+| -h         | --help                             | Display help information                                                    |
+| -t         | --transport                        | Transport method: 'stdio', 'http', or 'sse' [legacy] (default: stdio)       |
+| -s         | --host                             | Host address for HTTP transport (default: 0.0.0.0)                          |
+| -p         | --port                             | Port number for HTTP transport (default: 8000)                              |
+|            | --auth-type                        | Authentication type: 'none', 'static', 'jwt', 'oauth-proxy', 'oidc-proxy', 'remote-oauth' (default: none) |
+|            | --token-jwks-uri                   | JWKS URI for JWT verification                                              |
+|            | --token-issuer                     | Issuer for JWT verification                                                |
+|            | --token-audience                   | Audience for JWT verification                                              |
+|            | --oauth-upstream-auth-endpoint     | Upstream authorization endpoint for OAuth Proxy                             |
+|            | --oauth-upstream-token-endpoint    | Upstream token endpoint for OAuth Proxy                                    |
+|            | --oauth-upstream-client-id         | Upstream client ID for OAuth Proxy                                         |
+|            | --oauth-upstream-client-secret     | Upstream client secret for OAuth Proxy                                     |
+|            | --oauth-base-url                   | Base URL for OAuth Proxy                                                   |
+|            | --oidc-config-url                  | OIDC configuration URL                                                     |
+|            | --oidc-client-id                   | OIDC client ID                                                             |
+|            | --oidc-client-secret               | OIDC client secret                                                         |
+|            | --oidc-base-url                    | Base URL for OIDC Proxy                                                    |
+|            | --remote-auth-servers              | Comma-separated list of authorization servers for Remote OAuth             |
+|            | --remote-base-url                  | Base URL for Remote OAuth                                                  |
+|            | --allowed-client-redirect-uris     | Comma-separated list of allowed client redirect URIs                       |
+|            | --eunomia-type                     | Eunomia authorization type: 'none', 'embedded', 'remote' (default: none)   |
+|            | --eunomia-policy-file              | Policy file for embedded Eunomia (default: mcp_policies.json)              |
+|            | --eunomia-remote-url               | URL for remote Eunomia server                                              |
 
-### Install Python Package
+### Using as an MCP Server
 
+The MCP Server can be run in two modes: `stdio` (for local testing) or `http` (for networked access). To start the server, use the following commands:
+
+#### Run in stdio mode (default):
 ```bash
-python -m pip install systems-manager
+systems-manager-mcp --transport "stdio"
 ```
 
-or
-
+#### Run in HTTP mode:
 ```bash
-uv pip install --upgrade systems-manager
+systems-manager-mcp --transport "http"  --host "0.0.0.0"  --port "8000"
 ```
+
 
 ### Dependencies
 
@@ -91,9 +126,96 @@ The following Python packages are automatically installed if missing:
 - `requests`: For downloading Nerd Fonts.
 - `fastmcp`: For MCP server functionality (required for `systems-manager-mcp`).
 
-### Use with AI (MCP Server)
 
-Configure `mcp.json` to integrate with AI systems:
+### Deploy MCP Server as a Service
+
+The MCP server can be deployed using Docker, with configurable authentication, middleware, and Eunomia authorization.
+
+#### Using Docker Run
+
+```bash
+docker pull knucklessg1/systems-manager:latest
+
+docker run -d \
+  --name systems-manager-mcp \
+  -p 8004:8004 \
+  -e HOST=0.0.0.0 \
+  -e PORT=8004 \
+  -e TRANSPORT=http \
+  -e AUTH_TYPE=none \
+  -e EUNOMIA_TYPE=none \
+  knucklessg1/systems-manager:latest
+```
+
+For advanced authentication (e.g., JWT, OAuth Proxy, OIDC Proxy, Remote OAuth) or Eunomia, add the relevant environment variables:
+
+```bash
+docker run -d \
+  --name systems-manager-mcp \
+  -p 8004:8004 \
+  -e HOST=0.0.0.0 \
+  -e PORT=8004 \
+  -e TRANSPORT=http \
+  -e AUTH_TYPE=oidc-proxy \
+  -e OIDC_CONFIG_URL=https://provider.com/.well-known/openid-configuration \
+  -e OIDC_CLIENT_ID=your-client-id \
+  -e OIDC_CLIENT_SECRET=your-client-secret \
+  -e OIDC_BASE_URL=https://your-server.com \
+  -e ALLOWED_CLIENT_REDIRECT_URIS=http://localhost:*,https://*.example.com/* \
+  -e EUNOMIA_TYPE=embedded \
+  -e EUNOMIA_POLICY_FILE=/app/mcp_policies.json \
+  knucklessg1/systems-manager:latest
+```
+
+#### Using Docker Compose
+
+Create a `docker-compose.yml` file:
+
+```yaml
+services:
+  systems-manager-mcp:
+    image: knucklessg1/systems-manager:latest
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8004
+      - TRANSPORT=http
+      - AUTH_TYPE=none
+      - EUNOMIA_TYPE=none
+    ports:
+      - 8004:8004
+```
+
+For advanced setups with authentication and Eunomia:
+
+```yaml
+services:
+  systems-manager-mcp:
+    image: knucklessg1/systems-manager:latest
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8004
+      - TRANSPORT=http
+      - AUTH_TYPE=oidc-proxy
+      - OIDC_CONFIG_URL=https://provider.com/.well-known/openid-configuration
+      - OIDC_CLIENT_ID=your-client-id
+      - OIDC_CLIENT_SECRET=your-client-secret
+      - OIDC_BASE_URL=https://your-server.com
+      - ALLOWED_CLIENT_REDIRECT_URIS=http://localhost:*,https://*.example.com/*
+      - EUNOMIA_TYPE=embedded
+      - EUNOMIA_POLICY_FILE=/app/mcp_policies.json
+    ports:
+      - 8004:8004
+    volumes:
+      - ./mcp_policies.json:/app/mcp_policies.json
+```
+
+Run the service:
+
+```bash
+docker-compose up -d
+```
+
+#### Configure `mcp.json` for AI Integration
 
 ```json
 {
@@ -114,71 +236,23 @@ Configure `mcp.json` to integrate with AI systems:
     }
   }
 }
+
 ```
-
-Run the MCP server:
-
-```bash
-systems-manager-mcp --transport http --host 0.0.0.0 --port 8003
-```
-
-Available MCP tools:
-- `install_applications`: Install applications with Snap fallback (Linux).
-- `update`: Update system and applications.
-- `clean`: Clean system resources (e.g., trash/recycle bin).
-- `optimize`: Optimize system (e.g., autoremove, defrag on Windows).
-- `install_python_modules`: Install Python modules via pip.
-- `install_fonts`: Install specified Nerd Fonts (default: Hack) or all fonts.
-- `get_os_stats`: Retrieve OS statistics.
-- `get_hardware_stats`: Retrieve hardware statistics.
-- `list_windows_features`: List Windows features (Windows only).
-- `enable_windows_features`: Enable Windows features (Windows only).
-- `disable_windows_features`: Disable Windows features (Windows only).
-
-### Deploy MCP Server as a Container
-
-```bash
-docker pull knucklessg1/systems-manager:latest
-```
-
-Modify the `compose.yml`:
-
-```yaml
-services:
-  systems-manager-mcp:
-    image: knucklessg1/systems-manager:latest
-    environment:
-      - HOST=0.0.0.0
-      - PORT=8003
-      - SILENT=False
-      - LOG_FILE=/var/log/systems_manager_mcp.log
-    ports:
-      - 8003:8003
-    volumes:
-      - /path/to/log:/var/log
-```
-
 </details>
 
-## Geniusbot Application
-
-Use with a GUI through Geniusbot for an enhanced experience.
-
-Visit our [GitHub](https://github.com/Knuckles-Team/geniusbot) for more information.
-
 <details>
-  <summary><b>Installation Instructions with Geniusbot:</b></summary>
+  <summary><b>Installation Instructions:</b></summary>
 
 Install Python Package
 
 ```bash
-python -m pip install geniusbot
+python -m pip install systems-manager
 ```
 
 or
 
 ```bash
-uv pip install --upgrade geniusbot
+uv pip install --upgrade systems-manager
 ```
 
 </details>
