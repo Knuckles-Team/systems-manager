@@ -1,6 +1,7 @@
 # Systems-Manager
 
 ![PyPI - Version](https://img.shields.io/pypi/v/systems-manager)
+![MCP Server](https://badge.mcpx.dev?type=server 'MCP Server')
 ![PyPI - Downloads](https://img.shields.io/pypi/dd/systems-manager)
 ![GitHub Repo stars](https://img.shields.io/github/stars/Knuckles-Team/systems-manager)
 ![GitHub forks](https://img.shields.io/github/forks/Knuckles-Team/systems-manager)
@@ -20,7 +21,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 1.1.13*
+*Version: 1.1.14*
 
 Systems-Manager is a powerful CLI and MCP server tool to manage your system across multiple operating systems. It supports updating, installing, and optimizing applications, managing Windows features, installing Nerd Fonts, and retrieving system and hardware statistics. It now supports Ubuntu, Debian, Red Hat, Oracle Linux, SLES, Arch, and Windows, with Snap fallback for Linux application installations.
 
@@ -51,8 +52,66 @@ This repository is actively maintained - Contributions are welcome!
 - `disable_windows_features`: Disable Windows features (Windows only).
 - `run_command`: Run elevated commands on shell (Enable at your own risk).
 
+## A2A Agent
+
+### Architecture:
+
+```mermaid
+---
+config:
+  layout: dagre
+---
+flowchart TB
+ subgraph subGraph0["Agent Capabilities"]
+        C["Agent"]
+        B["A2A Server - Uvicorn/FastAPI"]
+        D["MCP Tools"]
+        F["Agent Skills"]
+  end
+    C --> D & F
+    A["User Query"] --> B
+    B --> C
+    D --> E["Platform API"]
+
+     C:::agent
+     B:::server
+     A:::server
+    classDef server fill:#f9f,stroke:#333
+    classDef agent fill:#bbf,stroke:#333,stroke-width:2px
+    style B stroke:#000000,fill:#FFD600
+    style D stroke:#000000,fill:#BBDEFB
+    style F fill:#BBDEFB
+    style A fill:#C8E6C9
+    style subGraph0 fill:#FFF9C4
+```
+
+### Component Interaction Diagram
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Server as A2A Server
+    participant Agent as Agent
+    participant Skill as Agent Skills
+    participant MCP as MCP Tools
+
+    User->>Server: Send Query
+    Server->>Agent: Invoke Agent
+    Agent->>Skill: Analyze Skills Available
+    Skill->>Agent: Provide Guidance on Next Steps
+    Agent->>MCP: Invoke Tool
+    MCP-->>Agent: Tool Response Returned
+    Agent-->>Agent: Return Results Summarized
+    Agent-->>Server: Final Response
+    Server-->>User: Output
+```
+
 <details>
   <summary><b>Usage:</b></summary>
+
+## Usage
+
+### CLI
 
 | Short Flag | Long Flag           | Description                                              |
 |------------|---------------------|----------------------------------------------------------|
