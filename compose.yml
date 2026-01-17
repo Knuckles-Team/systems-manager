@@ -1,0 +1,46 @@
+---
+services:
+  systems-manager-mcp:
+    image: docker.io/knucklessg1/systems-manager:latest
+    # build: . # Debug
+    container_name: systems-manager-mcp
+    hostname: systems-manager-mcp
+    command: ["systems-manager-mcp"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: always
+    environment:
+      - "HOST=0.0.0.0"
+      - "PORT=8010"
+      - "TRANSPORT=streamable-http"
+    ports:
+      - "8010:8010"
+
+  systems-manager-a2a:
+    image: docker.io/knucklessg1/systems-manager:latest
+    # build: . # Debug
+    container_name: systems-manager-a2a
+    hostname: systems-manager-a2a
+    command: ["systems-manager-a2a"]
+    depends_on:
+      - systems-manager-mcp
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: always
+    environment:
+      - "HOST=0.0.0.0"
+      - "PORT=9009"
+      - "MCP_URL=http://systems-manager-mcp:8010/mcp"
+      - "PROVIDER=openai"
+      - "OPENAI_BASE_URL=http://localhost:1234/v1"
+      - "OPENAI_API_KEY=llama"
+      - "MODEL_ID=qwen/qwen3-8b"
+      - "DEBUG=False"
+    ports:
+      - "9009:9009"

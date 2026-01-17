@@ -1,4 +1,4 @@
-# Systems-Manager
+# Systems-Manager - A2A & MCP Server
 
 ![PyPI - Version](https://img.shields.io/pypi/v/systems-manager)
 ![MCP Server](https://badge.mcpx.dev?type=server 'MCP Server')
@@ -23,11 +23,13 @@
 
 *Version: 1.1.14*
 
+## Overview
+
 Systems-Manager is a powerful CLI and MCP server tool to manage your system across multiple operating systems. It supports updating, installing, and optimizing applications, managing Windows features, installing Nerd Fonts, and retrieving system and hardware statistics. It now supports Ubuntu, Debian, Red Hat, Oracle Linux, SLES, Arch, and Windows, with Snap fallback for Linux application installations.
 
 This repository is actively maintained - Contributions are welcome!
 
-## Features
+### Features
 
 - **Multi-OS Support**: Works on Windows, Ubuntu, Debian, Red Hat, Oracle Linux, SLES, and Arch.
 - **Application Management**: Install and update applications using native package managers (apt, dnf, zypper, pacman, winget) with automatic Snap fallback for Linux.
@@ -38,7 +40,9 @@ This repository is actively maintained - Contributions are welcome!
 - **Logging**: Optional logging to a specified file or default `systems_manager.log` in the script directory.
 - **FastMCP Server**: Expose all functionality via a Model Context Protocol (MCP) server over stdio or HTTP for integration with AI or automation systems.
 
-## Available MCP tools:
+## MCP
+
+### MCP tools:
 - `install_applications`: Install applications with Snap fallback (Linux).
 - `update`: Update system and applications.
 - `clean`: Clean system resources (e.g., trash/recycle bin).
@@ -105,9 +109,6 @@ sequenceDiagram
     Agent-->>Server: Final Response
     Server-->>User: Output
 ```
-
-<details>
-  <summary><b>Usage:</b></summary>
 
 ## Usage
 
@@ -297,12 +298,8 @@ docker-compose up -d
 }
 
 ```
-</details>
 
-<details>
-  <summary><b>Installation Instructions:</b></summary>
-
-Install Python Package
+## Install Python Package
 
 ```bash
 python -m pip install systems-manager
@@ -314,13 +311,10 @@ or
 uv pip install --upgrade systems-manager
 ```
 
-</details>
-
-<details>
-  <summary><b>Repository Owners:</b></summary>
+## Repository Owners
 
 <img width="100%" height="180em" src="https://github-readme-stats.vercel.app/api?username=Knucklessg1&show_icons=true&hide_border=true&&count_private=true&include_all_commits=true" />
 
 ![GitHub followers](https://img.shields.io/github/followers/Knucklessg1)
 ![GitHub User's stars](https://img.shields.io/github/stars/Knucklessg1)
-</details>
+
