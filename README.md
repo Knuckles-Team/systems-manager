@@ -1,4 +1,4 @@
-# Systems-Manager - A2A & MCP Server
+# Systems-Manager - A2A | AG-UI | MCP
 
 ![PyPI - Version](https://img.shields.io/pypi/v/systems-manager)
 ![MCP Server](https://badge.mcpx.dev?type=server 'MCP Server')
@@ -139,7 +139,9 @@ systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install
 
 | Short Flag | Long Flag                          | Description                                                                 |
 |------------|------------------------------------|-----------------------------------------------------------------------------|
-| -h         | --help                             | Display help information                                                    |
+| --mcp-url        | MCP Server URL to connect to                     | http://systems-manager-mcp.arpa/mcp |
+| --allowed-tools  | List of allowed MCP tools                        | system_management            |
+| --web            | Enable Pydantic AI Web UI                        | False (Env: ENABLE_WEB_UI)  |
 | -t         | --transport                        | Transport method: 'stdio', 'http', or 'sse' [legacy] (default: stdio)       |
 | -s         | --host                             | Host address for HTTP transport (default: 0.0.0.0)                          |
 | -p         | --port                             | Port number for HTTP transport (default: 8000)                              |
@@ -186,6 +188,36 @@ The following Python packages are automatically installed if missing:
 - `requests`: For downloading Nerd Fonts.
 - `fastmcp`: For MCP server functionality (required for `systems-manager-mcp`).
 
+### Agent-to-Agent (A2A) Server
+
+This package includes an Agent utilizing `pydantic-ai` that can be deployed as an A2A server.
+
+#### Endpoints
+- **Web UI**: `http://localhost:8000/` (if enabled)
+- **A2A**: `http://localhost:8000/a2a` (Discovery: `/a2a/.well-known/agent.json`)
+- **AG-UI**: `http://localhost:8000/ag-ui` (POST)
+
+#### A2A CLI
+
+| Long Flag        | Description                                      | Default                     |
+|------------------|--------------------------------------------------|-----------------------------|
+| --host           | Host to bind the server to                       | 0.0.0.0                     |
+| --port           | Port to bind the server to                       | 9000                        |
+| --reload         | Enable auto-reload                               | False                       |
+| --provider       | LLM Provider (openai, anthropic, google, etc)    | openai                      |
+| --model-id       | LLM Model ID                                     | qwen/qwen3-8b               |
+| --base-url       | LLM Base URL (for OpenAI compatible providers)   | http://127.0.0.1:1234/v1    |
+| --api-key        | LLM API Key                                      | ollama                      |
+| --mcp-url        | MCP Server URL to connect to                     | None                        |
+| --mcp-config     | MCP Server Config                                | ...                         |
+| --skills-directory| Directory containing agent skills               | ...                         |
+| --web            | Enable Pydantic AI Web UI                        | False (Env: ENABLE_WEB_UI)  |
+
+#### Run A2A Server
+
+```bash
+systems-manager-agent --provider openai --model-id qwen/qwen3-8b
+```
 
 ### Deploy MCP Server as a Service
 
@@ -317,4 +349,3 @@ uv pip install --upgrade systems-manager
 
 ![GitHub followers](https://img.shields.io/github/followers/Knucklessg1)
 ![GitHub User's stars](https://img.shields.io/github/stars/Knucklessg1)
-

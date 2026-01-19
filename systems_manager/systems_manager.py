@@ -944,8 +944,7 @@ def detect_and_create_manager(
 
 
 def usage():
-    print(
-        """
+    print("""
 Systems-Manager: A tool to manage your systems software!
 
 Usage:
@@ -968,8 +967,7 @@ Usage:
 
 Example:
 systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install python3,git --enable-features Microsoft-Hyper-V-All,Containers --log-file /path/to/log.log --add-repo ppa:graphics-drivers/ppa --install-local /path/to/package.deb
-"""
-    )
+""")
 
 
 def systems_manager():

@@ -6,6 +6,8 @@ services:
     container_name: systems-manager-mcp
     hostname: systems-manager-mcp
     command: ["systems-manager-mcp"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     logging:
       driver: json-file
       options:
@@ -19,12 +21,14 @@ services:
     ports:
       - "8010:8010"
 
-  systems-manager-a2a:
+  systems-manager-agent:
     image: docker.io/knucklessg1/systems-manager:latest
     # build: . # Debug
-    container_name: systems-manager-a2a
-    hostname: systems-manager-a2a
-    command: ["systems-manager-a2a"]
+    container_name: systems-manager-agent
+    hostname: systems-manager-agent
+    command: ["systems-manager-agent"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - systems-manager-mcp
     logging:
@@ -42,5 +46,6 @@ services:
       - "OPENAI_API_KEY=llama"
       - "MODEL_ID=qwen/qwen3-8b"
       - "DEBUG=False"
+      - "ENABLE_WEB_UI=True"
     ports:
       - "9009:9009"
