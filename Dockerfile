@@ -49,6 +49,6 @@ ENV UV_HTTP_TIMEOUT=3600
 ENV PATH="/usr/local/bin:${PATH}"
 
 RUN pip install uv \
-    && uv pip install --system --upgrade systems-manager[all]>=1.1.14
+    && uv pip install --system --upgrade systems-manager[all]>=1.1.15
 
 CMD ["systems-manager-mcp"]
