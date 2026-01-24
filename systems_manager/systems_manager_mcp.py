@@ -8,6 +8,8 @@ import logging
 import requests
 from typing import Optional, Dict, List, Union, Any
 from pydantic import Field
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from fastmcp import FastMCP, Context
 from fastmcp.server.auth.oidc_proxy import OIDCProxy
 from fastmcp.server.auth import OAuthProxy, RemoteAuthProvider
@@ -53,6 +55,10 @@ DEFAULT_PORT = to_integer(string=os.getenv("PORT", "8000"))
 
 
 def register_tools(mcp: FastMCP):
+    @mcp.custom_route("/health", methods=["GET"])
+    async def health_check(request: Request) -> JSONResponse:
+        return JSONResponse({"status": "OK"})
+
     @mcp.tool(
         annotations={
             "title": "Install Applications",

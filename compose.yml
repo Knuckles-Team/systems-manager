@@ -5,7 +5,7 @@ services:
     # build: . # Debug
     container_name: systems-manager-mcp
     hostname: systems-manager-mcp
-    command: ["systems-manager-mcp"]
+    command: [ "systems-manager-mcp" ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     logging:
@@ -20,13 +20,19 @@ services:
       - "TRANSPORT=streamable-http"
     ports:
       - "8010:8010"
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8010/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   systems-manager-agent:
     image: docker.io/knucklessg1/systems-manager:latest
     # build: . # Debug
     container_name: systems-manager-agent
     hostname: systems-manager-agent
-    command: ["systems-manager-agent"]
+    command: [ "systems-manager-agent" ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -49,3 +55,9 @@ services:
       - "ENABLE_WEB_UI=True"
     ports:
       - "9009:9009"
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9009/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
