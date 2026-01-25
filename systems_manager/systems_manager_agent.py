@@ -24,6 +24,7 @@ from systems_manager.utils import (
     to_boolean,
     to_integer,
     load_skills_from_directory,
+    create_model,
 )
 
 from fastapi import FastAPI, Request
@@ -194,7 +195,7 @@ def create_agent_server(
     a2a_app = agent.to_a2a(
         name=AGENT_NAME,
         description=AGENT_DESCRIPTION,
-        version="1.1.17",
+        version="1.1.18",
         skills=skills,
         debug=debug,
     )
