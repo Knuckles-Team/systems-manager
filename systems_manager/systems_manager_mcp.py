@@ -92,6 +92,12 @@ def register_tools(mcp: FastMCP):
         if not apps:
             return {"success": False, "error": "No applications provided"}
 
+        if ctx:
+            message = f"Are you sure you want to INSTALL the following applications: {', '.join(apps)}?"
+            result = await ctx.elicit(message, response_type=bool)
+            if result.action != "accept" or not result.data:
+                return {"success": False, "error": "Operation cancelled by user."}
+
         try:
             manager = detect_and_create_manager(silent, log_file)
             total_steps = len(apps)
@@ -139,6 +145,12 @@ def register_tools(mcp: FastMCP):
         logger = logging.getLogger("SystemsManager")
         logger.debug(f"Updating system, silent: {silent}, log_file: {log_file}")
 
+        if ctx:
+            message = "Are you sure you want to UPDATE the system?"
+            result = await ctx.elicit(message, response_type=bool)
+            if result.action != "accept" or not result.data:
+                return {"success": False, "error": "Operation cancelled by user."}
+
         try:
             manager = detect_and_create_manager(silent, log_file)
             if ctx:
@@ -182,6 +194,12 @@ def register_tools(mcp: FastMCP):
         logger = logging.getLogger("SystemsManager")
         logger.debug(f"Cleaning system, silent: {silent}, log_file: {log_file}")
 
+        if ctx:
+            message = "Are you sure you want to CLEAN system resources?"
+            result = await ctx.elicit(message, response_type=bool)
+            if result.action != "accept" or not result.data:
+                return {"success": False, "error": "Operation cancelled by user."}
+
         try:
             manager = detect_and_create_manager(silent, log_file)
             if ctx:
@@ -224,6 +242,12 @@ def register_tools(mcp: FastMCP):
         """Optimizes system resources (e.g., autoremove, defrag)."""
         logger = logging.getLogger("SystemsManager")
         logger.debug(f"Optimizing system, silent: {silent}, log_file: {log_file}")
+
+        if ctx:
+            message = "Are you sure you want to OPTIMIZE system resources?"
+            result = await ctx.elicit(message, response_type=bool)
+            if result.action != "accept" or not result.data:
+                return {"success": False, "error": "Operation cancelled by user."}
 
         try:
             manager = detect_and_create_manager(silent, log_file)
@@ -274,6 +298,12 @@ def register_tools(mcp: FastMCP):
         )
         if not modules:
             return {"success": False, "error": "No Python modules provided"}
+
+        if ctx:
+            message = f"Are you sure you want to INSTALL Python modules: {', '.join(modules)}?"
+            result = await ctx.elicit(message, response_type=bool)
+            if result.action != "accept" or not result.data:
+                return {"success": False, "error": "Operation cancelled by user."}
 
         try:
             manager = detect_and_create_manager(silent, log_file)
@@ -330,6 +360,12 @@ def register_tools(mcp: FastMCP):
 
         if not fonts:
             fonts = ["Hack"]
+
+        if ctx:
+            message = f"Are you sure you want to INSTALL fonts: {', '.join(fonts)}?"
+            result = await ctx.elicit(message, response_type=bool)
+            if result.action != "accept" or not result.data:
+                return {"success": False, "error": "Operation cancelled by user."}
 
         try:
             manager = detect_and_create_manager(silent, log_file)
