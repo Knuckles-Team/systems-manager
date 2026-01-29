@@ -28,6 +28,8 @@ from systems_manager.systems_manager import (
     WindowsManager,
 )
 
+__version__ = "1.1.23"
+
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
@@ -940,6 +942,7 @@ def register_tools(mcp: FastMCP):
 
 
 def systems_manager_mcp():
+    print(f"systems_manager_mcp v{__version__}")
     parser = argparse.ArgumentParser(description="System Manager MCP Utility")
     parser.add_argument(
         "-t",

@@ -16,6 +16,8 @@ import psutil
 from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 
+__version__ = "1.1.23"
+
 
 def setup_logging(
     is_mcp_server: bool = False, log_file: str = "systems_manager_mcp.log"
@@ -971,6 +973,7 @@ systems-manager --fonts Hack,Meslo --update --clean --python geniusbot --install
 
 
 def systems_manager():
+    print(f"systems_manager v{__version__}")
     parser = argparse.ArgumentParser(description="System Manager Utility")
     parser.add_argument(
         "-c", "--clean", action="store_true", help="Clean system resources"
