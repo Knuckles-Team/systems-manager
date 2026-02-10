@@ -35,7 +35,7 @@ from pydantic import ValidationError
 from pydantic_ai.ui import SSE_CONTENT_TYPE
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
-__version__ = "1.1.27"
+__version__ = "1.1.28"
 
 # Configure logging
 logging.basicConfig(
@@ -206,13 +206,7 @@ def create_agent_server(
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        # Trigger A2A (sub-app) startup/shutdown events
-        # This is critical for TaskManager initialization in A2A
-        if hasattr(a2a_app, "router"):
-            async with a2a_app.router.lifespan_context(a2a_app):
-                yield
-        else:
-            yield
+        yield
 
     # Create main FastAPI app
     app = FastAPI(
