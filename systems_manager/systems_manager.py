@@ -18,7 +18,7 @@ import psutil
 from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 
-__version__ = "1.1.28"
+__version__ = "1.2.0"
 
 
 def setup_logging(
