@@ -18,7 +18,7 @@ import psutil
 from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 
-__version__ = "1.2.4"
+__version__ = "1.2.5"
 
 
 def setup_logging(
@@ -170,7 +170,6 @@ class SystemsManagerBase(ABC):
             )
             if not enable_result["success"]:
                 self.logger.warning("Failed to enable snapd.socket")
-            # Optional symlink
             symlink_result = self.run_command(
                 ["ln", "-s", "/var/lib/snapd/snap", "/snap"], elevated=True
             )
@@ -221,11 +220,9 @@ class SystemsManagerBase(ABC):
             if a["name"].endswith(".zip") and "FontPatcher" not in a["name"]
         ]
 
-        # Check for "all" (case-insensitive)
         if any(f.lower() == "all" for f in fonts):
             assets = all_assets
         else:
-            # Filter assets to match requested fonts (case-insensitive)
             assets = [
                 a
                 for a in all_assets
@@ -265,7 +262,6 @@ class SystemsManagerBase(ABC):
                 self.logger.error(f"Failed to process {zip_name}: {e}")
                 continue
 
-        # Collect font files after all extractions
         font_files = glob.glob(
             os.path.join(extract_path, "**/*.ttf"), recursive=True
         ) + glob.glob(os.path.join(extract_path, "**/*.otf"), recursive=True)
@@ -330,7 +326,7 @@ class SystemsManagerBase(ABC):
         }
 
 
-class AptManager(SystemsManagerBase):  # Ubuntu/Debian
+class AptManager(SystemsManagerBase):
     def __init__(self, silent: bool = False, log_file: str = None):
         super().__init__(silent, log_file)
         self.not_found_msg = "Unable to locate package"
@@ -461,7 +457,7 @@ class AptManager(SystemsManagerBase):  # Ubuntu/Debian
         return install_result
 
 
-class DnfManager(SystemsManagerBase):  # Red Hat, Oracle Linux
+class DnfManager(SystemsManagerBase):
     def __init__(self, silent: bool = False, log_file: str = None):
         super().__init__(silent, log_file)
         self.not_found_msg = "Unable to find a match"
@@ -473,7 +469,6 @@ class DnfManager(SystemsManagerBase):  # Red Hat, Oracle Linux
             "failed": [],
             "success": True,
         }
-        # Optional: update repos before install
         update_result = self.run_command(["dnf", "update", "-y"], elevated=True)
         if not update_result["success"]:
             self.logger.warning("dnf update failed before installs")
@@ -552,7 +547,7 @@ class DnfManager(SystemsManagerBase):  # Red Hat, Oracle Linux
         return self.run_command(["dnf", "install", "-y", file_path], elevated=True)
 
 
-class ZypperManager(SystemsManagerBase):  # SLES
+class ZypperManager(SystemsManagerBase):
     def __init__(self, silent: bool = False, log_file: str = None):
         super().__init__(silent, log_file)
         self.not_found_msg = "No provider of"
@@ -642,7 +637,7 @@ class ZypperManager(SystemsManagerBase):  # SLES
         return self.run_command(["zypper", "install", "-y", file_path], elevated=True)
 
 
-class PacmanManager(SystemsManagerBase):  # Arch
+class PacmanManager(SystemsManagerBase):
     def __init__(self, silent: bool = False, log_file: str = None):
         super().__init__(silent, log_file)
         self.not_found_msg = "target not found"
@@ -741,7 +736,6 @@ class PacmanManager(SystemsManagerBase):  # Arch
 class WindowsManager(SystemsManagerBase):
     def __init__(self, silent: bool = False, log_file: str = None):
         super().__init__(silent, log_file)
-        # Ensure winget is available (simplified)
         winget_path = os.path.expanduser(
             r"~\AppData\Local\Microsoft\WindowsApps\winget.exe"
         )
@@ -804,7 +798,6 @@ class WindowsManager(SystemsManagerBase):
                 "--accept-source-agreements",
             ]
         )
-        # For Windows updates, use PSWindowsUpdate
         wu_cmd = [
             "powershell.exe",
             "-Command",
@@ -821,7 +814,6 @@ class WindowsManager(SystemsManagerBase):
         }
 
     def clean(self) -> Dict:
-        # cleanmgr runs GUI, may not be ideal for automation; consider alternatives like Dism
         result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)
         return {
             "success": result["success"],
@@ -935,7 +927,7 @@ def detect_and_create_manager(
         dist_id = distro.id()
         if dist_id in ["ubuntu", "debian"]:
             return AptManager(silent, log_file)
-        elif dist_id in ["rhel", "ol", "centos"]:  # Red Hat, Oracle, CentOS
+        elif dist_id in ["rhel", "ol", "centos"]:
             return DnfManager(silent, log_file)
         elif dist_id == "sles":
             return ZypperManager(silent, log_file)
@@ -1054,7 +1046,7 @@ def systems_manager():
     disable_features_list = (
         args.disable_features.split(",") if args.disable_features else []
     )
-    fonts = args.fonts.split(",") if args.fonts else ["Hack"]  # Default to Hack
+    fonts = args.fonts.split(",") if args.fonts else ["Hack"]
     install = bool(args.install)
     font = bool(args.fonts)
     update = args.update
