@@ -16,7 +16,9 @@ services:
     restart: always
     env_file:
       - .env
+
     environment:
+      - "PYTHONUNBUFFERED=1"
       - "HOST=0.0.0.0"
       - "PORT=8010"
       - "TRANSPORT=streamable-http"
@@ -47,7 +49,9 @@ services:
     restart: always
     env_file:
       - .env
+
     environment:
+      - "PYTHONUNBUFFERED=1"
       - "HOST=0.0.0.0"
       - "PORT=9009"
       - "MCP_URL=http://systems-manager-mcp:8010/mcp"
