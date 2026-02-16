@@ -37,7 +37,7 @@ from pydantic import ValidationError
 from pydantic_ai.ui import SSE_CONTENT_TYPE
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
-__version__ = "1.2.8"
+__version__ = "1.2.9"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -225,7 +225,7 @@ def create_agent(
     elif mcp_config:
         mcp_toolset = load_mcp_servers(mcp_config)
         for server in mcp_toolset:
-             if hasattr(server, "http_client"):
+            if hasattr(server, "http_client"):
                 server.http_client = httpx.AsyncClient(
                     verify=ssl_verify, timeout=DEFAULT_TIMEOUT
                 )
@@ -277,8 +277,8 @@ def create_agent(
     }
 
     child_agents = {}
-    
-    # Import filter_tools_by_tag here to avoid circular imports if any, 
+
+    # Import filter_tools_by_tag here to avoid circular imports if any,
     # though it should be fine as it is in utils.
     from systems_manager.utils import filter_tools_by_tag
 
@@ -302,12 +302,14 @@ def create_agent(
         # Filter MCP tools
         for ts in agent_toolsets:
             tag_toolsets.append(FilteredToolset(ts, tag))
-        
+
         # Load specific skills
         if skills_directory:
-            skill_dir_path = os.path.join(skills_directory, f"systems-manager-{tag.replace('_', '-')}")
+            skill_dir_path = os.path.join(
+                skills_directory, f"systems-manager-{tag.replace('_', '-')}"
+            )
             if os.path.exists(skill_dir_path):
-                 tag_toolsets.append(SkillsToolset(directories=[skill_dir_path]))
+                tag_toolsets.append(SkillsToolset(directories=[skill_dir_path]))
 
         agent = Agent(
             name=name,
@@ -331,16 +333,16 @@ def create_agent(
     async def call_specialist(ctx: Any, tool_tag: str, request: str) -> str:
         """
         Delegates a task to a specialist agent.
-        
+
         Args:
             tool_tag: The tag of the specialist to call (e.g., 'filesystem', 'python_management').
             request: The specific request for the specialist.
         """
         if tool_tag not in child_agents:
             return f"Error: No specialist found for tag '{tool_tag}'. Available: {list(child_agents.keys())}"
-        
+
         agent = child_agents[tool_tag]
-        # We need to run the agent. 
+        # We need to run the agent.
         # usage: await agent.run(request)
         result = await agent.run(request)
         return result.data
