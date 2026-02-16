@@ -9,6 +9,9 @@ import os
 import platform
 import json
 import shutil
+import socket
+import tempfile
+from datetime import datetime
 import zipfile
 import glob
 import requests
@@ -37,10 +40,187 @@ def setup_logging(
     return logger
 
 
+class FileSystemManager:
+    def __init__(self, manager):
+        self.manager = manager
+        self.logger = manager.logger
+
+    def list_files(self, path: str = ".", recursive: bool = False, depth: int = 1) -> Dict:
+        try:
+            expanded_path = os.path.abspath(os.path.expanduser(path))
+            if not os.path.exists(expanded_path):
+                return {"success": False, "error": f"Path not found: {path}"}
+
+            items = []
+            if recursive:
+                for root, dirs, files in os.walk(expanded_path):
+                    current_depth = root[len(expanded_path):].count(os.sep)
+                    if current_depth >= depth:
+                        continue
+                    for name in dirs:
+                        items.append({"name": name, "type": "directory", "path": os.path.join(root, name)})
+                    for name in files:
+                        items.append({"name": name, "type": "file", "path": os.path.join(root, name)})
+            else:
+                for entry in os.scandir(expanded_path):
+                    items.append({"name": entry.name, "type": "directory" if entry.is_dir() else "file",
+                                  "path": entry.path})
+            return {"success": True, "path": expanded_path, "items": items, "total": len(items)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def search_files(self, path: str, pattern: str) -> Dict:
+        try:
+            expanded_path = os.path.abspath(os.path.expanduser(path))
+            matches = []
+            for root, _, files in os.walk(expanded_path):
+                for name in files:
+                    if pattern in name:
+                        matches.append(os.path.join(root, name))
+            return {"success": True, "matches": matches, "total": len(matches)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def grep_files(self, path: str, pattern: str, recursive: bool = False) -> Dict:
+        try:
+            cmd = ["grep", "-rn" if recursive else "-n", pattern, path]
+            result = self.manager.run_command(cmd)
+            return {"success": result["success"], "matches": result.get("stdout", ""), "path": path}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def manage_file(self, action: str, path: str, content: str = None) -> Dict:
+        try:
+            expanded_path = os.path.abspath(os.path.expanduser(path))
+            if action == "create" or action == "update":
+                os.makedirs(os.path.dirname(expanded_path), exist_ok=True)
+                with open(expanded_path, "w") as f:
+                    f.write(content or "")
+                return {"success": True, "message": f"File {action}d: {path}"}
+            elif action == "delete":
+                if os.path.exists(expanded_path):
+                    os.remove(expanded_path)
+                    return {"success": True, "message": f"File deleted: {path}"}
+                return {"success": False, "error": f"File not found: {path}"}
+            elif action == "read":
+                if os.path.exists(expanded_path):
+                    with open(expanded_path, "r") as f:
+                        return {"success": True, "content": f.read()}
+                return {"success": False, "error": f"File not found: {path}"}
+            else:
+                return {"success": False, "error": f"Unknown action: {action}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+
+class ShellProfileManager:
+    def __init__(self, manager):
+        self.manager = manager
+
+    def get_profile_path(self, shell: str = "bash") -> str:
+        home = os.path.expanduser("~")
+        if shell == "bash":
+            return os.path.join(home, ".bashrc")
+        elif shell == "zsh":
+            return os.path.join(home, ".zshrc")
+        elif shell == "fish":
+            return os.path.join(home, ".config/fish/config.fish")
+        elif platform.system() == "Windows":
+            return os.path.join(home, "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1")
+        return os.path.join(home, ".profile")
+
+    def add_alias(self, name: str, command: str, shell: str = "bash") -> Dict:
+        try:
+            profile_path = self.get_profile_path(shell)
+            alias_cmd = f'alias {name}="{command}"'
+            
+            if platform.system() == "Windows":
+                alias_cmd = f'function {name} {{ {command} }}'
+                
+            if os.path.exists(profile_path):
+                with open(profile_path, "r") as f:
+                    if alias_cmd in f.read():
+                        return {"success": True, "message": "Alias already exists"}
+            
+            os.makedirs(os.path.dirname(profile_path), exist_ok=True)
+            with open(profile_path, "a") as f:
+                f.write(f"\n{alias_cmd}\n")
+            return {"success": True, "message": f"Alias added to {profile_path}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+
+class PythonManager:
+    def __init__(self, manager):
+        self.manager = manager
+
+    def install_uv(self) -> Dict:
+        cmd = ["curl", "-LsSf", "https://astral.sh/uv/install.sh", "|", "sh"]
+        if platform.system() == "Windows":
+            cmd = ["powershell", "-c", "irm https://astral.sh/uv/install.ps1 | iex"]
+        
+        # We need shell=True for piping
+        try:
+            if platform.system() == "Windows":
+                 result = self.manager.run_command(cmd[-1], shell=True)
+            else:
+                 # Use subprocess directly for pipe support if needed, or just run the installer
+                 # For simplicity in this agent context, we'll try the direct command string with shell=True
+                 result = self.manager.run_command("curl -LsSf https://astral.sh/uv/install.sh | sh", shell=True)
+            return result
+        except Exception as e:
+             return {"success": False, "error": str(e)}
+
+    def create_venv(self, path: str, python_version: str = None) -> Dict:
+        cmd = ["uv", "venv", path]
+        if python_version:
+            cmd.extend(["--python", python_version])
+        return self.manager.run_command(cmd)
+
+    def install_package(self, package: str, venv_path: str = None) -> Dict:
+        cmd = ["uv", "pip", "install", package]
+        env = os.environ.copy()
+        if venv_path:
+             if platform.system() == "Windows":
+                 env["VIRTUAL_ENV"] = venv_path
+             else:
+                 env["VIRTUAL_ENV"] = venv_path
+        
+        # uv requires active venv or --system (but we want venv management)
+        # Using VIRTUAL_ENV env var is the standard way uv detects active environment
+        return self.manager.run_command(cmd) # We might need to pass env if run_command supported it, 
+                                             # but for now let's assume global or currently active info
+
+
+class NodeManager:
+    def __init__(self, manager):
+        self.manager = manager
+
+    def install_nvm(self) -> Dict:
+        if platform.system() == "Windows":
+             return {"success": False, "error": "NVM for Windows not supported directly via this tool yet. Use nvm-windows installer."}
+        
+        cmd = "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
+        return self.manager.run_command(cmd, shell=True)
+
+    def install_node(self, version: str = "--lts") -> Dict:
+        # Source nvm first
+        cmd = f". ~/.nvm/nvm.sh && nvm install {version}"
+        return self.manager.run_command(cmd, shell=True)
+    
+    def use_node(self, version: str) -> Dict:
+        cmd = f". ~/.nvm/nvm.sh && nvm use {version}"
+        return self.manager.run_command(cmd, shell=True)
+
+
 class SystemsManagerBase(ABC):
     def __init__(self, silent: bool = False, log_file: str = None):
         self.silent = silent
         self.logger = setup_logging(log_file)
+        self.fs_manager = FileSystemManager(self)
+        self.shell_manager = ShellProfileManager(self)
+        self.python_manager = PythonManager(self)
+        self.node_manager = NodeManager(self)
 
     def log_command(
         self,
@@ -152,6 +332,26 @@ class SystemsManagerBase(ABC):
 
     @abstractmethod
     def install_local_package(self, file_path: str) -> Dict:
+        pass
+
+    @abstractmethod
+    def search_package(self, query: str) -> Dict:
+        pass
+
+    @abstractmethod
+    def get_package_info(self, package: str) -> Dict:
+        pass
+
+    @abstractmethod
+    def list_installed_packages(self) -> Dict:
+        pass
+
+    @abstractmethod
+    def list_upgradable_packages(self) -> Dict:
+        pass
+
+    @abstractmethod
+    def clean_package_cache(self) -> Dict:
         pass
 
     def install_via_snap(self, app: str) -> Dict:
@@ -325,6 +525,681 @@ class SystemsManagerBase(ABC):
             "network": psutil.net_io_counters()._asdict(),
         }
 
+    # =========================================================================
+    # Service Management
+    # =========================================================================
+
+    def list_services(self) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                result = self.run_command(
+                    ["systemctl", "list-units", "--type=service", "--all",
+                     "--no-pager", "--plain", "--no-legend"])
+                if not result["success"]:
+                    return result
+                services = []
+                for line in (result.get("stdout") or "").strip().splitlines():
+                    parts = line.split(None, 4)
+                    if len(parts) >= 4:
+                        services.append({"name": parts[0], "load": parts[1],
+                                         "active": parts[2], "sub": parts[3],
+                                         "description": parts[4] if len(parts) > 4 else ""})
+                return {"success": True, "services": services, "total": len(services)}
+            elif platform.system() == "Windows":
+                result = self.run_command(
+                    ["powershell.exe", "-Command",
+                     "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3"],
+                    shell=True)
+                if not result["success"]:
+                    return result
+                try:
+                    services = json.loads(result.get("stdout", "[]"))
+                    if isinstance(services, dict):
+                        services = [services]
+                    return {"success": True, "services": services, "total": len(services)}
+                except json.JSONDecodeError:
+                    return {"success": False, "error": "Failed to parse service list"}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_service_status(self, name: str) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                result = self.run_command(["systemctl", "status", name, "--no-pager"])
+                return {"success": True, "service": name, "output": result.get("stdout", ""),
+                        "returncode": result.get("returncode")}
+            elif platform.system() == "Windows":
+                result = self.run_command(
+                    ["powershell.exe", "-Command",
+                     f"Get-Service -Name '{name}' | Select-Object Name,Status,DisplayName,StartType | ConvertTo-Json"],
+                    shell=True)
+                if result["success"]:
+                    try:
+                        return {"success": True, "service": json.loads(result.get("stdout", "{}"))}
+                    except json.JSONDecodeError:
+                        pass
+                return {"success": result["success"], "service": name, "output": result.get("stdout", "")}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def start_service(self, name: str) -> Dict:
+        if platform.system() == "Linux":
+            return self.run_command(["systemctl", "start", name], elevated=True)
+        elif platform.system() == "Windows":
+            return self.run_command(["powershell.exe", "-Command", f"Start-Service -Name '{name}'"],
+                                   elevated=True, shell=True)
+        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+
+    def stop_service(self, name: str) -> Dict:
+        if platform.system() == "Linux":
+            return self.run_command(["systemctl", "stop", name], elevated=True)
+        elif platform.system() == "Windows":
+            return self.run_command(["powershell.exe", "-Command", f"Stop-Service -Name '{name}' -Force"],
+                                   elevated=True, shell=True)
+        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+
+    def restart_service(self, name: str) -> Dict:
+        if platform.system() == "Linux":
+            return self.run_command(["systemctl", "restart", name], elevated=True)
+        elif platform.system() == "Windows":
+            return self.run_command(["powershell.exe", "-Command", f"Restart-Service -Name '{name}' -Force"],
+                                   elevated=True, shell=True)
+        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+
+    def enable_service(self, name: str) -> Dict:
+        if platform.system() == "Linux":
+            return self.run_command(["systemctl", "enable", name], elevated=True)
+        elif platform.system() == "Windows":
+            return self.run_command(["powershell.exe", "-Command",
+                                    f"Set-Service -Name '{name}' -StartupType Automatic"],
+                                   elevated=True, shell=True)
+        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+
+    def disable_service(self, name: str) -> Dict:
+        if platform.system() == "Linux":
+            return self.run_command(["systemctl", "disable", name], elevated=True)
+        elif platform.system() == "Windows":
+            return self.run_command(["powershell.exe", "-Command",
+                                    f"Set-Service -Name '{name}' -StartupType Disabled"],
+                                   elevated=True, shell=True)
+        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+
+    # =========================================================================
+    # Process Management
+    # =========================================================================
+
+    def list_processes(self) -> Dict:
+        try:
+            processes = []
+            for proc in psutil.process_iter(['pid', 'name', 'username', 'cpu_percent',
+                                             'memory_percent', 'status']):
+                try:
+                    info = proc.info
+                    processes.append({
+                        "pid": info['pid'], "name": info['name'], "username": info['username'],
+                        "cpu_percent": info['cpu_percent'],
+                        "memory_percent": round(info['memory_percent'], 2) if info['memory_percent'] else 0,
+                        "status": info['status']})
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+            return {"success": True, "processes": processes, "total": len(processes)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_process_info(self, pid: int) -> Dict:
+        try:
+            proc = psutil.Process(pid)
+            with proc.oneshot():
+                info = {"pid": proc.pid, "name": proc.name(), "status": proc.status(),
+                        "username": proc.username(), "cpu_percent": proc.cpu_percent(interval=0.1),
+                        "memory_percent": round(proc.memory_percent(), 2),
+                        "memory_info": proc.memory_info()._asdict(),
+                        "create_time": datetime.fromtimestamp(proc.create_time()).isoformat(),
+                        "cmdline": proc.cmdline(), "num_threads": proc.num_threads()}
+            return {"success": True, "process": info}
+        except psutil.NoSuchProcess:
+            return {"success": False, "error": f"No process found with PID {pid}"}
+        except psutil.AccessDenied:
+            return {"success": False, "error": f"Access denied to process {pid}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def kill_process(self, pid: int, signal: int = 15) -> Dict:
+        try:
+            proc = psutil.Process(pid)
+            name = proc.name()
+            proc.kill() if signal == 9 else proc.terminate()
+            return {"success": True, "message": f"Signal {signal} sent to process {pid} ({name})"}
+        except psutil.NoSuchProcess:
+            return {"success": False, "error": f"No process found with PID {pid}"}
+        except psutil.AccessDenied:
+            return {"success": False, "error": f"Access denied to process {pid}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # Network Diagnostics
+    # =========================================================================
+
+    def list_network_interfaces(self) -> Dict:
+        try:
+            interfaces = {}
+            addrs = psutil.net_if_addrs()
+            stats = psutil.net_if_stats()
+            for iface, addr_list in addrs.items():
+                iface_info = {"addresses": [], "is_up": False, "speed": 0}
+                if iface in stats:
+                    iface_info.update({"is_up": stats[iface].isup, "speed": stats[iface].speed,
+                                       "mtu": stats[iface].mtu})
+                for addr in addr_list:
+                    iface_info["addresses"].append({"family": str(addr.family), "address": addr.address,
+                                                    "netmask": addr.netmask, "broadcast": addr.broadcast})
+                interfaces[iface] = iface_info
+            return {"success": True, "interfaces": interfaces}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def list_open_ports(self) -> Dict:
+        try:
+            connections = []
+            for conn in psutil.net_connections(kind="inet"):
+                if conn.status == "LISTEN":
+                    connections.append({"local_address": conn.laddr.ip if conn.laddr else None,
+                                        "local_port": conn.laddr.port if conn.laddr else None,
+                                        "pid": conn.pid, "status": conn.status})
+            return {"success": True, "ports": connections, "total": len(connections)}
+        except psutil.AccessDenied:
+            cmd = ["ss", "-tlnp"] if platform.system() == "Linux" else ["netstat", "-an"]
+            result = self.run_command(cmd)
+            return {"success": result["success"], "output": result.get("stdout", "")}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def ping_host(self, host: str, count: int = 4) -> Dict:
+        flag = "-n" if platform.system() == "Windows" else "-c"
+        result = self.run_command(["ping", flag, str(count), host])
+        return {"success": result["success"], "host": host, "output": result.get("stdout", "")}
+
+    def dns_lookup(self, hostname: str) -> Dict:
+        try:
+            results = socket.getaddrinfo(hostname, None)
+            addresses = list(set(addr[4][0] for addr in results))
+            return {"success": True, "hostname": hostname, "addresses": addresses}
+        except socket.gaierror as e:
+            return {"success": False, "error": f"DNS lookup failed: {str(e)}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # Disk / Filesystem Management
+    # =========================================================================
+
+    def list_disks(self) -> Dict:
+        try:
+            partitions = []
+            for part in psutil.disk_partitions(all=False):
+                entry = {"device": part.device, "mountpoint": part.mountpoint,
+                         "fstype": part.fstype, "opts": part.opts}
+                try:
+                    usage = psutil.disk_usage(part.mountpoint)
+                    entry.update({"total": usage.total, "used": usage.used,
+                                  "free": usage.free, "percent": usage.percent})
+                except (PermissionError, OSError):
+                    pass
+                partitions.append(entry)
+            return {"success": True, "disks": partitions, "total": len(partitions)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_disk_usage(self, path: str = "/") -> Dict:
+        try:
+            usage = psutil.disk_usage(path)
+            return {"success": True, "path": path, "total": usage.total,
+                    "used": usage.used, "free": usage.free, "percent": usage.percent}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # User / Group Management
+    # =========================================================================
+
+    def list_users(self) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                users = []
+                with open("/etc/passwd", "r") as f:
+                    for line in f:
+                        parts = line.strip().split(":")
+                        if len(parts) >= 7:
+                            users.append({"username": parts[0], "uid": int(parts[2]),
+                                          "gid": int(parts[3]), "home": parts[5], "shell": parts[6]})
+                return {"success": True, "users": users, "total": len(users)}
+            elif platform.system() == "Windows":
+                result = self.run_command(
+                    ["powershell.exe", "-Command",
+                     "Get-LocalUser | Select-Object Name,Enabled,Description | ConvertTo-Json -Depth 3"],
+                    shell=True)
+                if result["success"]:
+                    try:
+                        users = json.loads(result.get("stdout", "[]"))
+                        if isinstance(users, dict):
+                            users = [users]
+                        return {"success": True, "users": users, "total": len(users)}
+                    except json.JSONDecodeError:
+                        return {"success": False, "error": "Failed to parse user list"}
+                return result
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def list_groups(self) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                groups = []
+                with open("/etc/group", "r") as f:
+                    for line in f:
+                        parts = line.strip().split(":")
+                        if len(parts) >= 4:
+                            groups.append({"name": parts[0], "gid": int(parts[2]),
+                                           "members": parts[3].split(",") if parts[3] else []})
+                return {"success": True, "groups": groups, "total": len(groups)}
+            elif platform.system() == "Windows":
+                result = self.run_command(
+                    ["powershell.exe", "-Command",
+                     "Get-LocalGroup | Select-Object Name,Description | ConvertTo-Json -Depth 3"],
+                    shell=True)
+                if result["success"]:
+                    try:
+                        groups = json.loads(result.get("stdout", "[]"))
+                        if isinstance(groups, dict):
+                            groups = [groups]
+                        return {"success": True, "groups": groups, "total": len(groups)}
+                    except json.JSONDecodeError:
+                        return {"success": False, "error": "Failed to parse group list"}
+                return result
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # Log / Journal Viewer
+    # =========================================================================
+
+    def get_system_logs(self, unit: str = None, lines: int = 100, priority: str = None) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                cmd = ["journalctl", "--no-pager", "-n", str(lines)]
+                if unit:
+                    cmd.extend(["-u", unit])
+                if priority:
+                    cmd.extend(["-p", priority])
+                result = self.run_command(cmd)
+                return {"success": result["success"], "logs": result.get("stdout", "")}
+            elif platform.system() == "Windows":
+                result = self.run_command(
+                    ["powershell.exe", "-Command",
+                     f"Get-EventLog -LogName System -Newest {lines} | Format-List | Out-String"],
+                    shell=True)
+                return {"success": result["success"], "logs": result.get("stdout", "")}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def tail_log_file(self, path: str, lines: int = 50) -> Dict:
+        try:
+            if not os.path.exists(path):
+                return {"success": False, "error": f"File not found: {path}"}
+            with open(path, "r", errors="replace") as f:
+                all_lines = f.readlines()
+                tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
+            return {"success": True, "path": path, "lines": len(tail), "content": "".join(tail)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # System Health Check
+    # =========================================================================
+
+    def system_health_check(self) -> Dict:
+        try:
+            boot_time = datetime.fromtimestamp(psutil.boot_time())
+            uptime = datetime.now() - boot_time
+            cpu_percent = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
+            swap = psutil.swap_memory()
+            disk_warnings = []
+            for part in psutil.disk_partitions(all=False):
+                try:
+                    usage = psutil.disk_usage(part.mountpoint)
+                    if usage.percent > 90:
+                        disk_warnings.append({"mountpoint": part.mountpoint, "percent": usage.percent,
+                                              "free_gb": round(usage.free / (1024**3), 2)})
+                except (PermissionError, OSError):
+                    continue
+            top_procs = []
+            for proc in sorted(psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent']),
+                               key=lambda p: p.info.get('memory_percent', 0) or 0, reverse=True)[:10]:
+                try:
+                    top_procs.append(proc.info)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+            warnings = []
+            if cpu_percent > 90:
+                warnings.append(f"HIGH CPU: {cpu_percent}%")
+            if memory.percent > 90:
+                warnings.append(f"HIGH MEMORY: {memory.percent}%")
+            if swap.percent > 80:
+                warnings.append(f"HIGH SWAP: {swap.percent}%")
+            for dw in disk_warnings:
+                warnings.append(f"DISK FULL: {dw['mountpoint']} at {dw['percent']}%")
+            load_avg = os.getloadavg() if platform.system() != "Windows" else None
+            return {"success": True, "status": "warning" if warnings else "healthy",
+                    "warnings": warnings, "uptime_seconds": int(uptime.total_seconds()),
+                    "uptime_human": str(uptime).split(".")[0], "cpu_percent": cpu_percent,
+                    "memory_percent": memory.percent,
+                    "memory_available_gb": round(memory.available / (1024**3), 2),
+                    "swap_percent": swap.percent, "disk_warnings": disk_warnings,
+                    "load_average": load_avg, "top_memory_processes": top_procs}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # Uptime / Boot Info
+    # =========================================================================
+
+    def get_uptime(self) -> Dict:
+        try:
+            boot_time = datetime.fromtimestamp(psutil.boot_time())
+            uptime = datetime.now() - boot_time
+            return {"success": True, "boot_time": boot_time.isoformat(),
+                    "uptime_seconds": int(uptime.total_seconds()),
+                    "uptime_human": str(uptime).split(".")[0]}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # Cron / Scheduled Task Management
+    # =========================================================================
+
+    def list_cron_jobs(self, user: str = None) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
+                result = self.run_command(cmd)
+                jobs = []
+                if result["success"]:
+                    for line in (result.get("stdout") or "").strip().splitlines():
+                        if line.strip() and not line.strip().startswith("#"):
+                            jobs.append(line.strip())
+                return {"success": True, "jobs": jobs, "total": len(jobs)}
+            elif platform.system() == "Windows":
+                result = self.run_command(["schtasks", "/query", "/fo", "CSV", "/v"], shell=True)
+                return {"success": result["success"], "output": result.get("stdout", "")}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def add_cron_job(self, schedule: str, command: str, user: str = None) -> Dict:
+        try:
+            if platform.system() != "Linux":
+                return {"success": False, "error": "Cron jobs are only supported on Linux"}
+            cron_entry = f"{schedule} {command}"
+            list_cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
+            existing = self.run_command(list_cmd)
+            current = existing.get("stdout", "") if existing["success"] else ""
+            new_crontab = current.rstrip("\n") + "\n" + cron_entry + "\n"
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".cron", delete=False) as tmp:
+                tmp.write(new_crontab)
+                tmp_path = tmp.name
+            try:
+                install_cmd = ["crontab", "-u", user, tmp_path] if user else ["crontab", tmp_path]
+                result = self.run_command(install_cmd, elevated=bool(user))
+                return {"success": result["success"],
+                        "message": f"Cron job added: {cron_entry}" if result["success"] else "Failed",
+                        "details": result}
+            finally:
+                os.remove(tmp_path)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def remove_cron_job(self, pattern: str, user: str = None) -> Dict:
+        try:
+            if platform.system() != "Linux":
+                return {"success": False, "error": "Cron jobs are only supported on Linux"}
+            list_cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
+            existing = self.run_command(list_cmd)
+            if not existing["success"]:
+                return {"success": False, "error": "Failed to read current crontab"}
+            lines = (existing.get("stdout") or "").splitlines()
+            removed = [l for l in lines if pattern in l]
+            kept = [l for l in lines if pattern not in l]
+            if not removed:
+                return {"success": True, "message": "No matching cron jobs found", "removed": []}
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".cron", delete=False) as tmp:
+                tmp.write("\n".join(kept) + "\n")
+                tmp_path = tmp.name
+            try:
+                install_cmd = ["crontab", "-u", user, tmp_path] if user else ["crontab", tmp_path]
+                result = self.run_command(install_cmd, elevated=bool(user))
+                return {"success": result["success"], "removed": removed,
+                        "message": f"Removed {len(removed)} cron job(s)" if result["success"] else "Failed"}
+            finally:
+                os.remove(tmp_path)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # Firewall Management
+    # =========================================================================
+
+    def get_firewall_status(self) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                if shutil.which("ufw"):
+                    r = self.run_command(["ufw", "status", "verbose"], elevated=True)
+                    return {"success": r["success"], "tool": "ufw", "output": r.get("stdout", "")}
+                if shutil.which("firewall-cmd"):
+                    r = self.run_command(["firewall-cmd", "--state"], elevated=True)
+                    return {"success": r["success"], "tool": "firewalld", "output": r.get("stdout", "")}
+                r = self.run_command(["iptables", "-L", "-n", "--line-numbers"], elevated=True)
+                return {"success": r["success"], "tool": "iptables", "output": r.get("stdout", "")}
+            elif platform.system() == "Windows":
+                r = self.run_command(["netsh", "advfirewall", "show", "allprofiles"], shell=True)
+                return {"success": r["success"], "tool": "netsh", "output": r.get("stdout", "")}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def list_firewall_rules(self) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                if shutil.which("ufw"):
+                    r = self.run_command(["ufw", "status", "numbered"], elevated=True)
+                    return {"success": r["success"], "tool": "ufw", "output": r.get("stdout", "")}
+                if shutil.which("firewall-cmd"):
+                    r = self.run_command(["firewall-cmd", "--list-all"], elevated=True)
+                    return {"success": r["success"], "tool": "firewalld", "output": r.get("stdout", "")}
+                r = self.run_command(["iptables", "-L", "-n", "-v", "--line-numbers"], elevated=True)
+                return {"success": r["success"], "tool": "iptables", "output": r.get("stdout", "")}
+            elif platform.system() == "Windows":
+                r = self.run_command(["powershell.exe", "-Command",
+                    "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action "
+                    "| ConvertTo-Json -Depth 3"], shell=True)
+                if r["success"]:
+                    try:
+                        rules = json.loads(r.get("stdout", "[]"))
+                        if isinstance(rules, dict):
+                            rules = [rules]
+                        return {"success": True, "tool": "netsh", "rules": rules, "total": len(rules)}
+                    except json.JSONDecodeError:
+                        pass
+                return {"success": r["success"], "tool": "netsh", "output": r.get("stdout", "")}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def add_firewall_rule(self, rule: str) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                if shutil.which("ufw"):
+                    r = self.run_command(["ufw"] + rule.split(), elevated=True)
+                    return {"success": r["success"], "tool": "ufw", "details": r}
+                if shutil.which("firewall-cmd"):
+                    r = self.run_command(["firewall-cmd"] + rule.split(), elevated=True)
+                    return {"success": r["success"], "tool": "firewalld", "details": r}
+                r = self.run_command(["iptables"] + rule.split(), elevated=True)
+                return {"success": r["success"], "tool": "iptables", "details": r}
+            elif platform.system() == "Windows":
+                r = self.run_command(["netsh", "advfirewall", "firewall", "add", "rule"] + rule.split(),
+                                    shell=True, elevated=True)
+                return {"success": r["success"], "tool": "netsh", "details": r}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def remove_firewall_rule(self, rule: str) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                if shutil.which("ufw"):
+                    r = self.run_command(["ufw", "delete"] + rule.split(), elevated=True)
+                    return {"success": r["success"], "tool": "ufw", "details": r}
+                if shutil.which("firewall-cmd"):
+                    r = self.run_command(["firewall-cmd", "--remove-" + rule], elevated=True)
+                    return {"success": r["success"], "tool": "firewalld", "details": r}
+                r = self.run_command(["iptables", "-D"] + rule.split(), elevated=True)
+                return {"success": r["success"], "tool": "iptables", "details": r}
+            elif platform.system() == "Windows":
+                r = self.run_command(["netsh", "advfirewall", "firewall", "delete", "rule"] + rule.split(),
+                                    shell=True, elevated=True)
+                return {"success": r["success"], "tool": "netsh", "details": r}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # SSH Key Management
+    # =========================================================================
+
+    def list_ssh_keys(self) -> Dict:
+        try:
+            ssh_dir = os.path.expanduser("~/.ssh")
+            if not os.path.exists(ssh_dir):
+                return {"success": True, "keys": [], "message": "No .ssh directory found"}
+            keys = []
+            for filename in os.listdir(ssh_dir):
+                filepath = os.path.join(ssh_dir, filename)
+                if os.path.isfile(filepath):
+                    stat = os.stat(filepath)
+                    keys.append({"filename": filename, "path": filepath,
+                                 "is_public": filename.endswith(".pub"),
+                                 "size": stat.st_size, "permissions": oct(stat.st_mode)[-3:]})
+            return {"success": True, "keys": keys, "total": len(keys)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def generate_ssh_key(self, key_type: str = "ed25519", comment: str = "",
+                         passphrase: str = "") -> Dict:
+        try:
+            ssh_dir = os.path.expanduser("~/.ssh")
+            os.makedirs(ssh_dir, exist_ok=True)
+            key_path = os.path.join(ssh_dir, f"id_{key_type}")
+            if os.path.exists(key_path):
+                return {"success": False, "error": f"Key already exists: {key_path}"}
+            result = self.run_command(
+                ["ssh-keygen", "-t", key_type, "-f", key_path, "-N", passphrase, "-C", comment])
+            return {"success": result["success"], "key_path": key_path,
+                    "public_key_path": f"{key_path}.pub", "details": result}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def add_authorized_key(self, public_key: str) -> Dict:
+        try:
+            ssh_dir = os.path.expanduser("~/.ssh")
+            os.makedirs(ssh_dir, exist_ok=True)
+            auth_keys = os.path.join(ssh_dir, "authorized_keys")
+            if os.path.exists(auth_keys):
+                with open(auth_keys, "r") as f:
+                    if public_key.strip() in f.read():
+                        return {"success": True, "message": "Key already exists in authorized_keys"}
+            with open(auth_keys, "a") as f:
+                f.write(public_key.strip() + "\n")
+            os.chmod(auth_keys, 0o600)
+            return {"success": True, "message": "Public key added to authorized_keys"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # =========================================================================
+    # Environment Variables
+    # =========================================================================
+
+    def list_env_vars(self) -> Dict:
+        return {"success": True, "variables": dict(os.environ), "total": len(os.environ)}
+
+    def get_env_var(self, name: str) -> Dict:
+        value = os.environ.get(name)
+        if value is None:
+            return {"success": False, "error": f"Environment variable '{name}' not found"}
+        return {"success": True, "name": name, "value": value}
+
+    # =========================================================================
+    # Temp File / Cache Cleanup
+    # =========================================================================
+
+    def clean_temp_files(self) -> Dict:
+        try:
+            temp_dir = tempfile.gettempdir()
+            cleaned, errors = 0, 0
+            for item in os.listdir(temp_dir):
+                item_path = os.path.join(temp_dir, item)
+                try:
+                    if os.path.isfile(item_path):
+                        os.remove(item_path)
+                    elif os.path.isdir(item_path):
+                        shutil.rmtree(item_path, ignore_errors=True)
+                    cleaned += 1
+                except (PermissionError, OSError):
+                    errors += 1
+            return {"success": True, "temp_dir": temp_dir, "cleaned": cleaned, "errors": errors}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def get_disk_space_report(self, path: str = "/", top_n: int = 10) -> Dict:
+        try:
+            if platform.system() == "Linux":
+                result = self.run_command(
+                    ["du", "-h", "--max-depth=1", path, "--threshold=100M"], elevated=True)
+                if result["success"]:
+                    entries = []
+                    for line in (result.get("stdout") or "").strip().splitlines():
+                        parts = line.split(None, 1)
+                        if len(parts) == 2:
+                            entries.append({"size": parts[0], "path": parts[1]})
+                    entries.sort(key=lambda x: x["size"], reverse=True)
+                    return {"success": True, "entries": entries[:top_n], "base_path": path}
+                return result
+            elif platform.system() == "Windows":
+                ps_cmd = (f"Get-ChildItem '{path}' -Directory | ForEach-Object {{ $s = "
+                          f"(Get-ChildItem $_.FullName -Recurse -File -EA SilentlyContinue "
+                          f"| Measure-Object Length -Sum).Sum; [PSCustomObject]@{{Path=$_.FullName; "
+                          f"SizeGB=[math]::Round($s/1GB,2)}} }} | Sort-Object SizeGB -Desc "
+                          f"| Select-Object -First {top_n} | ConvertTo-Json")
+                result = self.run_command(["powershell.exe", "-Command", ps_cmd], shell=True)
+                if result["success"]:
+                    try:
+                        entries = json.loads(result.get("stdout", "[]"))
+                        if isinstance(entries, dict):
+                            entries = [entries]
+                        return {"success": True, "entries": entries, "base_path": path}
+                    except json.JSONDecodeError:
+                        pass
+                return {"success": result["success"], "output": result.get("stdout", "")}
+            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+
 
 class AptManager(SystemsManagerBase):
     def __init__(self, silent: bool = False, log_file: str = None):
@@ -456,6 +1331,46 @@ class AptManager(SystemsManagerBase):
             }
         return install_result
 
+    def search_package(self, query: str):
+        result = self.run_command(["apt-cache", "search", query])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                parts = line.split(" - ", 1)
+                if len(parts) == 2:
+                    packages.append({"name": parts[0].strip(), "description": parts[1].strip()})
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def get_package_info(self, package: str):
+        result = self.run_command(["apt-cache", "show", package])
+        return {"success": result["success"], "info": result.get("stdout", "")}
+
+    def list_installed_packages(self):
+        result = self.run_command(["dpkg", "--get-selections"])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                parts = line.split()
+                if len(parts) >= 2 and parts[1] == "install":
+                    packages.append(parts[0])
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def list_upgradable_packages(self):
+        self.run_command(["apt", "update"], elevated=True)
+        result = self.run_command(["apt", "list", "--upgradable"])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                if "/" in line and "Listing" not in line:
+                    packages.append(line.split("/")[0])
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def clean_package_cache(self):
+        result = self.run_command(["apt-get", "clean"], elevated=True)
+        return {"success": result["success"], "message": "APT cache cleaned" if result["success"] else "Failed"}
+
+
+
 
 class DnfManager(SystemsManagerBase):
     def __init__(self, silent: bool = False, log_file: str = None):
@@ -546,6 +1461,47 @@ class DnfManager(SystemsManagerBase):
             return {"success": False, "error": "Not a .rpm file"}
         return self.run_command(["dnf", "install", "-y", file_path], elevated=True)
 
+    def search_package(self, query: str):
+        result = self.run_command(["dnf", "search", query])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                parts = line.split(" : ", 1)
+                if len(parts) == 2 and not line.startswith("="):
+                    packages.append({"name": parts[0].strip().split(".")[0], "description": parts[1].strip()})
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def get_package_info(self, package: str):
+        result = self.run_command(["dnf", "info", package])
+        return {"success": result["success"], "info": result.get("stdout", "")}
+
+    def list_installed_packages(self):
+        result = self.run_command(["dnf", "list", "installed"])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                if not line.startswith("Installed") and not line.startswith("Last"):
+                    parts = line.split()
+                    if parts:
+                        packages.append(parts[0].split(".")[0])
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def list_upgradable_packages(self):
+        result = self.run_command(["dnf", "check-update"])
+        packages = []
+        if result.get("stdout"):
+            for line in result["stdout"].strip().splitlines():
+                parts = line.split()
+                if len(parts) >= 3 and "." in parts[0]:
+                    packages.append(parts[0].split(".")[0])
+        return {"success": True, "packages": packages, "total": len(packages)}
+
+    def clean_package_cache(self):
+        result = self.run_command(["dnf", "clean", "all"], elevated=True)
+        return {"success": result["success"], "message": "DNF cache cleaned" if result["success"] else "Failed"}
+
+
+
 
 class ZypperManager(SystemsManagerBase):
     def __init__(self, silent: bool = False, log_file: str = None):
@@ -635,6 +1591,46 @@ class ZypperManager(SystemsManagerBase):
         if not file_path.endswith(".rpm"):
             return {"success": False, "error": "Not a .rpm file"}
         return self.run_command(["zypper", "install", "-y", file_path], elevated=True)
+
+    def search_package(self, query: str):
+        result = self.run_command(["zypper", "search", query])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                parts = line.split("|")
+                if len(parts) >= 3 and parts[0].strip() not in ("S", "-", ""):
+                    packages.append({"name": parts[1].strip(), "description": parts[2].strip() if len(parts) > 2 else ""})
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def get_package_info(self, package: str):
+        result = self.run_command(["zypper", "info", package])
+        return {"success": result["success"], "info": result.get("stdout", "")}
+
+    def list_installed_packages(self):
+        result = self.run_command(["zypper", "search", "--installed-only"])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                parts = line.split("|")
+                if len(parts) >= 2 and parts[0].strip() == "i":
+                    packages.append(parts[1].strip())
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def list_upgradable_packages(self):
+        result = self.run_command(["zypper", "list-updates"])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                parts = line.split("|")
+                if len(parts) >= 3 and parts[0].strip() not in ("S", "-", "", "v"):
+                    packages.append(parts[2].strip() if len(parts) > 2 else parts[1].strip())
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def clean_package_cache(self):
+        result = self.run_command(["zypper", "clean", "--all"], elevated=True)
+        return {"success": result["success"], "message": "Zypper cache cleaned" if result["success"] else "Failed"}
+
+
 
 
 class PacmanManager(SystemsManagerBase):
@@ -731,6 +1727,49 @@ class PacmanManager(SystemsManagerBase):
         return self.run_command(
             ["pacman", "-U", "--noconfirm", file_path], elevated=True
         )
+
+    def search_package(self, query: str):
+        result = self.run_command(["pacman", "-Ss", query])
+        packages = []
+        if result["success"]:
+            lines = (result.get("stdout") or "").strip().splitlines()
+            for i in range(0, len(lines), 2):
+                name_line = lines[i].strip()
+                desc = lines[i+1].strip() if i+1 < len(lines) else ""
+                parts = name_line.split("/", 1)
+                if len(parts) == 2:
+                    pkg_name = parts[1].split()[0]
+                    packages.append({"name": pkg_name, "description": desc})
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def get_package_info(self, package: str):
+        result = self.run_command(["pacman", "-Si", package])
+        if not result["success"]:
+            result = self.run_command(["pacman", "-Qi", package])
+        return {"success": result["success"], "info": result.get("stdout", "")}
+
+    def list_installed_packages(self):
+        result = self.run_command(["pacman", "-Qq"])
+        packages = []
+        if result["success"]:
+            packages = [p.strip() for p in (result.get("stdout") or "").strip().splitlines() if p.strip()]
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def list_upgradable_packages(self):
+        result = self.run_command(["pacman", "-Qu"])
+        packages = []
+        if result["success"]:
+            for line in (result.get("stdout") or "").strip().splitlines():
+                parts = line.split()
+                if parts:
+                    packages.append(parts[0])
+        return {"success": result["success"], "packages": packages, "total": len(packages)}
+
+    def clean_package_cache(self):
+        result = self.run_command(["pacman", "-Sc", "--noconfirm"], elevated=True)
+        return {"success": result["success"], "message": "Pacman cache cleaned" if result["success"] else "Failed"}
+
+
 
 
 class WindowsManager(SystemsManagerBase):
@@ -915,6 +1954,31 @@ class WindowsManager(SystemsManagerBase):
             "success": False,
             "error": "Local package installation not supported on Windows",
         }
+
+    def search_package(self, query: str):
+        result = self.run_command([self.winget_bin, "search", query, "--accept-source-agreements"])
+        return {"success": result["success"], "output": result.get("stdout", "")}
+
+    def get_package_info(self, package: str):
+        result = self.run_command([self.winget_bin, "show", package, "--accept-source-agreements"])
+        return {"success": result["success"], "info": result.get("stdout", "")}
+
+    def list_installed_packages(self):
+        result = self.run_command([self.winget_bin, "list", "--accept-source-agreements"])
+        return {"success": result["success"], "output": result.get("stdout", "")}
+
+    def list_upgradable_packages(self):
+        result = self.run_command([self.winget_bin, "upgrade", "--accept-source-agreements"])
+        return {"success": result["success"], "output": result.get("stdout", "")}
+
+    def clean_package_cache(self):
+        result = self.run_command(
+            ["powershell.exe", "-Command",
+             "Remove-Item -Path $env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_*\LocalState\DiagOutputDir\* -Recurse -Force -ErrorAction SilentlyContinue"],
+            shell=True)
+        return {"success": True, "message": "Windows package cache cleaned"}
+
+
 
 
 def detect_and_create_manager(

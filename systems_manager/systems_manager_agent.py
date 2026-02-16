@@ -11,6 +11,9 @@ from contextlib import asynccontextmanager
 from typing import Optional, Any
 import json
 
+# Add parent directory to path to allow running as script
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from pydantic_ai import Agent, ModelSettings
 from pydantic_ai.mcp import load_mcp_servers, MCPServerStreamableHTTP, MCPServerSSE
 from pydantic_ai_skills import SkillsToolset
@@ -73,17 +76,120 @@ DEFAULT_STOP_SEQUENCES = to_list(os.getenv("STOP_SEQUENCES", None))
 DEFAULT_EXTRA_HEADERS = to_dict(os.getenv("EXTRA_HEADERS", None))
 DEFAULT_EXTRA_BODY = to_dict(os.getenv("EXTRA_BODY", None))
 
+
 AGENT_NAME = "Systems Manager Agent"
 AGENT_DESCRIPTION = "A specialist agent for managing system configurations, installations, and maintenance."
-AGENT_SYSTEM_PROMPT = (
-    "You are a Systems Management Specialist Agent.\n"
-    "You are responsible for maintaining, updating, and configuring operating systems.\n"
-    "Your responsibilities:\n"
-    "1. Manage Software: Install, update, and remove applications ('system_management').\n"
-    "2. Maintain System: Perform cleanup and optimization tasks ('system_management').\n"
-    "3. Monitor System: Retrieve OS and hardware statistics ('system_management').\n"
-    "4. Handle OS-Specific Tasks: Manage Windows features or Linux repositories depending on the host OS.\n"
-    "5. Always be careful with destructive actions and confirm intent if critical system components are involved.\n"
+
+# =============================================================================
+# Agent Prompts
+# =============================================================================
+
+SUPERVISOR_SYSTEM_PROMPT = (
+    "You are the Systems Manager Supervisor Agent.\n"
+    "Your role is to orchestrate a team of specialized agents to manage system configurations, installations, and maintenance.\n"
+    "You have access to the following specialists:\n"
+    "1.  **System Specialist**: General system updates, health checks, uptime, and hardware stats.\n"
+    "2.  **Filesystem Specialist**: File and directory management (list, search, grep, create, delete).\n"
+    "3.  **Shell Specialist**: Shell profile management and alias creation.\n"
+    "4.  **Python Specialist**: Python environment management (uv, venvs, packages).\n"
+    "5.  **Node Specialist**: Node.js environment management (nvm, node versions).\n"
+    "6.  **Service Specialist**: System service management (start, stop, enable, disable).\n"
+    "7.  **Process Specialist**: Process management (list, kill, details).\n"
+    "8.  **Network Specialist**: Network diagnostics (interfaces, ports, ping, DNS).\n"
+    "9.  **Disk Specialist**: Disk usage and partition information.\n"
+    "10. **User Specialist**: User and group management.\n"
+    "11. **Log Specialist**: System and file log viewing.\n"
+    "12. **Cron Specialist**: Scheduled task management.\n"
+    "13. **Firewall Specialist**: Firewall rule management.\n"
+    "14. **SSH Specialist**: SSH key management.\n\n"
+    "**Routing Guidelines:**\n"
+    "- Delegates tasks to the appropriate specialist based on the user's request.\n"
+    "- For complex requests involving multiple domains (e.g., 'install node, create a project dir, and add an alias'), break them down and call respective agents in sequence or parallel as appropriate.\n"
+    "- Always report the final outcome to the user.\n"
+)
+
+SYSTEM_PROMPT = (
+    "You are the System Specialist.\n"
+    "Responsibilities: System updates, health checks, stats, uptime, and package info.\n"
+    "Tools: update, clean, optimize, get_os_statistics, get_hardware_statistics, etc."
+)
+
+FILESYSTEM_PROMPT = (
+    "You are the Filesystem Specialist.\n"
+    "Responsibilities: Manage files and directories.\n"
+    "Tools: list_files, search_files, grep_files, manage_file."
+)
+
+SHELL_PROMPT = (
+    "You are the Shell Specialist.\n"
+    "Responsibilities: Manage shell profiles and aliases.\n"
+    "Tools: add_shell_alias."
+)
+
+PYTHON_PROMPT = (
+    "You are the Python Specialist.\n"
+    "Responsibilities: Manage Python environments and packages using uv.\n"
+    "Tools: install_uv, create_python_venv, install_python_package_uv."
+)
+
+NODE_PROMPT = (
+    "You are the Node.js Specialist.\n"
+    "Responsibilities: Manage Node.js versions and nvm.\n"
+    "Tools: install_nvm, install_node, use_node."
+)
+
+SERVICE_PROMPT = (
+    "You are the Service Specialist.\n"
+    "Responsibilities: Manage system services (systemd/Windows services).\n"
+    "Tools: list_services, start_service, stop_service, restart_service, enable/disable_service."
+)
+
+PROCESS_PROMPT = (
+    "You are the Process Specialist.\n"
+    "Responsibilities: Manage running processes.\n"
+    "Tools: list_processes, get_process_info, kill_process."
+)
+
+NETWORK_PROMPT = (
+    "You are the Network Specialist.\n"
+    "Responsibilities: Network diagnostics and information.\n"
+    "Tools: list_network_interfaces, list_open_ports, ping_host, dns_lookup."
+)
+
+DISK_PROMPT = (
+    "You are the Disk Specialist.\n"
+    "Responsibilities: Disk usage and partition information.\n"
+    "Tools: list_disks, get_disk_usage."
+)
+
+USER_PROMPT = (
+    "You are the User Specialist.\n"
+    "Responsibilities: detailed user and group management.\n"
+    "Tools: list_users, list_groups, create_user, delete_user, manage_group."
+)
+
+LOG_PROMPT = (
+    "You are the Log Specialist.\n"
+    "Responsibilities: View and analyze system and file logs.\n"
+    "Tools: get_system_logs, tail_log_file."
+)
+
+CRON_PROMPT = (
+    "You are the Cron Specialist.\n"
+    "Responsibilities: Manage scheduled tasks and cron jobs.\n"
+    "Tools: list_cron_jobs, add_cron_job, remove_cron_job."
+)
+
+FIREWALL_PROMPT = (
+    "You are the Firewall Specialist.\n"
+    "Responsibilities: Manage firewall rules.\n"
+    "Tools: list_firewall_rules, allow_port, deny_port."
+)
+
+SSH_PROMPT = (
+    "You are the SSH Specialist.\n"
+    "Responsibilities: Manage SSH keys.\n"
+    "Tools: list_ssh_keys, generate_ssh_key, add_ssh_key."
 )
 
 
@@ -119,18 +225,12 @@ def create_agent(
     elif mcp_config:
         mcp_toolset = load_mcp_servers(mcp_config)
         for server in mcp_toolset:
-            if hasattr(server, "http_client"):
+             if hasattr(server, "http_client"):
                 server.http_client = httpx.AsyncClient(
                     verify=ssl_verify, timeout=DEFAULT_TIMEOUT
                 )
         agent_toolsets.extend(mcp_toolset)
         logger.info(f"Connected to MCP Config JSON: {mcp_toolset}")
-
-    if skills_directory and os.path.exists(skills_directory):
-        logger.debug(f"Loading skills {skills_directory}")
-        skills = SkillsToolset(directories=[str(skills_directory)])
-        agent_toolsets.append(skills)
-        logger.info(f"Loaded Skills at {skills_directory}")
 
     model = create_model(
         provider=provider,
@@ -141,7 +241,7 @@ def create_agent(
         timeout=DEFAULT_TIMEOUT,
     )
 
-    logger.info("Initializing Agent...")
+    logger.info("Initializing Agents...")
 
     settings = ModelSettings(
         max_tokens=DEFAULT_MAX_TOKENS,
@@ -158,15 +258,94 @@ def create_agent(
         extra_body=DEFAULT_EXTRA_BODY,
     )
 
-    return Agent(
+    # Define Agent Definitions: (Tag, Prompt, AgentName)
+    agent_defs = {
+        "system_management": (SYSTEM_PROMPT, "System_Specialist"),
+        "filesystem": (FILESYSTEM_PROMPT, "Filesystem_Specialist"),
+        "shell_management": (SHELL_PROMPT, "Shell_Specialist"),
+        "python_management": (PYTHON_PROMPT, "Python_Specialist"),
+        "node_management": (NODE_PROMPT, "Node_Specialist"),
+        "service_management": (SERVICE_PROMPT, "Service_Specialist"),
+        "process_management": (PROCESS_PROMPT, "Process_Specialist"),
+        "network_management": (NETWORK_PROMPT, "Network_Specialist"),
+        "disk_management": (DISK_PROMPT, "Disk_Specialist"),
+        "user_management": (USER_PROMPT, "User_Specialist"),
+        "log_management": (LOG_PROMPT, "Log_Specialist"),
+        "cron_management": (CRON_PROMPT, "Cron_Specialist"),
+        "firewall_management": (FIREWALL_PROMPT, "Firewall_Specialist"),
+        "ssh_management": (SSH_PROMPT, "SSH_Specialist"),
+    }
+
+    child_agents = {}
+    
+    # Import filter_tools_by_tag here to avoid circular imports if any, 
+    # though it should be fine as it is in utils.
+    from systems_manager.utils import filter_tools_by_tag
+
+    class FilteredToolset:
+        def __init__(self, original_toolset: Any, tag: str):
+            self.original = original_toolset
+            self.tag = tag
+
+        @property
+        def tools(self):
+            # Inspect the original toolset for tools
+            if hasattr(self.original, "tools"):
+                original_tools = self.original.tools
+                if callable(original_tools):
+                    original_tools = original_tools()
+                return filter_tools_by_tag(original_tools, self.tag)
+            return []
+
+    for tag, (prompt, name) in agent_defs.items():
+        tag_toolsets = []
+        # Filter MCP tools
+        for ts in agent_toolsets:
+            tag_toolsets.append(FilteredToolset(ts, tag))
+        
+        # Load specific skills
+        if skills_directory:
+            skill_dir_path = os.path.join(skills_directory, f"systems-manager-{tag.replace('_', '-')}")
+            if os.path.exists(skill_dir_path):
+                 tag_toolsets.append(SkillsToolset(directories=[skill_dir_path]))
+
+        agent = Agent(
+            name=name,
+            system_prompt=prompt,
+            model=model,
+            model_settings=settings,
+            toolsets=tag_toolsets,
+            tool_timeout=DEFAULT_TOOL_TIMEOUT,
+        )
+        child_agents[tag] = agent
+
+    supervisor = Agent(
         name=AGENT_NAME,
-        system_prompt=AGENT_SYSTEM_PROMPT,
+        system_prompt=SUPERVISOR_SYSTEM_PROMPT,
         model=model,
         model_settings=settings,
-        toolsets=agent_toolsets,
-        tool_timeout=DEFAULT_TOOL_TIMEOUT,
         deps_type=Any,
     )
+
+    @supervisor.tool
+    async def call_specialist(ctx: Any, tool_tag: str, request: str) -> str:
+        """
+        Delegates a task to a specialist agent.
+        
+        Args:
+            tool_tag: The tag of the specialist to call (e.g., 'filesystem', 'python_management').
+            request: The specific request for the specialist.
+        """
+        if tool_tag not in child_agents:
+            return f"Error: No specialist found for tag '{tool_tag}'. Available: {list(child_agents.keys())}"
+        
+        agent = child_agents[tool_tag]
+        # We need to run the agent. 
+        # usage: await agent.run(request)
+        result = await agent.run(request)
+        return result.data
+
+    return supervisor
 
 
 def create_agent_server(
