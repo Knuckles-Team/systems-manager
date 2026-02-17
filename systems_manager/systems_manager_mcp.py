@@ -28,7 +28,7 @@ from systems_manager.systems_manager import (
     WindowsManager,
 )
 
-__version__ = "1.2.10"
+__version__ = "1.2.11"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -2285,6 +2285,364 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    @mcp.tool(
+        annotations={
+            "title": "List Files",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+        tags={"filesystem"},
+    )
+    async def list_files(
+        path: str = Field(description="Path to list files from", default="."),
+        recursive: bool = Field(description="List recursively", default=False),
+        depth: int = Field(description="Recursion depth", default=1),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Lists files and directories in a path."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.fs_manager.list_files(path, recursive, depth)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Search Files",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+        tags={"filesystem"},
+    )
+    async def search_files(
+        path: str = Field(description="Path to search in"),
+        pattern: str = Field(description="Pattern to search for in filenames"),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Searches for files matching a pattern."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.fs_manager.search_files(path, pattern)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Grep Files",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+        tags={"filesystem"},
+    )
+    async def grep_files(
+        path: str = Field(description="Path to search within"),
+        pattern: str = Field(description="Text pattern to search for inside files"),
+        recursive: bool = Field(description="Search recursively", default=False),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Searches for text content inside files (like grep)."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.fs_manager.grep_files(path, pattern, recursive)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Manage File",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+        tags={"filesystem"},
+    )
+    async def manage_file(
+        action: str = Field(
+            description="Action to perform: create, update, delete, read"
+        ),
+        path: str = Field(description="Path to the file"),
+        content: Optional[str] = Field(
+            description="Content for create/update", default=None
+        ),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Creates, updates, deletes, or reads a file."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.fs_manager.manage_file(action, path, content)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Add Shell Alias",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"shell_management"},
+    )
+    async def add_shell_alias(
+        name: str = Field(description="Alias name"),
+        command: str = Field(description="Command to alias"),
+        shell: str = Field(description="Shell type (bash, zsh, fish)", default="bash"),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Adds an alias to the user's shell profile."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.shell_manager.add_alias(name, command, shell)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Install uv",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"python_management"},
+    )
+    async def install_uv(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Installs uv (Python package manager)."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.python_manager.install_uv()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Create Python Venv",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+        tags={"python_management"},
+    )
+    async def create_python_venv(
+        path: str = Field(description="Path to create venv at"),
+        python_version: Optional[str] = Field(
+            description="Python version to use (e.g., 3.11)", default=None
+        ),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Creates a Python virtual environment using uv."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.python_manager.create_venv(path, python_version)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Install Python Package (uv)",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"python_management"},
+    )
+    async def install_python_package_uv(
+        package: str = Field(description="Package name"),
+        venv_path: Optional[str] = Field(
+            description="Path to virtual environment", default=None
+        ),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Installs a Python package using uv pip."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.python_manager.install_package(package, venv_path)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Install NVM",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"node_management"},
+    )
+    async def install_nvm(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Installs NVM (Node Version Manager)."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.node_manager.install_nvm()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Install Node.js",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"node_management"},
+    )
+    async def install_node(
+        version: str = Field(description="Node version to install", default="--lts"),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Installs a Node.js version using NVM."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.node_manager.install_node(version)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Use Node Version",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+        tags={"node_management"},
+    )
+    async def use_node(
+        version: str = Field(description="Node version to use"),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Switches the active Node.js version using NVM."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.node_manager.use_node(version)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
 
 def systems_manager_mcp():
     print(f"systems_manager_mcp v{__version__}")
@@ -2842,361 +3200,3 @@ def usage():
 
 if __name__ == "__main__":
     systems_manager_mcp()
-
-    @mcp.tool(
-        annotations={
-            "title": "List Files",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
-        tags={"filesystem"},
-    )
-    async def list_files(
-        path: str = Field(description="Path to list files from", default="."),
-        recursive: bool = Field(description="List recursively", default=False),
-        depth: int = Field(description="Recursion depth", default=1),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Lists files and directories in a path."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.fs_manager.list_files(path, recursive, depth)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Search Files",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
-        tags={"filesystem"},
-    )
-    async def search_files(
-        path: str = Field(description="Path to search in"),
-        pattern: str = Field(description="Pattern to search for in filenames"),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Searches for files matching a pattern."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.fs_manager.search_files(path, pattern)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Grep Files",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
-        tags={"filesystem"},
-    )
-    async def grep_files(
-        path: str = Field(description="Path to search within"),
-        pattern: str = Field(description="Text pattern to search for inside files"),
-        recursive: bool = Field(description="Search recursively", default=False),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Searches for text content inside files (like grep)."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.fs_manager.grep_files(path, pattern, recursive)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Manage File",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": False,
-            "openWorldHint": True,
-        },
-        tags={"filesystem"},
-    )
-    async def manage_file(
-        action: str = Field(
-            description="Action to perform: create, update, delete, read"
-        ),
-        path: str = Field(description="Path to the file"),
-        content: Optional[str] = Field(
-            description="Content for create/update", default=None
-        ),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Creates, updates, deletes, or reads a file."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.fs_manager.manage_file(action, path, content)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Add Shell Alias",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"shell_management"},
-    )
-    async def add_shell_alias(
-        name: str = Field(description="Alias name"),
-        command: str = Field(description="Command to alias"),
-        shell: str = Field(description="Shell type (bash, zsh, fish)", default="bash"),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Adds an alias to the user's shell profile."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.shell_manager.add_alias(name, command, shell)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Install uv",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"python_management"},
-    )
-    async def install_uv(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Installs uv (Python package manager)."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.python_manager.install_uv()
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Create Python Venv",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
-        tags={"python_management"},
-    )
-    async def create_python_venv(
-        path: str = Field(description="Path to create venv at"),
-        python_version: Optional[str] = Field(
-            description="Python version to use (e.g., 3.11)", default=None
-        ),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Creates a Python virtual environment using uv."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.python_manager.create_venv(path, python_version)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Install Python Package (uv)",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"python_management"},
-    )
-    async def install_python_package_uv(
-        package: str = Field(description="Package name"),
-        venv_path: Optional[str] = Field(
-            description="Path to virtual environment", default=None
-        ),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Installs a Python package using uv pip."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.python_manager.install_package(package, venv_path)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Install NVM",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"node_management"},
-    )
-    async def install_nvm(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Installs NVM (Node Version Manager)."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.node_manager.install_nvm()
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Install Node.js",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"node_management"},
-    )
-    async def install_node(
-        version: str = Field(description="Node version to install", default="--lts"),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Installs a Node.js version using NVM."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.node_manager.install_node(version)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Use Node Version",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": False,
-            "openWorldHint": False,
-        },
-        tags={"node_management"},
-    )
-    async def use_node(
-        version: str = Field(description="Node version to use"),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Switches the active Node.js version using NVM."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.node_manager.use_node(version)
-        except Exception as e:
-            return {"success": False, "error": str(e)}

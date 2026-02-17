@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systems-manager"
-version = "1.2.10"
+version = "1.2.11"
 description = "Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server"
 readme = "README.md"
 authors = [{ name = "Audel Rouhi", email = "knucklessg1@gmail.com" }]
@@ -57,3 +57,6 @@ systems_manager = ["mcp_config.json", "skills/**"]
 
 [tool.setuptools]
 include-package-data = true
+
+[tool.codespell]
+ignore-words-list = "fo"
