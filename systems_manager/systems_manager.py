@@ -21,7 +21,7 @@ import psutil
 from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 
-__version__ = "1.2.11"
+__version__ = "1.2.12"
 
 
 def setup_logging(
@@ -2457,32 +2457,6 @@ def detect_and_create_manager(
         raise NotImplementedError(f"Unsupported OS: {sys_name}")
 
 
-def usage():
-    print(
-        f"Systems Manager ({__version__}): System Manager Utility\n\n"
-        "Usage:\n"
-        "-c | --clean               [ Clean system resources ]\n"
-        "-f | --fonts               [ Comma-separated list of fonts to install ]\n"
-        "-s | --silent              [ Run in silent mode ]\n"
-        "-u | --update              [ Update system packages ]\n"
-        "-i | --install             [ Comma-separated list of applications to install ]\n"
-        "-p | --python              [ Comma-separated list of Python modules to install ]\n"
-        "-o | --optimize            [ Optimize system ]\n"
-        "--os-stats                 [ Display OS statistics ]\n"
-        "--hw-stats                 [ Display hardware statistics ]\n"
-        "-e | --enable-features     [ Comma-separated list of features to enable (Windows only) ]\n"
-        "-d | --disable-features    [ Comma-separated list of features to disable (Windows only) ]\n"
-        "-l | --list-features       [ List available features (Windows only) ]\n"
-        "--log-file                 [ Specify log file path ]\n"
-        "--add-repo                 [ Add upstream repository: url[:name] (Linux only) ]\n"
-        "--install-local            [ Install local package files, comma-separated (Linux only) ]\n"
-        "\n"
-        "Examples:\n"
-        "  [Simple]  systems-manager \n"
-        '  [Complex] systems-manager --clean --fonts "value" --silent --update --install "value" --python "value" --optimize --os-stats --hw-stats --enable-features "value" --disable-features "value" --list-features --log-file "value" --add-repo "value" --install-local "value"\n'
-    )
-
-
 def systems_manager():
     print(f"systems_manager v{__version__}")
     parser = argparse.ArgumentParser(
@@ -2550,9 +2524,7 @@ def systems_manager():
     args = parser.parse_args()
 
     if hasattr(args, "help") and args.help:
-
-        usage()
-
+        parser.print_help()
         sys.exit(0)
 
     log_file = args.log_file
