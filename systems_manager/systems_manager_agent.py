@@ -14,7 +14,7 @@ import json
 # Add parent directory to path to allow running as script
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pydantic_ai import Agent, ModelSettings
+from pydantic_ai import Agent, ModelSettings, RunContext
 from pydantic_ai.mcp import load_mcp_servers, MCPServerStreamableHTTP, MCPServerSSE
 from pydantic_ai_skills import SkillsToolset
 from fasta2a import Skill
@@ -37,7 +37,7 @@ from pydantic import ValidationError
 from pydantic_ai.ui import SSE_CONTENT_TYPE
 from pydantic_ai.ui.ag_ui import AGUIAdapter
 
-__version__ = "1.2.13"
+__version__ = "1.2.14"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -299,6 +299,20 @@ def create_agent(
                 return filter_tools_by_tag(original_tools, self.tag)
             return []
 
+    # 1. Identify Universal Skills
+    # Universal skills are those in the skills directory that do NOT start with the package prefix
+    package_prefix = "systems-manager-"
+    skills_path = get_skills_path()
+    universal_skill_dirs = []
+
+    if os.path.exists(skills_path):
+        for item in os.listdir(skills_path):
+            item_path = os.path.join(skills_path, item)
+            if os.path.isdir(item_path):
+                if not item.startswith(package_prefix):
+                    universal_skill_dirs.append(item_path)
+                    logger.info(f"Identified universal skill: {item}")
+
     for tag, (prompt, name) in agent_defs.items():
         tag_toolsets = []
         # Filter MCP tools
@@ -321,6 +335,10 @@ def create_agent(
         if os.path.exists(default_skill_path):
             child_skills_directories.append(default_skill_path)
 
+        # Append Universal Skills to ALL child agents
+        if universal_skill_dirs:
+            child_skills_directories.extend(universal_skill_dirs)
+
         if child_skills_directories:
             ts = SkillsToolset(directories=child_skills_directories)
             tag_toolsets.append(ts)
@@ -334,6 +352,40 @@ def create_agent(
             tool_timeout=DEFAULT_TOOL_TIMEOUT,
         )
         child_agents[tag] = agent
+
+    # Create Custom Agent if custom_skills_directory is provided
+    if custom_skills_directory:
+        custom_agent_tag = "custom_agent"
+        custom_agent_name = "Custom_Agent"
+        custom_agent_prompt = (
+            "You are the Custom Agent.\n"
+            "Your goal is to handle custom tasks or general tasks not covered by other specialists.\n"
+            "You have access to valid custom skills and universal skills."
+        )
+
+        custom_agent_skills_dirs = list(universal_skill_dirs)
+        custom_agent_skills_dirs.append(custom_skills_directory)
+
+        custom_toolsets = []
+        # Add filtered MCP tools if needed, or maybe all of them?
+        # For now, let's assume it only gets the custom/universal skills from directories
+        # If we wanted MCP tools, we'd potentially give it everything or a specific subset.
+        # Given the prompt implies "custom skills delegated to custom agent", we stick to the directories.
+
+        custom_toolsets.append(SkillsToolset(directories=custom_agent_skills_dirs))
+
+        custom_agent = Agent(
+            name=custom_agent_name,
+            system_prompt=custom_agent_prompt,
+            model=model,
+            model_settings=settings,
+            toolsets=custom_toolsets,
+            tool_timeout=DEFAULT_TOOL_TIMEOUT,
+        )
+        child_agents[custom_agent_tag] = custom_agent
+        logger.info(
+            f"Initialized Custom Agent with skills from: {custom_agent_skills_dirs}"
+        )
 
     if custom_skills_directory:
         supervisor_skills_directories.append(custom_skills_directory)
@@ -350,7 +402,7 @@ def create_agent(
     )
 
     @supervisor.tool
-    async def call_specialist(ctx: Any, tool_tag: str, request: str) -> str:
+    async def call_specialist(ctx: RunContext[Any], tool_tag: str, request: str) -> str:
         """
         Delegates a task to a specialist agent.
 
@@ -366,6 +418,20 @@ def create_agent(
         # usage: await agent.run(request)
         result = await agent.run(request)
         return result.data
+
+    if custom_skills_directory:
+
+        @supervisor.tool
+        async def assign_task_to_custom_agent(ctx: RunContext[Any], task: str) -> str:
+            """
+            Assign a task to the Custom Agent. Use this for tasks that don't fit into other specialists' categories
+            but might be handled by custom skills or general universal skills.
+            """
+            return (
+                await child_agents["custom_agent"].run(
+                    task, usage=ctx.usage, deps=ctx.deps
+                )
+            ).data
 
     return supervisor
 
