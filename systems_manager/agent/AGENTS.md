@@ -1,5 +1,5 @@
 # AGENTS.md - Known A2A Peer Agents
-Last updated: 2026-02-21 01:19
+Last updated: 2026-02-23 19:13
 
 This file is the local registry of other A2A agents this agent can discover and call.
 

@@ -1,6 +1,7 @@
 ---
 name: systems-manager-node-management
 description: Systems Manager Node Management capabilities for A2A Agent.
+tags: [node-management]
 ---
 ### Overview
 This skill provides access to Node.js environment management.

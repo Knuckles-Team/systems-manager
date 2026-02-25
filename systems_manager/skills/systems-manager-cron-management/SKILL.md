@@ -1,6 +1,7 @@
 ---
-name: Cron Job Management
+name: systems-manager-cron-management
 description: A skill for managing scheduled tasks using cron on Linux systems.
+tags: [cron-management]
 ---
 
 # Cron Job Management Skill

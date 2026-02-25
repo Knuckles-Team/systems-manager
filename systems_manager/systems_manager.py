@@ -21,7 +21,7 @@ import psutil
 from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 
-__version__ = "1.2.14"
+__version__ = "1.2.15"
 
 
 def setup_logging(
@@ -1020,7 +1020,12 @@ class SystemsManagerBase(ABC):
                 if priority:
                     cmd.extend(["-p", priority])
                 result = self.run_command(cmd)
-                return {"success": result["success"], "logs": result.get("stdout", "")}
+                logs = (
+                    result.get("stdout", "")
+                    if result["success"]
+                    else result.get("stderr", result.get("error", "Unknown error"))
+                )
+                return {"success": result["success"], "logs": logs}
             elif platform.system() == "Windows":
                 result = self.run_command(
                     [
@@ -1030,7 +1035,12 @@ class SystemsManagerBase(ABC):
                     ],
                     shell=True,
                 )
-                return {"success": result["success"], "logs": result.get("stdout", "")}
+                logs = (
+                    result.get("stdout", "")
+                    if result["success"]
+                    else result.get("stderr", result.get("error", "Unknown error"))
+                )
+                return {"success": result["success"], "logs": logs}
             return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
         except Exception as e:
             return {"success": False, "error": str(e)}

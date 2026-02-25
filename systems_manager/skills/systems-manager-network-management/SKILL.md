@@ -1,6 +1,7 @@
 ---
 name: systems-manager-network-management
 description: Systems Manager Network Management capabilities for A2A Agent.
+tags: [network-management]
 ---
 ### Overview
 This skill provides access to network diagnostic operations.

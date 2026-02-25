@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import argparse
 import os
 import sys
 import logging
@@ -21,40 +20,26 @@ from fastmcp.server.middleware.error_handling import ErrorHandlingMiddleware
 
 from eunomia_mcp.middleware import EunomiaMcpMiddleware
 from fastmcp.utilities.logging import get_logger
-from agent_utilities.base_utilities import to_integer, to_boolean
-from systems_manager.middlewares import UserTokenMiddleware, JWTClaimsLoggingMiddleware
+from agent_utilities.base_utilities import to_boolean
+from agent_utilities.mcp_utilities import (
+    create_mcp_parser,
+    config,
+)
+from agent_utilities.middlewares import (
+    UserTokenMiddleware,
+    JWTClaimsLoggingMiddleware,
+)
 from systems_manager.systems_manager import (
     detect_and_create_manager,
     WindowsManager,
 )
-from agent_utilities.mcp_utilities import create_mcp_parser
 
-__version__ = "1.2.14"
+__version__ = "1.2.15"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = get_logger("SystemsManagerServer")
-
-config = {
-    "enable_delegation": to_boolean(os.environ.get("ENABLE_DELEGATION", "False")),
-    "audience": os.environ.get("AUDIENCE", None),
-    "delegated_scopes": os.environ.get("DELEGATED_SCOPES", "api"),
-    "token_endpoint": None,
-    "oidc_client_id": os.environ.get("OIDC_CLIENT_ID", None),
-    "oidc_client_secret": os.environ.get("OIDC_CLIENT_SECRET", None),
-    "oidc_config_url": os.environ.get("OIDC_CONFIG_URL", None),
-    "jwt_jwks_uri": os.getenv("FASTMCP_SERVER_AUTH_JWT_JWKS_URI", None),
-    "jwt_issuer": os.getenv("FASTMCP_SERVER_AUTH_JWT_ISSUER", None),
-    "jwt_audience": os.getenv("FASTMCP_SERVER_AUTH_JWT_AUDIENCE", None),
-    "jwt_algorithm": os.getenv("FASTMCP_SERVER_AUTH_JWT_ALGORITHM", None),
-    "jwt_secret": os.getenv("FASTMCP_SERVER_AUTH_JWT_PUBLIC_KEY", None),
-    "jwt_required_scopes": os.getenv("FASTMCP_SERVER_AUTH_JWT_REQUIRED_SCOPES", None),
-}
-
-DEFAULT_TRANSPORT = os.getenv("TRANSPORT", "stdio")
-DEFAULT_HOST = os.getenv("HOST", "0.0.0.0")
-DEFAULT_PORT = to_integer(string=os.getenv("PORT", "8000"))
 
 
 def register_tools(mcp: FastMCP):
@@ -438,10 +423,15 @@ def register_tools(mcp: FastMCP):
         try:
             manager = detect_and_create_manager(silent, log_file)
             stats = manager.get_os_statistics()
-            logger.debug(f"OS stats: {stats}")
+            if not stats.get("success", True):
+                logger.error(
+                    f"Failed to get OS stats. Error: {stats.get('error', 'Unknown error')}"
+                )
+            else:
+                logger.debug("OS stats retrieved successfully.")
             return stats
         except Exception as e:
-            logger.error(f"Failed to get OS stats: {str(e)}")
+            logger.error(f"Exception while getting OS stats: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -474,10 +464,15 @@ def register_tools(mcp: FastMCP):
         try:
             manager = detect_and_create_manager(silent, log_file)
             stats = manager.get_hardware_statistics()
-            logger.debug(f"Hardware stats: {stats}")
+            if not stats.get("success", True):
+                logger.error(
+                    f"Failed to get hardware stats. Error: {stats.get('error', 'Unknown error')}"
+                )
+            else:
+                logger.debug("Hardware stats retrieved successfully.")
             return stats
         except Exception as e:
-            logger.error(f"Failed to get hardware stats: {str(e)}")
+            logger.error(f"Exception while getting hardware stats: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -1599,10 +1594,22 @@ def register_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Gets system logs from journalctl (Linux) or Event Log (Windows)."""
+        logger = logging.getLogger("SystemsManager")
+        logger.debug(
+            f"Getting system logs, unit: {unit}, lines: {lines}, priority: {priority}"
+        )
         try:
             manager = detect_and_create_manager(silent, log_file)
-            return manager.get_system_logs(unit, lines, priority)
+            result = manager.get_system_logs(unit, lines, priority)
+            if not result.get("success"):
+                logger.error(
+                    f"Failed to get system logs. Error: {result.get('error', result.get('logs', 'Unknown error'))}"
+                )
+            else:
+                logger.debug("Successfully retrieved system logs.")
+            return result
         except Exception as e:
+            logger.error(f"Exception while getting system logs: {str(e)}")
             return {"success": False, "error": str(e)}
 
     @mcp.tool(
@@ -1633,10 +1640,20 @@ def register_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Reads the last N lines of a log file."""
+        logger = logging.getLogger("SystemsManager")
+        logger.debug(f"Tailing log file: {path}, lines: {lines}")
         try:
             manager = detect_and_create_manager(silent, log_file)
-            return manager.tail_log_file(path, lines)
+            result = manager.tail_log_file(path, lines)
+            if not result.get("success"):
+                logger.error(
+                    f"Failed to tail log file. Error: {result.get('error', result.get('logs', 'Unknown error'))}"
+                )
+            else:
+                logger.debug("Successfully tailed log file.")
+            return result
         except Exception as e:
+            logger.error(f"Exception while tailing log file: {str(e)}")
             return {"success": False, "error": str(e)}
 
     # =========================================================================
@@ -1789,10 +1806,22 @@ def register_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Performs a comprehensive system health check including CPU, memory, disk, swap, and top processes."""
+        logger = logging.getLogger("SystemsManager")
+        logger.debug("Performing system health check")
         try:
             manager = detect_and_create_manager(silent, log_file)
-            return manager.system_health_check()
+            result = manager.system_health_check()
+            if not result.get("success"):
+                logger.error(
+                    f"System health check failed. Error: {result.get('error', 'Unknown error')}"
+                )
+            else:
+                logger.debug(
+                    f"System health check retrieved successfully. Status: {result.get('status', 'unknown')}"
+                )
+            return result
         except Exception as e:
+            logger.error(f"Exception during system health check: {str(e)}")
             return {"success": False, "error": str(e)}
 
     @mcp.tool(
@@ -1819,10 +1848,20 @@ def register_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Gets system uptime and boot time."""
+        logger = logging.getLogger("SystemsManager")
+        logger.debug("Fetching system uptime")
         try:
             manager = detect_and_create_manager(silent, log_file)
-            return manager.get_uptime()
+            result = manager.get_uptime()
+            if not result.get("success"):
+                logger.error(
+                    f"Failed to get uptime. Error: {result.get('error', 'Unknown error')}"
+                )
+            else:
+                logger.debug("Successfully retrieved system uptime.")
+            return result
         except Exception as e:
+            logger.error(f"Exception while getting uptime: {str(e)}")
             return {"success": False, "error": str(e)}
 
     @mcp.tool(
@@ -2645,191 +2684,10 @@ def register_tools(mcp: FastMCP):
             return {"success": False, "error": str(e)}
 
 
-def systems_manager_mcp():
-    print(f"systems_manager_mcp v{__version__}")
-    parser = argparse.ArgumentParser(
-        add_help=False, description="System Manager MCP Utility"
-    )
-    parser.add_argument(
-        "-t",
-        "--transport",
-        default=DEFAULT_TRANSPORT,
-        choices=["stdio", "streamable-http", "sse"],
-        help="Transport method: 'stdio', 'streamable-http', or 'sse' [legacy] (default: stdio)",
-    )
-    parser.add_argument(
-        "-s",
-        "--host",
-        default=DEFAULT_HOST,
-        help="Host address for HTTP transport (default: 0.0.0.0)",
-    )
-    parser.add_argument(
-        "-p",
-        "--port",
-        type=int,
-        default=DEFAULT_PORT,
-        help="Port number for HTTP transport (default: 8000)",
-    )
-    parser.add_argument(
-        "--auth-type",
-        default="none",
-        choices=["none", "static", "jwt", "oauth-proxy", "oidc-proxy", "remote-oauth"],
-        help="Authentication type for MCP server: 'none' (disabled), 'static' (internal), 'jwt' (external token verification), 'oauth-proxy', 'oidc-proxy', 'remote-oauth' (external) (default: none)",
-    )
-    parser.add_argument(
-        "--token-jwks-uri", default=None, help="JWKS URI for JWT verification"
-    )
-    parser.add_argument(
-        "--token-issuer", default=None, help="Issuer for JWT verification"
-    )
-    parser.add_argument(
-        "--token-audience", default=None, help="Audience for JWT verification"
-    )
-    parser.add_argument(
-        "--token-algorithm",
-        default=os.getenv("FASTMCP_SERVER_AUTH_JWT_ALGORITHM"),
-        choices=[
-            "HS256",
-            "HS384",
-            "HS512",
-            "RS256",
-            "RS384",
-            "RS512",
-            "ES256",
-            "ES384",
-            "ES512",
-        ],
-        help="JWT signing algorithm (required for HMAC or static key). Auto-detected for JWKS.",
-    )
-    parser.add_argument(
-        "--token-secret",
-        default=os.getenv("FASTMCP_SERVER_AUTH_JWT_PUBLIC_KEY"),
-        help="Shared secret for HMAC (HS*) or PEM public key for static asymmetric verification.",
-    )
-    parser.add_argument(
-        "--token-public-key",
-        default=os.getenv("FASTMCP_SERVER_AUTH_JWT_PUBLIC_KEY"),
-        help="Path to PEM public key file or inline PEM string (for static asymmetric keys).",
-    )
-    parser.add_argument(
-        "--required-scopes",
-        default=os.getenv("FASTMCP_SERVER_AUTH_JWT_REQUIRED_SCOPES"),
-        help="Comma-separated list of required scopes (e.g., gitlab.read,gitlab.write).",
-    )
-    parser.add_argument(
-        "--oauth-upstream-auth-endpoint",
-        default=None,
-        help="Upstream authorization endpoint for OAuth Proxy",
-    )
-    parser.add_argument(
-        "--oauth-upstream-token-endpoint",
-        default=None,
-        help="Upstream token endpoint for OAuth Proxy",
-    )
-    parser.add_argument(
-        "--oauth-upstream-client-id",
-        default=None,
-        help="Upstream client ID for OAuth Proxy",
-    )
-    parser.add_argument(
-        "--oauth-upstream-client-secret",
-        default=None,
-        help="Upstream client secret for OAuth Proxy",
-    )
-    parser.add_argument(
-        "--oauth-base-url", default=None, help="Base URL for OAuth Proxy"
-    )
-    parser.add_argument(
-        "--oidc-config-url", default=None, help="OIDC configuration URL"
-    )
-    parser.add_argument("--oidc-client-id", default=None, help="OIDC client ID")
-    parser.add_argument("--oidc-client-secret", default=None, help="OIDC client secret")
-    parser.add_argument("--oidc-base-url", default=None, help="Base URL for OIDC Proxy")
-    parser.add_argument(
-        "--remote-auth-servers",
-        default=None,
-        help="Comma-separated list of authorization servers for Remote OAuth",
-    )
-    parser.add_argument(
-        "--remote-base-url", default=None, help="Base URL for Remote OAuth"
-    )
-    parser.add_argument(
-        "--allowed-client-redirect-uris",
-        default=None,
-        help="Comma-separated list of allowed client redirect URIs",
-    )
-    parser.add_argument(
-        "--eunomia-type",
-        default="none",
-        choices=["none", "embedded", "remote"],
-        help="Eunomia authorization type: 'none' (disabled), 'embedded' (built-in), 'remote' (external) (default: none)",
-    )
-    parser.add_argument(
-        "--eunomia-policy-file",
-        default="mcp_policies.json",
-        help="Policy file for embedded Eunomia (default: mcp_policies.json)",
-    )
-    parser.add_argument(
-        "--eunomia-remote-url", default=None, help="URL for remote Eunomia server"
-    )
-    parser.add_argument(
-        "--enable-delegation",
-        action="store_true",
-        default=to_boolean(os.environ.get("ENABLE_DELEGATION", "False")),
-        help="Enable OIDC token delegation",
-    )
-    parser.add_argument(
-        "--audience",
-        default=os.environ.get("AUDIENCE", None),
-        help="Audience for the delegated token",
-    )
-    parser.add_argument(
-        "--delegated-scopes",
-        default=os.environ.get("DELEGATED_SCOPES", "api"),
-        help="Scopes for the delegated token (space-separated)",
-    )
-    parser.add_argument(
-        "--openapi-file",
-        default=None,
-        help="Path to the OpenAPI JSON file to import additional tools from",
-    )
-    parser.add_argument(
-        "--openapi-base-url",
-        default=None,
-        help="Base URL for the OpenAPI client (overrides instance URL)",
-    )
-    parser.add_argument(
-        "--openapi-use-token",
-        action="store_true",
-        help="Use the incoming Bearer token (from MCP request) to authenticate OpenAPI import",
-    )
-
-    parser.add_argument(
-        "--openapi-username",
-        default=os.getenv("OPENAPI_USERNAME"),
-        help="Username for basic auth during OpenAPI import",
-    )
-
-    parser.add_argument(
-        "--openapi-password",
-        default=os.getenv("OPENAPI_PASSWORD"),
-        help="Password for basic auth during OpenAPI import",
-    )
-
-    parser.add_argument(
-        "--openapi-client-id",
-        default=os.getenv("OPENAPI_CLIENT_ID"),
-        help="OAuth client ID for OpenAPI import",
-    )
-
-    parser.add_argument(
-        "--openapi-client-secret",
-        default=os.getenv("OPENAPI_CLIENT_SECRET"),
-        help="OAuth client secret for OpenAPI import",
-    )
-
-    parser.add_argument("--help", action="store_true", help="Show usage")
-
+def mcp_server():
+    print(f"mcp_server v{__version__}")
+    parser = create_mcp_parser()
+    parser.description = "System Manager MCP Utility"
     args = parser.parse_args()
 
     if hasattr(args, "help") and args.help:
@@ -3151,4 +3009,4 @@ def systems_manager_mcp():
 
 
 if __name__ == "__main__":
-    systems_manager_mcp()
+    mcp_server()

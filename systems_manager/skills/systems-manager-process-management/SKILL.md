@@ -1,6 +1,7 @@
 ---
 name: systems-manager-process-management
 description: Systems Manager Process Management capabilities for A2A Agent.
+tags: [process-management]
 ---
 ### Overview
 This skill provides access to process management operations for monitoring and controlling processes.

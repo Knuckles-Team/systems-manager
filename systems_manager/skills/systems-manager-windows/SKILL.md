@@ -1,6 +1,7 @@
 ---
 name: systems-manager-windows
 description: Systems Manager Windows capabilities for A2A Agent.
+tags: [windows]
 ---
 ### Overview
 This skill provides access to windows operations.

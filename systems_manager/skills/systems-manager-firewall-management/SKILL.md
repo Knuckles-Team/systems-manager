@@ -1,6 +1,7 @@
 ---
 name: systems-manager-firewall-management
 description: Systems Manager Firewall Management capabilities for A2A Agent.
+tags: [firewall-management]
 ---
 ### Overview
 This skill provides access to firewall management operations (ufw/firewalld/iptables on Linux, netsh on Windows).

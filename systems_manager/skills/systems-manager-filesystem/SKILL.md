@@ -1,6 +1,7 @@
 ---
 name: systems-manager-filesystem
 description: Systems Manager Filesystem capabilities for A2A Agent.
+tags: [filesystem]
 ---
 ### Overview
 This skill provides access to filesystem operations.

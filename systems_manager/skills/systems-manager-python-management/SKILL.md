@@ -1,6 +1,7 @@
 ---
 name: systems-manager-python-management
 description: Systems Manager Python Management capabilities for A2A Agent.
+tags: [python-management]
 ---
 ### Overview
 This skill provides access to Python environment management using uv.
