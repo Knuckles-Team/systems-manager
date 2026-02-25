@@ -5,6 +5,7 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
+
 async def run():
     try:
         mcp = FastMCP("test_sm")
@@ -12,8 +13,10 @@ async def run():
         print("Calling get_system_logs...")
         result = await mcp.call_tool("get_system_logs", {"lines": 50})
         print("Result:", result)
-    except Exception as e:
+    except Exception:
         import traceback
+
         traceback.print_exc()
+
 
 asyncio.run(run())

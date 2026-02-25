@@ -1,5 +1,4 @@
 from systems_manager.systems_manager import detect_and_create_manager
-import json
 
 manager = detect_and_create_manager(silent=True)
 health = manager.system_health_check()
@@ -7,7 +6,9 @@ if health.get("success"):
     print(f"✅ Overall Status: {health.get('status').title()}")
     print(f"Uptime: {health.get('uptime_human')}")
     print(f"CPU Usage: {health.get('cpu_percent')}%")
-    print(f"Memory Usage: {health.get('memory_percent')}% ({health.get('memory_available_gb')} GB available)")
+    print(
+        f"Memory Usage: {health.get('memory_percent')}% ({health.get('memory_available_gb')} GB available)"
+    )
     print(f"Swap Usage: {health.get('swap_percent')}%")
     print("\nLoad Average:")
     if health.get("load_average"):
