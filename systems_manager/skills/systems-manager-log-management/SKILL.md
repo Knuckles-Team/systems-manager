@@ -1,7 +1,7 @@
 ---
 name: systems-manager-log-management
 description: Systems Manager Log Management capabilities for A2A Agent.
-tags: [log-management]
+tags: [log, log-management]
 ---
 ### Overview
 This skill provides access to system log viewing operations.

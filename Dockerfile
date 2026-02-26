@@ -54,6 +54,6 @@ ENV HOST=${HOST} \
 RUN apt-get update \
    && apt-get install -y curl nano ripgrep tree fd-find \
    && curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && uv pip install --system --upgrade --verbose --no-cache --break-system-packages --prerelease=allow systems-manager[all]>=1.2.15
+    && uv pip install --system --upgrade --verbose --no-cache --break-system-packages --prerelease=allow systems-manager[all]>=1.2.16
 
 CMD ["systems-manager-mcp"]

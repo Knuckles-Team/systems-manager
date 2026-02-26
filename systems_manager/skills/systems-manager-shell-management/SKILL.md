@@ -1,7 +1,7 @@
 ---
 name: systems-manager-shell-management
 description: Systems Manager Shell Management capabilities for A2A Agent.
-tags: [shell-management]
+tags: [shell, shell-management]
 ---
 ### Overview
 This skill provides access to shell profile management.

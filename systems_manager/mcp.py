@@ -34,7 +34,7 @@ from systems_manager.systems_manager import (
     WindowsManager,
 )
 
-__version__ = "1.2.15"
+__version__ = "1.2.16"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -55,7 +55,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def install_applications(
         apps: List[str] = Field(
@@ -114,7 +114,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def update(
         silent: Optional[bool] = Field(
@@ -163,7 +163,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def clean(
         silent: Optional[bool] = Field(
@@ -212,7 +212,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def optimize(
         silent: Optional[bool] = Field(
@@ -261,7 +261,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def install_python_modules(
         modules: List[str] = Field(
@@ -321,7 +321,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def install_fonts(
         fonts: Optional[List[str]] = Field(
@@ -401,7 +401,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def get_os_statistics(
         silent: Optional[bool] = Field(
@@ -442,7 +442,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def get_hardware_statistics(
         silent: Optional[bool] = Field(
@@ -940,7 +940,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"service_management"},
+        tags={"service"},
     )
     async def list_services(
         silent: Optional[bool] = Field(
@@ -975,7 +975,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"service_management"},
+        tags={"service"},
     )
     async def get_service_status(
         name: str = Field(description="Name of the service to check"),
@@ -1011,7 +1011,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"service_management"},
+        tags={"service"},
     )
     async def start_service(
         name: str = Field(description="Name of the service to start"),
@@ -1043,7 +1043,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"service_management"},
+        tags={"service"},
     )
     async def stop_service(
         name: str = Field(description="Name of the service to stop"),
@@ -1075,7 +1075,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"service_management"},
+        tags={"service"},
     )
     async def restart_service(
         name: str = Field(description="Name of the service to restart"),
@@ -1107,7 +1107,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"service_management"},
+        tags={"service"},
     )
     async def enable_service(
         name: str = Field(description="Name of the service to enable at boot"),
@@ -1139,7 +1139,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"service_management"},
+        tags={"service"},
     )
     async def disable_service(
         name: str = Field(description="Name of the service to disable at boot"),
@@ -1175,7 +1175,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"process_management"},
+        tags={"process"},
     )
     async def list_processes(
         silent: Optional[bool] = Field(
@@ -1205,7 +1205,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"process_management"},
+        tags={"process"},
     )
     async def get_process_info(
         pid: int = Field(description="Process ID to get information about"),
@@ -1236,7 +1236,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": False,
             "openWorldHint": False,
         },
-        tags={"process_management"},
+        tags={"process"},
     )
     async def kill_process(
         pid: int = Field(description="Process ID to kill"),
@@ -1274,7 +1274,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"network_management"},
+        tags={"network"},
     )
     async def list_network_interfaces(
         silent: Optional[bool] = Field(
@@ -1304,7 +1304,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"network_management"},
+        tags={"network"},
     )
     async def list_open_ports(
         silent: Optional[bool] = Field(
@@ -1334,7 +1334,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": True,
         },
-        tags={"network_management"},
+        tags={"network"},
     )
     async def ping_host(
         host: str = Field(description="Hostname or IP address to ping"),
@@ -1368,7 +1368,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": True,
         },
-        tags={"network_management"},
+        tags={"network"},
     )
     async def dns_lookup(
         hostname: str = Field(description="Hostname to resolve"),
@@ -1403,7 +1403,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"disk_management"},
+        tags={"disk"},
     )
     async def list_disks(
         silent: Optional[bool] = Field(
@@ -1433,7 +1433,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"disk_management"},
+        tags={"disk"},
     )
     async def get_disk_usage(
         path: Optional[str] = Field(
@@ -1466,7 +1466,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"disk_management"},
+        tags={"disk"},
     )
     async def get_disk_space_report(
         path: Optional[str] = Field(description="Base path to analyze", default="/"),
@@ -1504,7 +1504,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"user_management"},
+        tags={"user"},
     )
     async def list_users(
         silent: Optional[bool] = Field(
@@ -1534,7 +1534,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"user_management"},
+        tags={"user"},
     )
     async def list_groups(
         silent: Optional[bool] = Field(
@@ -1568,7 +1568,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"log_management"},
+        tags={"log"},
     )
     async def get_system_logs(
         unit: Optional[str] = Field(
@@ -1620,7 +1620,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"log_management"},
+        tags={"log"},
     )
     async def tail_log_file(
         path: str = Field(description="Path to the log file to tail"),
@@ -1668,7 +1668,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": True,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def search_package(
         query: str = Field(description="Search query for packages"),
@@ -1699,7 +1699,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def get_package_info(
         package: str = Field(description="Package name to get info about"),
@@ -1730,7 +1730,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def list_installed_packages(
         silent: Optional[bool] = Field(
@@ -1760,7 +1760,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def list_upgradable_packages(
         silent: Optional[bool] = Field(
@@ -1790,7 +1790,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def system_health_check(
         silent: Optional[bool] = Field(
@@ -1832,7 +1832,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def get_uptime(
         silent: Optional[bool] = Field(
@@ -1872,7 +1872,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def list_env_vars(
         silent: Optional[bool] = Field(
@@ -1902,7 +1902,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def get_env_var(
         name: str = Field(description="Name of the environment variable"),
@@ -1933,7 +1933,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": False,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def clean_temp_files(
         silent: Optional[bool] = Field(
@@ -1963,7 +1963,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": False,
             "openWorldHint": False,
         },
-        tags={"system_management"},
+        tags={"system"},
     )
     async def clean_package_cache(
         silent: Optional[bool] = Field(
@@ -1997,7 +1997,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"cron_management"},
+        tags={"cron"},
     )
     async def list_cron_jobs(
         user: Optional[str] = Field(
@@ -2030,7 +2030,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": False,
             "openWorldHint": False,
         },
-        tags={"cron_management"},
+        tags={"cron"},
     )
     async def add_cron_job(
         schedule: str = Field(
@@ -2067,7 +2067,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": False,
             "openWorldHint": False,
         },
-        tags={"cron_management"},
+        tags={"cron"},
     )
     async def remove_cron_job(
         pattern: str = Field(description="Pattern to match cron jobs for removal"),
@@ -2468,7 +2468,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"shell_management"},
+        tags={"shell"},
     )
     async def add_shell_alias(
         name: str = Field(description="Alias name"),
@@ -2501,7 +2501,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"python_management"},
+        tags={"python"},
     )
     async def install_uv(
         silent: Optional[bool] = Field(
@@ -2531,7 +2531,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": True,
         },
-        tags={"python_management"},
+        tags={"python"},
     )
     async def create_python_venv(
         path: str = Field(description="Path to create venv at"),
@@ -2565,7 +2565,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"python_management"},
+        tags={"python"},
     )
     async def install_python_package_uv(
         package: str = Field(description="Package name"),
@@ -2599,7 +2599,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"node_management"},
+        tags={"nodejs"},
     )
     async def install_nvm(
         silent: Optional[bool] = Field(
@@ -2629,7 +2629,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": True,
             "openWorldHint": False,
         },
-        tags={"node_management"},
+        tags={"nodejs"},
     )
     async def install_node(
         version: str = Field(description="Node version to install", default="--lts"),
@@ -2660,7 +2660,7 @@ def register_tools(mcp: FastMCP):
             "idempotentHint": False,
             "openWorldHint": False,
         },
-        tags={"node_management"},
+        tags={"nodejs"},
     )
     async def use_node(
         version: str = Field(description="Node version to use"),

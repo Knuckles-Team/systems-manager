@@ -1,7 +1,7 @@
 ---
 name: systems-manager-service-management
 description: Systems Manager Service Management capabilities for A2A Agent.
-tags: [service-management]
+tags: [service, service-management]
 ---
 ### Overview
 This skill provides access to service management operations for controlling system services.

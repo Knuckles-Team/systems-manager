@@ -1,7 +1,7 @@
 ---
 name: systems-manager-system-management
 description: Systems Manager System Management capabilities for A2A Agent.
-tags: [system-management]
+tags: [system, system-management]
 ---
 ### Overview
 This skill provides access to system_management operations.

@@ -1,7 +1,7 @@
 ---
 name: systems-manager-ssh-management
 description: Systems Manager SSH Key Management capabilities for A2A Agent.
-tags: [ssh-management]
+tags: [ssh, ssh-management]
 ---
 ### Overview
 This skill provides access to SSH key management operations.

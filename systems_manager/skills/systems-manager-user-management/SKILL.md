@@ -1,7 +1,7 @@
 ---
 name: systems-manager-user-management
 description: Systems Manager User Management capabilities for A2A Agent.
-tags: [user-management]
+tags: [user, user-management]
 ---
 ### Overview
 This skill provides access to user and group management operations.

@@ -1,7 +1,7 @@
 ---
 name: systems-manager-disk-management
 description: Systems Manager Disk Management capabilities for A2A Agent.
-tags: [disk-management]
+tags: [disk, disk-management]
 ---
 ### Overview
 This skill provides access to disk and filesystem management operations.
