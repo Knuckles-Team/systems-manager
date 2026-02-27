@@ -63,6 +63,7 @@ services:
       - "MODEL_ID=${MODEL_ID:-qwen/qwen3-coder-next}"
       - "DEBUG=False"
       - "ENABLE_WEB_UI=True"
+      - "ENABLE_OTEL=True"
     ports:
       - "9009:9009"
     healthcheck:
