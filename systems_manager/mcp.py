@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from dotenv import load_dotenv, find_dotenv
 import os
 import sys
 import logging
@@ -34,7 +35,7 @@ from systems_manager.systems_manager import (
     WindowsManager,
 )
 
-__version__ = "1.2.24"
+__version__ = "1.2.25"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -42,11 +43,12 @@ logging.basicConfig(
 logger = get_logger("SystemsManagerServer")
 
 
-def register_tools(mcp: FastMCP):
-    @mcp.custom_route("/health", methods=["GET"])
+def register_misc_tools(mcp: FastMCP):
     async def health_check(request: Request) -> JSONResponse:
         return JSONResponse({"status": "OK"})
 
+
+def register_system_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "Install Applications",
@@ -477,6 +479,333 @@ def register_tools(mcp: FastMCP):
 
     @mcp.tool(
         annotations={
+            "title": "Search Package",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+        tags={"system"},
+    )
+    async def search_package(
+        query: str = Field(description="Search query for packages"),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Searches for packages in the system package manager repositories."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.search_package(query)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Get Package Info",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def get_package_info(
+        package: str = Field(description="Package name to get info about"),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Gets detailed information about a specific package."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.get_package_info(package)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "List Installed Packages",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def list_installed_packages(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Lists all installed packages on the system."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.list_installed_packages()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "List Upgradable Packages",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def list_upgradable_packages(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Lists all packages that have updates available."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.list_upgradable_packages()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "System Health Check",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def system_health_check(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Performs a comprehensive system health check including CPU, memory, disk, swap, and top processes."""
+        logger = logging.getLogger("SystemsManager")
+        logger.debug("Performing system health check")
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            result = manager.system_health_check()
+            if not result.get("success"):
+                logger.error(
+                    f"System health check failed. Error: {result.get('error', 'Unknown error')}"
+                )
+            else:
+                logger.debug(
+                    f"System health check retrieved successfully. Status: {result.get('status', 'unknown')}"
+                )
+            return result
+        except Exception as e:
+            logger.error(f"Exception during system health check: {str(e)}")
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Get Uptime",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def get_uptime(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Gets system uptime and boot time."""
+        logger = logging.getLogger("SystemsManager")
+        logger.debug("Fetching system uptime")
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            result = manager.get_uptime()
+            if not result.get("success"):
+                logger.error(
+                    f"Failed to get uptime. Error: {result.get('error', 'Unknown error')}"
+                )
+            else:
+                logger.debug("Successfully retrieved system uptime.")
+            return result
+        except Exception as e:
+            logger.error(f"Exception while getting uptime: {str(e)}")
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "List Environment Variables",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def list_env_vars(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Lists all environment variables on the system."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.list_env_vars()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Get Environment Variable",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def get_env_var(
+        name: str = Field(description="Name of the environment variable"),
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Gets the value of a specific environment variable."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.get_env_var(name)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Clean Temp Files",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def clean_temp_files(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Cleans temporary files from system temp directories."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.clean_temp_files()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    @mcp.tool(
+        annotations={
+            "title": "Clean Package Cache",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+        tags={"system"},
+    )
+    async def clean_package_cache(
+        silent: Optional[bool] = Field(
+            description="Suppress output",
+            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+        ),
+        log_file: Optional[str] = Field(
+            description="Path to log file",
+            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+        ),
+        ctx: Context = Field(
+            description="MCP context for progress reporting", default=None
+        ),
+    ) -> Dict:
+        """Cleans the package manager cache to free disk space."""
+        try:
+            manager = detect_and_create_manager(silent, log_file)
+            return manager.clean_package_cache()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+
+def register_system_management_tools(mcp: FastMCP):
+    @mcp.tool(
+        annotations={
             "title": "List Windows Features",
             "readOnlyHint": True,
             "destructiveHint": False,
@@ -832,6 +1161,8 @@ def register_tools(mcp: FastMCP):
             logger.error(f"Failed to install local package: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
+
+def register_text_editor_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "Text Editor",
@@ -928,10 +1259,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"status": 500, "error": str(e)}
 
-    # =========================================================================
-    # Service Management Tools
-    # =========================================================================
 
+def register_service_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "List Services",
@@ -1163,10 +1492,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Process Management Tools
-    # =========================================================================
 
+def register_process_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "List Processes",
@@ -1262,10 +1589,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Network Management Tools
-    # =========================================================================
 
+def register_network_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "List Network Interfaces",
@@ -1391,10 +1716,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Disk Management Tools
-    # =========================================================================
 
+def register_disk_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "List Disks",
@@ -1492,10 +1815,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # User Management Tools
-    # =========================================================================
 
+def register_user_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "List Users",
@@ -1556,10 +1877,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Log Management Tools
-    # =========================================================================
 
+def register_log_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "Get System Logs",
@@ -1656,339 +1975,8 @@ def register_tools(mcp: FastMCP):
             logger.error(f"Exception while tailing log file: {str(e)}")
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # System Management Tools (additions to existing tag)
-    # =========================================================================
 
-    @mcp.tool(
-        annotations={
-            "title": "Search Package",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": True,
-        },
-        tags={"system"},
-    )
-    async def search_package(
-        query: str = Field(description="Search query for packages"),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Searches for packages in the system package manager repositories."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.search_package(query)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Get Package Info",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def get_package_info(
-        package: str = Field(description="Package name to get info about"),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Gets detailed information about a specific package."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.get_package_info(package)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "List Installed Packages",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def list_installed_packages(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Lists all installed packages on the system."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.list_installed_packages()
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "List Upgradable Packages",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def list_upgradable_packages(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Lists all packages that have updates available."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.list_upgradable_packages()
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "System Health Check",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def system_health_check(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Performs a comprehensive system health check including CPU, memory, disk, swap, and top processes."""
-        logger = logging.getLogger("SystemsManager")
-        logger.debug("Performing system health check")
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            result = manager.system_health_check()
-            if not result.get("success"):
-                logger.error(
-                    f"System health check failed. Error: {result.get('error', 'Unknown error')}"
-                )
-            else:
-                logger.debug(
-                    f"System health check retrieved successfully. Status: {result.get('status', 'unknown')}"
-                )
-            return result
-        except Exception as e:
-            logger.error(f"Exception during system health check: {str(e)}")
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Get Uptime",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def get_uptime(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Gets system uptime and boot time."""
-        logger = logging.getLogger("SystemsManager")
-        logger.debug("Fetching system uptime")
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            result = manager.get_uptime()
-            if not result.get("success"):
-                logger.error(
-                    f"Failed to get uptime. Error: {result.get('error', 'Unknown error')}"
-                )
-            else:
-                logger.debug("Successfully retrieved system uptime.")
-            return result
-        except Exception as e:
-            logger.error(f"Exception while getting uptime: {str(e)}")
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "List Environment Variables",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def list_env_vars(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Lists all environment variables on the system."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.list_env_vars()
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Get Environment Variable",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def get_env_var(
-        name: str = Field(description="Name of the environment variable"),
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Gets the value of a specific environment variable."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.get_env_var(name)
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Clean Temp Files",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": False,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def clean_temp_files(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Cleans temporary files from system temp directories."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.clean_temp_files()
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Clean Package Cache",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": False,
-            "openWorldHint": False,
-        },
-        tags={"system"},
-    )
-    async def clean_package_cache(
-        silent: Optional[bool] = Field(
-            description="Suppress output",
-            default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
-        ),
-        log_file: Optional[str] = Field(
-            description="Path to log file",
-            default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
-        ),
-        ctx: Context = Field(
-            description="MCP context for progress reporting", default=None
-        ),
-    ) -> Dict:
-        """Cleans the package manager cache to free disk space."""
-        try:
-            manager = detect_and_create_manager(silent, log_file)
-            return manager.clean_package_cache()
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    # =========================================================================
-    # Cron Management Tools
-    # =========================================================================
-
+def register_cron_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "List Cron Jobs",
@@ -2093,10 +2081,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Firewall Management Tools
-    # =========================================================================
 
+def register_firewall_management_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "Get Firewall Status",
@@ -2221,10 +2207,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # SSH Management Tools
-    # =========================================================================
 
+def register_ssh_management_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "List SSH Keys",
@@ -2325,6 +2309,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+
+def register_filesystem_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "List Files",
@@ -2460,6 +2446,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+
+def register_shell_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "Add Shell Alias",
@@ -2493,6 +2481,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+
+def register_python_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "Install uv",
@@ -2591,6 +2581,8 @@ def register_tools(mcp: FastMCP):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+
+def register_nodejs_tools(mcp: FastMCP):
     @mcp.tool(
         annotations={
             "title": "Install NVM",
@@ -2685,6 +2677,7 @@ def register_tools(mcp: FastMCP):
 
 
 def mcp_server():
+    load_dotenv(find_dotenv())
     print(f"mcp_server v{__version__}")
     parser = create_mcp_parser()
     parser.description = "System Manager MCP Utility"
@@ -2986,7 +2979,61 @@ def mcp_server():
             sys.exit(1)
 
     mcp = FastMCP(name="SystemsManagerMCP", auth=auth)
-    register_tools(mcp)
+    DEFAULT_MISCTOOL = to_boolean(os.getenv("MISCTOOL", "True"))
+    if DEFAULT_MISCTOOL:
+        register_misc_tools(mcp)
+    DEFAULT_SYSTEMTOOL = to_boolean(os.getenv("SYSTEMTOOL", "True"))
+    if DEFAULT_SYSTEMTOOL:
+        register_system_tools(mcp)
+    DEFAULT_SYSTEM_MANAGEMENTTOOL = to_boolean(
+        os.getenv("SYSTEM_MANAGEMENTTOOL", "True")
+    )
+    if DEFAULT_SYSTEM_MANAGEMENTTOOL:
+        register_system_management_tools(mcp)
+    DEFAULT_TEXT_EDITORTOOL = to_boolean(os.getenv("TEXT_EDITORTOOL", "True"))
+    if DEFAULT_TEXT_EDITORTOOL:
+        register_text_editor_tools(mcp)
+    DEFAULT_SERVICETOOL = to_boolean(os.getenv("SERVICETOOL", "True"))
+    if DEFAULT_SERVICETOOL:
+        register_service_tools(mcp)
+    DEFAULT_PROCESSTOOL = to_boolean(os.getenv("PROCESSTOOL", "True"))
+    if DEFAULT_PROCESSTOOL:
+        register_process_tools(mcp)
+    DEFAULT_NETWORKTOOL = to_boolean(os.getenv("NETWORKTOOL", "True"))
+    if DEFAULT_NETWORKTOOL:
+        register_network_tools(mcp)
+    DEFAULT_DISKTOOL = to_boolean(os.getenv("DISKTOOL", "True"))
+    if DEFAULT_DISKTOOL:
+        register_disk_tools(mcp)
+    DEFAULT_USERTOOL = to_boolean(os.getenv("USERTOOL", "True"))
+    if DEFAULT_USERTOOL:
+        register_user_tools(mcp)
+    DEFAULT_LOGTOOL = to_boolean(os.getenv("LOGTOOL", "True"))
+    if DEFAULT_LOGTOOL:
+        register_log_tools(mcp)
+    DEFAULT_CRONTOOL = to_boolean(os.getenv("CRONTOOL", "True"))
+    if DEFAULT_CRONTOOL:
+        register_cron_tools(mcp)
+    DEFAULT_FIREWALL_MANAGEMENTTOOL = to_boolean(
+        os.getenv("FIREWALL_MANAGEMENTTOOL", "True")
+    )
+    if DEFAULT_FIREWALL_MANAGEMENTTOOL:
+        register_firewall_management_tools(mcp)
+    DEFAULT_SSH_MANAGEMENTTOOL = to_boolean(os.getenv("SSH_MANAGEMENTTOOL", "True"))
+    if DEFAULT_SSH_MANAGEMENTTOOL:
+        register_ssh_management_tools(mcp)
+    DEFAULT_FILESYSTEMTOOL = to_boolean(os.getenv("FILESYSTEMTOOL", "True"))
+    if DEFAULT_FILESYSTEMTOOL:
+        register_filesystem_tools(mcp)
+    DEFAULT_SHELLTOOL = to_boolean(os.getenv("SHELLTOOL", "True"))
+    if DEFAULT_SHELLTOOL:
+        register_shell_tools(mcp)
+    DEFAULT_PYTHONTOOL = to_boolean(os.getenv("PYTHONTOOL", "True"))
+    if DEFAULT_PYTHONTOOL:
+        register_python_tools(mcp)
+    DEFAULT_NODEJSTOOL = to_boolean(os.getenv("NODEJSTOOL", "True"))
+    if DEFAULT_NODEJSTOOL:
+        register_nodejs_tools(mcp)
 
     for mw in middlewares:
         mcp.add_middleware(mw)

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systems-manager"
-version = "1.2.24"
+version = "1.2.25"
 description = "Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server"
 readme = "README.md"
 authors = [{ name = "Audel Rouhi", email = "knucklessg1@gmail.com" }]
@@ -14,27 +14,22 @@ classifiers = [
     "License :: Public Domain",
     "Environment :: Console",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3",
-]
+    "Programming Language :: Python :: 3"]
 requires-python = ">=3.10"
 dependencies = [
-    "agent-utilities>=0.2.11",
+    "agent-utilities>=0.2.12",
     "psutil>=7.0.0",
-    "distro>=1.9.0",
-]
+    "distro>=1.9.0"]
 
 [project.optional-dependencies]
 mcp = [
-    "agent-utilities[mcp]>=0.2.11",
-]
+    "agent-utilities[mcp]>=0.2.12"]
 
 agent = [
-    "agent-utilities[agent,logfire]>=0.2.11",
-]
+    "agent-utilities[agent,logfire]>=0.2.12"]
 
 all = [
-    "agent-utilities[mcp,agent,logfire]>=0.2.11",
-]
+    "agent-utilities[mcp,agent,logfire]>=0.2.12"]
 
 [project.scripts]
 systems-manager = "systems_manager.systems_manager:systems_manager"
@@ -45,7 +40,7 @@ systems-manager-agent = "systems_manager.agent:agent_server"
 where = ["."]
 
 [tool.setuptools.package-data]
-systems_manager = [ "mcp_config.json", "skills/**", "agent/**",]
+systems_manager = [ "mcp_config.json", "agent/**"]
 
 [tool.setuptools]
 include-package-data = true
