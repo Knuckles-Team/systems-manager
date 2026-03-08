@@ -12,7 +12,7 @@ async def run_test():
     print("Creating agent...")
     agent = create_agent(
         provider="openai",
-        model_id="qwen/qwen3-coder-next",
+        model_id="qwen/qwen3.5-35b-a3b",
         base_url="http://10.0.0.18:1234/v1",
         api_key="llama",
         mcp_url="http://localhost:8010/mcp",
