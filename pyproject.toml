@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systems-manager"
-version = "1.2.32"
+version = "1.2.33"
 description = "Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server"
 readme = "README.md"
 authors = [{ name = "Audel Rouhi", email = "knucklessg1@gmail.com" }]
@@ -17,19 +17,19 @@ classifiers = [
     "Programming Language :: Python :: 3"]
 requires-python = ">=3.10"
 dependencies = [
-    "agent-utilities>=0.2.19",
+    "agent-utilities>=0.2.20",
     "psutil>=7.0.0",
     "distro>=1.9.0"]
 
 [project.optional-dependencies]
 mcp = [
-    "agent-utilities[mcp]>=0.2.19"]
+    "agent-utilities[mcp]>=0.2.20"]
 
 agent = [
-    "agent-utilities[agent,logfire]>=0.2.19"]
+    "agent-utilities[agent,logfire]>=0.2.20"]
 
 all = [
-    "agent-utilities[mcp,agent,logfire]>=0.2.19"]
+    "agent-utilities[mcp,agent,logfire]>=0.2.20"]
 
 [project.scripts]
 systems-manager = "systems_manager.systems_manager:systems_manager"
