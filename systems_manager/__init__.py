@@ -12,8 +12,8 @@ CORE_MODULES = [
 ]
 
 OPTIONAL_MODULES = {
-    "systems_manager.agent": "agent",
-    "systems_manager.mcp": "mcp",
+    "systems_manager.agent_server": "agent",
+    "systems_manager.mcp_server": "mcp",
 }
 
 
@@ -47,10 +47,10 @@ for module_name, extra_name in OPTIONAL_MODULES.items():
     else:
         globals()[f"_{extra_name.upper()}_AVAILABLE"] = False
 
-_MCP_AVAILABLE = OPTIONAL_MODULES.get("systems_manager.mcp") in [
+_MCP_AVAILABLE = OPTIONAL_MODULES.get("systems_manager.mcp_server") in [
     m.__name__ for m in globals().values() if hasattr(m, "__name__")
 ]
-_AGENT_AVAILABLE = "systems_manager.agent" in globals()
+_AGENT_AVAILABLE = "systems_manager.agent_server" in globals()
 
 __all__.extend(["_MCP_AVAILABLE", "_AGENT_AVAILABLE"])
 

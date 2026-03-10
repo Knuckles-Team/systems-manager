@@ -1,5 +1,5 @@
 import asyncio
-from systems_manager.mcp import register_tools
+from systems_manager.mcp_server import register_tools
 from fastmcp import FastMCP
 import logging
 
