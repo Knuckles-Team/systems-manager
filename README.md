@@ -21,7 +21,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 1.2.48*
+*Version: 1.2.49*
 
 ## Overview
 

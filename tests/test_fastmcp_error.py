@@ -10,7 +10,7 @@ def test_tool(num: int) -> int:
 
 
 async def run():
-                                                                              
+
     print(await mcp.call_tool("test_tool", {"num": {}}))
 
 

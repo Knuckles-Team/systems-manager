@@ -16,7 +16,7 @@ async def run_test():
         base_url="http://10.0.0.18:1234/v1",
         api_key="llama",
         mcp_url="http://localhost:8010/mcp",
-        system_prompt="You must use get_os_statistics immediately.",              
+        system_prompt="You must use get_os_statistics immediately.",
     )
 
     print("Agent created. Building run input...")

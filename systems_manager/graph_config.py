@@ -4,7 +4,6 @@ This is the only file needed to enable graph mode for this agent.
 Provides TAG_PROMPTS and TAG_ENV_VARS for create_graph_agent_server().
 """
 
-                                                                       
 TAG_PROMPTS: dict[str, str] = {
     "cron": (
         "You are a Systems Manager Cron specialist. Help users manage and interact with Cron functionality using the available tools."
@@ -51,7 +50,6 @@ TAG_PROMPTS: dict[str, str] = {
 }
 
 
-                                                                        
 TAG_ENV_VARS: dict[str, str] = {
     "cron": "CRONTOOL",
     "disk": "DISKTOOL",
