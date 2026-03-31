@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 
-# coding: utf-8
 
 import argparse
 import subprocess
@@ -21,7 +20,7 @@ import psutil
 from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 
-__version__ = "1.2.47"
+__version__ = "1.2.48"
 
 
 def setup_logging(
@@ -192,13 +191,11 @@ class PythonManager:
         if platform.system() == "Windows":
             cmd = ["powershell", "-c", "irm https://astral.sh/uv/install.ps1 | iex"]
 
-        # We need shell=True for piping
         try:
             if platform.system() == "Windows":
                 result = self.manager.run_command(cmd[-1], shell=True)
             else:
-                # Use subprocess directly for pipe support if needed, or just run the installer
-                # For simplicity in this agent context, we'll try the direct command string with shell=True
+
                 result = self.manager.run_command(
                     "curl -LsSf https://astral.sh/uv/install.sh | sh", shell=True
                 )
@@ -221,12 +218,7 @@ class PythonManager:
             else:
                 env["VIRTUAL_ENV"] = venv_path
 
-        # uv requires active venv or --system (but we want venv management)
-        # Using VIRTUAL_ENV env var is the standard way uv detects active environment
-        return self.manager.run_command(
-            cmd
-        )  # We might need to pass env if run_command supported it,
-        # but for now let's assume global or currently active info
+        return self.manager.run_command(cmd)
 
 
 class NodeManager:
@@ -244,7 +236,7 @@ class NodeManager:
         return self.manager.run_command(cmd, shell=True)
 
     def install_node(self, version: str = "--lts") -> Dict:
-        # Source nvm first
+
         cmd = f". ~/.nvm/nvm.sh && nvm install {version}"
         return self.manager.run_command(cmd, shell=True)
 
@@ -566,10 +558,6 @@ class SystemsManagerBase(ABC):
             "network": psutil.net_io_counters()._asdict(),
         }
 
-    # =========================================================================
-    # Service Management
-    # =========================================================================
-
     def list_services(self) -> Dict:
         try:
             if platform.system() == "Linux":
@@ -729,10 +717,6 @@ class SystemsManagerBase(ABC):
             )
         return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
 
-    # =========================================================================
-    # Process Management
-    # =========================================================================
-
     def list_processes(self) -> Dict:
         try:
             processes = []
@@ -802,10 +786,6 @@ class SystemsManagerBase(ABC):
             return {"success": False, "error": f"Access denied to process {pid}"}
         except Exception as e:
             return {"success": False, "error": str(e)}
-
-    # =========================================================================
-    # Network Diagnostics
-    # =========================================================================
 
     def list_network_interfaces(self) -> Dict:
         try:
@@ -878,10 +858,6 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Disk / Filesystem Management
-    # =========================================================================
-
     def list_disks(self) -> Dict:
         try:
             partitions = []
@@ -922,10 +898,6 @@ class SystemsManagerBase(ABC):
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
-
-    # =========================================================================
-    # User / Group Management
-    # =========================================================================
 
     def list_users(self) -> Dict:
         try:
@@ -1005,10 +977,6 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Log / Journal Viewer
-    # =========================================================================
-
     def get_system_logs(
         self, unit: str = None, lines: int = 100, priority: str = None
     ) -> Dict:
@@ -1060,10 +1028,6 @@ class SystemsManagerBase(ABC):
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
-
-    # =========================================================================
-    # System Health Check
-    # =========================================================================
 
     def system_health_check(self) -> Dict:
         try:
@@ -1123,10 +1087,6 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Uptime / Boot Info
-    # =========================================================================
-
     def get_uptime(self) -> Dict:
         try:
             boot_time = datetime.fromtimestamp(psutil.boot_time())
@@ -1139,10 +1099,6 @@ class SystemsManagerBase(ABC):
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
-
-    # =========================================================================
-    # Cron / Scheduled Task Management
-    # =========================================================================
 
     def list_cron_jobs(self, user: str = None) -> Dict:
         try:
@@ -1227,13 +1183,6 @@ class SystemsManagerBase(ABC):
                     "error": f"Cron job with pattern '{pattern}' not found",
                 }
 
-            # ... writing back kept lines ...
-            # Actually I need to verify what the original code was doing for writing back.
-            # But the error was just about `l`. I will just fix `l` and the `result` assignment.
-
-            # Since I can't see the specific writing logic here, I will just replace the list comprehensions.
-            # context: writing back kept lines
-            # logic: join kept lines with newlines and write to temp file
             if not removed:
                 return {
                     "success": True,
@@ -1263,10 +1212,6 @@ class SystemsManagerBase(ABC):
                 os.remove(tmp_path)
         except Exception as e:
             return {"success": False, "error": str(e)}
-
-    # =========================================================================
-    # Firewall Management
-    # =========================================================================
 
     def get_firewall_status(self) -> Dict:
         try:
@@ -1412,10 +1357,6 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # SSH Key Management
-    # =========================================================================
-
     def list_ssh_keys(self) -> Dict:
         try:
             ssh_dir = os.path.expanduser("~/.ssh")
@@ -1493,10 +1434,6 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # =========================================================================
-    # Environment Variables
-    # =========================================================================
-
     def list_env_vars(self) -> Dict:
         return {
             "success": True,
@@ -1512,10 +1449,6 @@ class SystemsManagerBase(ABC):
                 "error": f"Environment variable '{name}' not found",
             }
         return {"success": True, "name": name, "value": value}
-
-    # =========================================================================
-    # Temp File / Cache Cleanup
-    # =========================================================================
 
     def clean_temp_files(self) -> Dict:
         try:

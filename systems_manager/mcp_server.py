@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding: utf-8
+
 
 from dotenv import load_dotenv, find_dotenv
 import os
@@ -22,7 +22,7 @@ from systems_manager.systems_manager import (
     WindowsManager,
 )
 
-__version__ = "1.2.47"
+__version__ = "1.2.48"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

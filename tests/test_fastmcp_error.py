@@ -10,7 +10,7 @@ def test_tool(num: int) -> int:
 
 
 async def run():
-    # Pass invalid argument type (e.g. dict) to cause Pydantic ValidationError
+                                                                              
     print(await mcp.call_tool("test_tool", {"num": {}}))
 
 

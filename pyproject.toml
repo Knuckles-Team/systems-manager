@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systems-manager"
-version = "1.2.47"
+version = "1.2.48"
 description = "Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server"
 readme = "README.md"
 authors = [{ name = "Audel Rouhi", email = "knucklessg1@gmail.com" }]
@@ -32,9 +32,7 @@ all = [
     "agent-utilities[mcp,agent,logfire]>=0.2.31"]
 
 [project.scripts]
-systems-manager = "systems_manager.systems_manager:systems_manager"
-systems-manager-mcp = "systems_manager.mcp_server:mcp_server"
-systems-manager-agent = "systems_manager.agent_server:agent_server"
+systems-mcp = "systems_manager.mcp_server:mcp_server"
 
 [tool.setuptools.packages.find]
 where = ["."]
