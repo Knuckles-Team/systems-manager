@@ -22,7 +22,7 @@ from systems_manager.systems_manager import (
     WindowsManager,
 )
 
-__version__ = "1.2.51"
+__version__ = "1.2.52"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
