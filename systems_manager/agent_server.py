@@ -4,12 +4,14 @@ import os
 import logging
 
 import sys
+from pathlib import Path
 import warnings
 from agent_utilities import (
     build_system_prompt_from_workspace,
     create_agent_parser,
     create_graph_agent_server,
     initialize_workspace,
+    get_workspace_path,
     load_identity,
 )
 
@@ -53,20 +55,12 @@ def agent_template(mcp_url: str = None, mcp_config: str = None, **kwargs):
 
             config_path = effective_mcp_config
             if not os.path.isabs(config_path) and "/" not in config_path:
-                from importlib.resources import files, as_file
-
-                try:
-
-                    pkg_res = files("systems_manager") / config_path
-                    if pkg_res.is_file():
-                        with as_file(pkg_res) as path:
-                            config_path = str(path)
-                except Exception:
-                    pass
-
-                if not os.path.isabs(config_path):
-                    from agent_utilities import get_workspace_path
-
+                # Check package-relative path first (for robust orchestration)
+                pkg_config = Path(__file__).parent / config_path
+                if pkg_config.exists():
+                    config_path = str(pkg_config)
+                else:
+                    # Fallback to workspace
                     ws_config = get_workspace_path(config_path)
                     if ws_config.exists():
                         config_path = str(ws_config)
