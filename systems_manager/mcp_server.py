@@ -1,5 +1,18 @@
 #!/usr/bin/env python
+import warnings
 
+# Filter RequestsDependencyWarning early to prevent log spam
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    try:
+        from requests.exceptions import RequestsDependencyWarning
+        warnings.filterwarnings("ignore", category=RequestsDependencyWarning)
+    except ImportError:
+        pass
+
+# General urllib3/chardet mismatch warnings
+warnings.filterwarnings("ignore", message=".*urllib3.*or chardet.*")
+warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 
 from dotenv import load_dotenv, find_dotenv
 import os
@@ -1142,7 +1155,7 @@ def register_system_management_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=total_steps, total=total_steps)
 
-            logger.debug(f"Command run completed: {command}\nResult: {result}")
+            logger.debug(f"Command run completed: {command} Result: {result}")
             return result
         except Exception as e:
             logger.error(f"Failed to install local package: {str(e)}")
@@ -2796,7 +2809,7 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
 
 def mcp_server() -> None:
     mcp, args, middlewares, registered_tags = get_mcp_instance()
-    print(f"{args.name or 'systems-manager'} MCP v{__version__}", file=sys.stderr)
+    print(f"{'systems-manager'} MCP v{__version__}", file=sys.stderr)
     print("\nStarting MCP Server", file=sys.stderr)
     print(f"  Transport: {args.transport.upper()}", file=sys.stderr)
     print(f"  Auth: {args.auth_type}", file=sys.stderr)
