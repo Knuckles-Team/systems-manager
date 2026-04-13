@@ -126,7 +126,7 @@ stateDiagram-v2
   DomainNode --> [*]: Domain Result
 ```
 
-- **RouterNode**: A fast, lightweight LLM (e.g., `nvidia/nemotron-3-super`) that classifies the user's query into one of the specialized domains.
+- **RouterNode**: A fast, lightweight LLM (e.g., `google/gemma-4-31b`) that classifies the user's query into one of the specialized domains.
 - **DomainNode**: The executor node. For the selected domain, it dynamically sets environment variables to temporarily enable ONLY the tools relevant to that domain, creating a highly focused sub-agent (e.g., `gpt-4o`) to complete the request. This preserves LLM context and prevents tool hallucination.
 
 ## Usage
@@ -224,7 +224,7 @@ This package includes an Agent utilizing `pydantic-ai` that can be deployed as a
 | --port           | Port to bind the server to                       | 9000                        |
 | --reload         | Enable auto-reload                               | False                       |
 | --provider       | LLM Provider (openai, anthropic, google, etc)    | openai                      |
-| --model-id       | LLM Model ID                                     | nvidia/nemotron-3-super               |
+| --model-id       | LLM Model ID                                     | google/gemma-4-31b               |
 | --base-url       | LLM Base URL (for OpenAI compatible providers)   | http://host.docker.internal:1234/v1    |
 | --api-key        | LLM API Key                                      | ollama                      |
 | --mcp-url        | MCP Server URL to connect to                     | None                        |
@@ -235,7 +235,7 @@ This package includes an Agent utilizing `pydantic-ai` that can be deployed as a
 #### Run A2A Server
 
 ```bash
-systems-manager-agent --provider openai --model-id nvidia/nemotron-3-super
+systems-manager-agent --provider openai --model-id google/gemma-4-31b
 ```
 
 ### Deploy MCP Server as a Service

@@ -12,7 +12,7 @@ async def run_test():
     print("Creating agent...")
     agent = create_agent(
         provider="openai",
-        model_id="nvidia/nemotron-3-super",
+        model_id="google/gemma-4-31b",
         base_url="http://10.0.0.18:1234/v1",
         api_key="llama",
         mcp_url="http://localhost:8010/mcp",
