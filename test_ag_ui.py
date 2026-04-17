@@ -1,8 +1,13 @@
 import asyncio
 import sys
 
-sys.path.insert(0, "/home/genius/Workspace/agent-packages/systems-manager")
-sys.path.insert(0, "/home/genius/Workspace/agent-packages/agent-utilities")
+import os
+
+REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE_ROOT = os.path.abspath(os.path.join(REPO_ROOT, "..", ".."))
+
+sys.path.insert(0, REPO_ROOT)
+sys.path.insert(0, os.path.join(WORKSPACE_ROOT, "agent-utilities"))
 
 from agent_utilities.agent_utilities import create_agent
 from pydantic_ai.ui.ag_ui import AGUIAdapter

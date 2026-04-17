@@ -20,11 +20,11 @@ import psutil
 from typing import List, Dict, Union
 from abc import ABC, abstractmethod
 
-__version__ = "1.2.53"
+__version__ = "1.2.54"
 
 
 def setup_logging(
-    is_mcp_server: bool = False, log_file: str = "systems_manager_mcp.log"
+    _is_mcp_server: bool = False, log_file: str = "systems_manager_mcp.log"
 ):
     if not log_file:
         script_dir = os.path.dirname(os.path.abspath(__file__))

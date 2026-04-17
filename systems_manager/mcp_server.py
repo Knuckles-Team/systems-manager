@@ -6,6 +6,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     try:
         from requests.exceptions import RequestsDependencyWarning
+
         warnings.filterwarnings("ignore", category=RequestsDependencyWarning)
     except ImportError:
         pass
@@ -21,8 +22,6 @@ import logging
 import requests
 from typing import Optional, Dict, List, Any
 from pydantic import Field
-from starlette.requests import Request
-from starlette.responses import JSONResponse
 from fastmcp import FastMCP, Context
 
 from fastmcp.utilities.logging import get_logger
@@ -35,7 +34,7 @@ from systems_manager.systems_manager import (
     WindowsManager,
 )
 
-__version__ = "1.2.53"
+__version__ = "1.2.54"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -44,8 +43,8 @@ logger = get_logger("SystemsManagerServer")
 
 
 def register_misc_tools(mcp: FastMCP):
-    async def health_check(request: Request) -> JSONResponse:
-        return JSONResponse({"status": "OK"})
+    pass
+    pass
 
 
 def register_system_tools(mcp: FastMCP):
