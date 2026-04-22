@@ -1,7 +1,6 @@
 import asyncio
-import sys
-
 import os
+import sys
 
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE_ROOT = os.path.abspath(os.path.join(REPO_ROOT, "..", ".."))

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=80.9.0", "wheel"]
+requires = [ "setuptools>=80.9.0", "wheel",]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,43 +7,48 @@ name = "systems-manager"
 version = "1.2.54"
 description = "Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server"
 readme = "README.md"
-authors = [{ name = "Audel Rouhi", email = "knucklessg1@gmail.com" }]
-license = { text = "MIT" }
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "License :: Public Domain",
-    "Environment :: Console",
-    "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3"]
+classifiers = [ "Development Status :: 5 - Production/Stable", "License :: Public Domain", "Environment :: Console", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3",]
 requires-python = ">=3.10"
-dependencies = [
-    "agent-utilities>=0.2.31",
-    "psutil>=7.0.0",
-    "distro>=1.9.0"]
+dependencies = [ "agent-utilities>=0.2.31", "psutil>=7.0.0", "distro>=1.9.0",]
+[[project.authors]]
+name = "Audel Rouhi"
+email = "knucklessg1@gmail.com"
+
+[project.license]
+text = "MIT"
 
 [project.optional-dependencies]
-mcp = [
-    "agent-utilities[mcp]>=0.2.31"]
-
-agent = [
-    "agent-utilities[agent,logfire]>=0.2.31"]
-
-all = [
-    "agent-utilities[mcp,agent,logfire]>=0.2.31"]
+mcp = [ "agent-utilities[mcp]>=0.2.31",]
+agent = [ "agent-utilities[agent,logfire]>=0.2.31",]
+all = [ "agent-utilities[mcp,agent,logfire]>=0.2.31",]
+test = [ "pytest", "pytest-asyncio",]
 
 [project.scripts]
 systems-manager = "systems_manager.systems_manager:main"
 systems-manager-mcp = "systems_manager.mcp_server:mcp_server"
 systems-manager-agent = "systems_manager.agent_server:agent_server"
 
-[tool.setuptools.packages.find]
-where = ["."]
-
-[tool.setuptools.package-data]
-systems_manager = [ "mcp_config.json", "agent_data/**"]
-
 [tool.setuptools]
 include-package-data = true
 
 [tool.codespell]
 ignore-words-list = "fo"
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.setuptools.package-data]
+systems_manager = [ "mcp_config.json", "agent_data/**",]
+
+[tool.ruff.lint]
+select = [ "E", "F", "I", "UP", "B",]
+ignore = [ "E402", "E501", "B008",]
+
+[tool.setuptools.packages.find]
+where = [ ".",]
