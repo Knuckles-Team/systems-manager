@@ -1,0 +1,624 @@
+check for added large files..............................................Passed
+check python ast.........................................................Passed
+check yaml...............................................................Passed
+check toml...............................................................Passed
+check json...............................................................Passed
+fix utf-8 byte order marker..............................................Passed
+check for merge conflicts................................................Passed
+detect private key.......................................................Passed
+trim trailing whitespace.................................................Passed
+fix end of files.........................................................Passed
+don't commit to branch...................................................Failed
+- hook id: no-commit-to-branch
+- exit code: 1
+black....................................................................Passed
+ruff (legacy alias)......................................................Failed
+- hook id: ruff
+- exit code: 1
+
+F841 Local variable `initial_all` is assigned to but never used
+   --> tests/test_init.py:186:9
+    |
+185 |         # Get initial state
+186 |         initial_all = systems_manager.__all__.copy()
+    |         ^^^^^^^^^^^
+187 |
+188 |         # Reload module
+    |
+help: Remove assignment to unused variable `initial_all`
+
+F841 Local variable `ctx` is assigned to but never used
+   --> tests/test_mcp_server.py:768:9
+    |
+766 |         """Test that tools work without context (progress is optional)."""
+767 |         # Tools should not fail when ctx is None
+768 |         ctx = None
+    |         ^^^
+769 |         # No error should occur
+770 |         assert True
+    |
+help: Remove assignment to unused variable `ctx`
+
+E722 Do not use bare `except`
+   --> tests/test_mcp_server.py:815:9
+    |
+813 |             assert response.status_code == 200
+814 |             assert "assets" in response.json()
+815 |         except:
+    |         ^^^^^^
+816 |             # Skip if mocking doesn't work
+817 |             pass
+    |
+
+Found 3 errors.
+No fixes available (2 hidden fixes can be enabled with the `--unsafe-fixes` option).
+
+vulture..................................................................Failed
+- hook id: vulture
+- exit code: 3
+
+systems_manager/mcp_server.py:51: unused variable 'request' (100% confidence)
+tests/test_linux_managers.py:17: unused variable 'mock_linux_platform' (100% confidence)
+tests/test_linux_managers.py:39: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:55: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:76: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:123: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:162: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:206: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:232: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:349: unused variable 'mock_rhel_platform' (100% confidence)
+tests/test_linux_managers.py:370: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:582: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:761: unused variable 'mock_arch_platform' (100% confidence)
+tests/test_linux_managers.py:782: unused variable 'kwargs' (100% confidence)
+tests/test_linux_managers.py:889: unused variable 'kwargs' (100% confidence)
+tests/test_mcp_server.py:690: unused variable 'kwargs' (100% confidence)
+tests/test_mcp_server.py:702: unused variable 'kwargs' (100% confidence)
+tests/test_mcp_server.py:714: unused variable 'kwargs' (100% confidence)
+tests/test_mcp_server.py:755: unused variable 'kwargs' (100% confidence)
+tests/test_mcp_server.py:803: unused variable 'mock_requests_get' (100% confidence)
+tests/test_systems_manager_base.py:364: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:379: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:390: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:404: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:419: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:433: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:447: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:464: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:862: unused variable 'kwargs' (100% confidence)
+tests/test_systems_manager_base.py:981: unused variable 'kwargs' (100% confidence)
+tests/test_windows_manager.py:13: unused variable 'mock_windows_platform' (100% confidence)
+tests/test_windows_manager.py:26: unused variable 'mock_windows_platform' (100% confidence)
+tests/test_windows_manager.py:57: unused variable 'kwargs' (100% confidence)
+tests/test_windows_manager.py:89: unused variable 'kwargs' (100% confidence)
+tests/test_windows_manager.py:103: unused variable 'kwargs' (100% confidence)
+tests/test_windows_manager.py:141: unused variable 'kwargs' (100% confidence)
+tests/test_windows_manager.py:214: unused variable 'kwargs' (100% confidence)
+tests/test_windows_manager.py:247: unused variable 'kwargs' (100% confidence)
+tests/test_windows_manager.py:376: unused variable 'mock_windows_platform' (100% confidence)
+
+codespell................................................................Passed
+bandit...................................................................Failed
+- hook id: bandit
+- exit code: 1
+
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: B101,B404,B603
+[main]	INFO	running on Python 3.13.7
+Run started:2026-04-28 14:21:22.900968
+
+Test results:
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: ./systems_manager/mcp_server.py:403:23
+402	            )
+403	            response = requests.get(api_url).json()
+404	            all_assets = [
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/mcp_server.py:1255:21
+1254	            result = manager.run_command(
+1255	                command=command, elevated=elevated, shell=shell
+1256	            )
+1257
+1258	            if ctx:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:195:25
+194	            if platform.system() == "Windows":
+195	                result = self.manager.run_command(cmd[-1], shell=True)
+196	            else:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:198:25
+197	                result = self.manager.run_command(
+198	                    "curl -LsSf https://astral.sh/uv/install.sh | sh", shell=True
+199	                )
+200	            return result
+201	        except Exception as e:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:234:15
+233	        cmd = "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
+234	        return self.manager.run_command(cmd, shell=True)
+235
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:239:15
+238	        cmd = f". ~/.nvm/nvm.sh && nvm install {version}"
+239	        return self.manager.run_command(cmd, shell=True)
+240
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:243:15
+242	        cmd = f". ~/.nvm/nvm.sh && nvm use {version}"
+243	        return self.manager.run_command(cmd, shell=True)
+244
+
+--------------------------------------------------
+>> Issue: [B602:subprocess_popen_with_shell_equals_true] subprocess call with shell=True identified, security issue.
+   Severity: High   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b602_subprocess_popen_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:300:28
+299	                    stderr=subprocess.DEVNULL,
+300	                    shell=shell,
+301	                    check=True,
+302	                )
+303	                stdout = None
+304	                stderr = None
+305	            else:
+306	                print(f"Running: {' '.join(command)}")
+307	                result_sp = subprocess.run(
+
+--------------------------------------------------
+>> Issue: [B602:subprocess_popen_with_shell_equals_true] subprocess call with shell=True identified, security issue.
+   Severity: High   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b602_subprocess_popen_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:311:28
+310	                    text=True,
+311	                    shell=shell,
+312	                    check=True,
+313	                )
+314	                stdout = result_sp.stdout
+315	                stderr = result_sp.stderr
+316	            self.log_command(command, result_sp)
+317	            return {
+318	                "success": True,
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: ./systems_manager/systems_manager.py:445:19
+444	        api_url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest"
+445	        response = requests.get(api_url).json()
+446	        all_assets = [
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b113_request_without_timeout.html
+   Location: ./systems_manager/systems_manager.py:482:20
+481	            try:
+482	                r = requests.get(url)
+483	                r.raise_for_status()
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:594:25
+593	                    ],
+594	                    shell=True,
+595	                )
+596	                if not result["success"]:
+597	                    return result
+598	                try:
+599	                    services = json.loads(result.get("stdout", "[]"))
+600	                    if isinstance(services, dict):
+601	                        services = [services]
+602	                    return {
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:630:25
+629	                    ],
+630	                    shell=True,
+631	                )
+632	                if result["success"]:
+633	                    try:
+634	                        return {
+635	                            "success": True,
+636	                            "service": json.loads(result.get("stdout", "{}")),
+637	                        }
+638	                    except json.JSONDecodeError:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:656:19
+655	                elevated=True,
+656	                shell=True,
+657	            )
+658	        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+659
+660	    def stop_service(self, name: str) -> dict:
+661	        if platform.system() == "Linux":
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:667:19
+666	                elevated=True,
+667	                shell=True,
+668	            )
+669	        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+670
+671	    def restart_service(self, name: str) -> dict:
+672	        if platform.system() == "Linux":
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:684:19
+683	                elevated=True,
+684	                shell=True,
+685	            )
+686	        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+687
+688	    def enable_service(self, name: str) -> dict:
+689	        if platform.system() == "Linux":
+690	            return self.run_command(["systemctl", "enable", name], elevated=True)
+691	        elif platform.system() == "Windows":
+692	            return self.run_command(
+693	                [
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:699:19
+698	                elevated=True,
+699	                shell=True,
+700	            )
+701	        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+702
+703	    def disable_service(self, name: str) -> dict:
+704	        if platform.system() == "Linux":
+705	            return self.run_command(["systemctl", "disable", name], elevated=True)
+706	        elif platform.system() == "Windows":
+707	            return self.run_command(
+708	                [
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:714:19
+713	                elevated=True,
+714	                shell=True,
+715	            )
+716	        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+717
+718	    def list_processes(self) -> dict:
+719	        try:
+720	            processes = []
+721	            for proc in psutil.process_iter(
+722	                ["pid", "name", "username", "cpu_percent", "memory_percent", "status"]
+723	            ):
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:925:25
+924	                    ],
+925	                    shell=True,
+926	                )
+927	                if result["success"]:
+928	                    try:
+929	                        users = json.loads(result.get("stdout", "[]"))
+930	                        if isinstance(users, dict):
+931	                            users = [users]
+932	                        return {"success": True, "users": users, "total": len(users)}
+933	                    except json.JSONDecodeError:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:963:25
+962	                    ],
+963	                    shell=True,
+964	                )
+965	                if result["success"]:
+966	                    try:
+967	                        groups = json.loads(result.get("stdout", "[]"))
+968	                        if isinstance(groups, dict):
+969	                            groups = [groups]
+970	                        return {"success": True, "groups": groups, "total": len(groups)}
+971	                    except json.JSONDecodeError:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:1002:25
+1001	                    ],
+1002	                    shell=True,
+1003	                )
+1004	                logs = (
+1005	                    result.get("stdout", "")
+1006	                    if result["success"]
+1007	                    else result.get("stderr", result.get("error", "Unknown error"))
+1008	                )
+1009	                return {"success": result["success"], "logs": logs}
+1010	            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:1114:25
+1113	                result = self.run_command(
+1114	                    ["schtasks", "/query", "/fo", "CSV", "/v"], shell=True
+1115	                )
+1116	                return {
+1117	                    "success": result["success"],
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:1243:20
+1242	                r = self.run_command(
+1243	                    ["netsh", "advfirewall", "show", "allprofiles"], shell=True
+1244	                )
+1245	                return {
+1246	                    "success": r["success"],
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:1287:20
+1286	                    ],
+1287	                    shell=True,
+1288	                )
+1289	                if r["success"]:
+1290	                    try:
+1291	                        rules = json.loads(r.get("stdout", "[]"))
+1292	                        if isinstance(rules, dict):
+1293	                            rules = [rules]
+1294	                        return {
+1295	                            "success": True,
+1296	                            "tool": "netsh",
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:1325:20
+1324	                    ["netsh", "advfirewall", "firewall", "add", "rule"] + rule.split(),
+1325	                    shell=True,
+1326	                    elevated=True,
+1327	                )
+1328	                return {"success": r["success"], "tool": "netsh", "details": r}
+1329	            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+1330	        except Exception as e:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:1352:20
+1351	                    + rule.split(),
+1352	                    shell=True,
+1353	                    elevated=True,
+1354	                )
+1355	                return {"success": r["success"], "tool": "netsh", "details": r}
+1356	            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+1357	        except Exception as e:
+1358	            return {"success": False, "error": str(e)}
+
+--------------------------------------------------
+>> Issue: [B107:hardcoded_password_default] Possible hardcoded password: ''
+   Severity: Low   Confidence: Medium
+   CWE: CWE-259 (https://cwe.mitre.org/data/definitions/259.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b107_hardcoded_password_default.html
+   Location: ./systems_manager/systems_manager.py:1387:4
+1386
+1387	    def generate_ssh_key(
+1388	        self, key_type: str = "ed25519", comment: str = "", passphrase: str = ""
+1389	    ) -> dict:
+1390	        try:
+1391	            ssh_dir = os.path.expanduser("~/.ssh")
+1392	            os.makedirs(ssh_dir, exist_ok=True)
+1393	            key_path = os.path.join(ssh_dir, f"id_{key_type}")
+1394	            if os.path.exists(key_path):
+1395	                return {"success": False, "error": f"Key already exists: {key_path}"}
+1396	            result = self.run_command(
+1397	                [
+1398	                    "ssh-keygen",
+1399	                    "-t",
+1400	                    key_type,
+1401	                    "-f",
+1402	                    key_path,
+1403	                    "-N",
+1404	                    passphrase,
+1405	                    "-C",
+1406	                    comment,
+1407	                ]
+1408	            )
+1409	            return {
+1410	                "success": result["success"],
+1411	                "key_path": key_path,
+1412	                "public_key_path": f"{key_path}.pub",
+1413	                "details": result,
+1414	            }
+1415	        except Exception as e:
+1416	            return {"success": False, "error": str(e)}
+1417
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:1505:25
+1504	                result = self.run_command(
+1505	                    ["powershell.exe", "-Command", ps_cmd], shell=True
+1506	                )
+1507	                if result["success"]:
+1508	                    try:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:2059:17
+2058	        orphans_cmd = ["pacman", "-Rns", "$(pacman -Qdtq)", "--noconfirm"]
+2059	        result = self.run_command(orphans_cmd, elevated=True, shell=True)
+2060	        return {
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:2084:21
+2083	        echo_cmd = ["bash", "-c", f"echo '{content}' >> {conf}"]
+2084	        add_result = self.run_command(echo_cmd, elevated=True, shell=True)
+2085	        if add_result["success"]:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:2220:20
+2219	        ]
+2220	        wu_result = self.run_command(wu_cmd, shell=True, elevated=True)
+2221	        overall_success = winget_result["success"] and wu_result["success"]
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:2231:17
+2230	    def clean(self) -> dict:
+2231	        result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)
+2232	        return {
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:2239:23
+2238	    def optimize(self) -> dict:
+2239	        clean_result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)
+2240	        defrag_result = self.run_command(
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:2259:17
+2258	        ]
+2259	        result = self.run_command(cmd, shell=True)
+2260	        if result["success"]:
+
+--------------------------------------------------
+>> Issue: [B604:any_other_function_with_shell_equals_true] Function call with shell=True parameter identified, possible security issue.
+   Severity: Medium   Confidence: Low
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/0.0.0/plugins/b604_any_other_function_with_shell_equals_true.html
+   Location: ./systems_manager/systems_manager.py:2364:17
+2363	            ],
+2364	            shell=True,
+2365	        )
+2366	        return {
+2367	            "success": True,
+2368	            "message": f"Windows package cache cleaned: \n{result}",
+2369	        }
+2370
+2371
+2372	def detect_and_create_manager(
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 5288
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 1
+		Medium: 32
+		High: 2
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 32
+		Medium: 1
+		High: 2
+Files skipped (0):
+
+nbqa-ruff................................................................Passed

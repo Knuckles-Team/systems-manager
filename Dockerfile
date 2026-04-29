@@ -52,7 +52,7 @@ ENV HOST=${HOST} \
     UV_COMPILE_BYTECODE=1
 
 RUN apt-get update \
-    && apt-get install -y curl nano ripgrep tree fd-find \
+    && apt-get install -y default-jre curl nano ripgrep tree fd-find \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
      && curl -sS https://starship.rs/install.sh | sh -s -- --yes \
     && mkdir -p /root/.config \

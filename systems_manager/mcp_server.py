@@ -6,6 +6,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     try:
         from requests.exceptions import RequestsDependencyWarning
+
         warnings.filterwarnings("ignore", category=RequestsDependencyWarning)
     except ImportError:
         pass
@@ -29,6 +30,9 @@ from fastmcp.utilities.logging import get_logger
 from agent_utilities.base_utilities import to_boolean
 from agent_utilities.mcp_utilities import (
     create_mcp_server,
+    ctx_confirm_destructive,
+    ctx_log,
+    ctx_progress,
 )
 from systems_manager.systems_manager import (
     detect_and_create_manager,
@@ -44,7 +48,7 @@ logger = get_logger("SystemsManagerServer")
 
 
 def register_misc_tools(mcp: FastMCP):
-    async def health_check(request: Request) -> JSONResponse:
+    async def health_check(_request: Request) -> JSONResponse:
         return JSONResponse({"status": "OK"})
 
 
@@ -77,7 +81,12 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Installs applications using the native package manager with Snap fallback."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(f"Installing apps: {apps}, silent: {silent}, log_file: {log_file}")
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Installing apps: {apps}, silent: {silent}, log_file: {log_file}",
+        )
 
         if not apps:
             return {"success": False, "error": "No applications provided"}
@@ -102,10 +111,15 @@ def register_system_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=current_step, total=total_steps)
 
-            logger.debug(f"Completed installing apps: {apps}, result: {result}")
+            ctx_log(
+                ctx,
+                logger,
+                "debug",
+                f"Completed installing apps: {apps}, result: {result}",
+            )
             return result
         except Exception as e:
-            logger.error(f"Failed to install applications: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to install applications: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -133,7 +147,12 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Updates the system and applications."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(f"Updating system, silent: {silent}, log_file: {log_file}")
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Updating system, silent: {silent}, log_file: {log_file}",
+        )
 
         if ctx:
             message = "Are you sure you want to UPDATE the system?"
@@ -151,10 +170,10 @@ def register_system_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=100, total=100)
 
-            logger.debug("System update completed")
+            ctx_log(ctx, logger, "debug", "System update completed")
             return result
         except Exception as e:
-            logger.error(f"Failed to update system: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to update system: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -182,7 +201,12 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Cleans system resources (e.g., trash/recycle bin)."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(f"Cleaning system, silent: {silent}, log_file: {log_file}")
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Cleaning system, silent: {silent}, log_file: {log_file}",
+        )
 
         if ctx:
             message = "Are you sure you want to CLEAN system resources?"
@@ -200,10 +224,10 @@ def register_system_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=100, total=100)
 
-            logger.debug("System cleanup completed")
+            ctx_log(ctx, logger, "debug", "System cleanup completed")
             return result
         except Exception as e:
-            logger.error(f"Failed to clean system: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to clean system: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -231,7 +255,12 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Optimizes system resources (e.g., autoremove, defrag)."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(f"Optimizing system, silent: {silent}, log_file: {log_file}")
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Optimizing system, silent: {silent}, log_file: {log_file}",
+        )
 
         if ctx:
             message = "Are you sure you want to OPTIMIZE system resources?"
@@ -249,10 +278,10 @@ def register_system_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=100, total=100)
 
-            logger.debug("System optimization completed")
+            ctx_log(ctx, logger, "debug", "System optimization completed")
             return result
         except Exception as e:
-            logger.error(f"Failed to optimize system: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to optimize system: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -283,8 +312,11 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Installs Python modules via pip."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Installing Python modules: {modules}, silent: {silent}, log_file: {log_file}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Installing Python modules: {modules}, silent: {silent}, log_file: {log_file}",
         )
         if not modules:
             return {"success": False, "error": "No Python modules provided"}
@@ -309,10 +341,12 @@ def register_system_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=current_step, total=total_steps)
 
-            logger.debug(f"Completed installing Python modules: {modules}")
+            ctx_log(
+                ctx, logger, "debug", f"Completed installing Python modules: {modules}"
+            )
             return result
         except Exception as e:
-            logger.error(f"Failed to install Python modules: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to install Python modules: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -344,8 +378,11 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Installs specified Nerd Fonts or all available fonts if 'all' is specified."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Installing fonts: {fonts}, silent: {silent}, log_file: {log_file}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Installing fonts: {fonts}, silent: {silent}, log_file: {log_file}",
         )
 
         if not fonts:
@@ -363,7 +400,7 @@ def register_system_tools(mcp: FastMCP):
             api_url = (
                 "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest"
             )
-            response = requests.get(api_url).json()
+            response = requests.get(api_url, timeout=10).json()
             all_assets = [
                 a
                 for a in response["assets"]
@@ -389,10 +426,10 @@ def register_system_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=total_steps, total=total_steps)
 
-            logger.debug(f"Font installation completed: {fonts}")
+            ctx_log(ctx, logger, "debug", f"Font installation completed: {fonts}")
             return result
         except Exception as e:
-            logger.error(f"Failed to install fonts: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to install fonts: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -420,20 +457,28 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Retrieves operating system statistics."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(f"Fetching OS stats, silent: {silent}, log_file: {log_file}")
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Fetching OS stats, silent: {silent}, log_file: {log_file}",
+        )
 
         try:
             manager = detect_and_create_manager(silent, log_file)
             stats = manager.get_os_statistics()
             if not stats.get("success", True):
-                logger.error(
-                    f"Failed to get OS stats. Error: {stats.get('error', 'Unknown error')}"
+                ctx_log(
+                    ctx,
+                    logger,
+                    "error",
+                    f"Failed to get OS stats. Error: {stats.get('error', 'Unknown error')}",
                 )
             else:
-                logger.debug("OS stats retrieved successfully.")
+                ctx_log(ctx, logger, "debug", "OS stats retrieved successfully.")
             return stats
         except Exception as e:
-            logger.error(f"Exception while getting OS stats: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Exception while getting OS stats: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -461,20 +506,33 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Retrieves hardware statistics."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(f"Fetching hardware stats, silent: {silent}, log_file: {log_file}")
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Fetching hardware stats, silent: {silent}, log_file: {log_file}",
+        )
 
         try:
             manager = detect_and_create_manager(silent, log_file)
             stats = manager.get_hardware_statistics()
             if not stats.get("success", True):
-                logger.error(
-                    f"Failed to get hardware stats. Error: {stats.get('error', 'Unknown error')}"
+                ctx_log(
+                    ctx,
+                    logger,
+                    "error",
+                    f"Failed to get hardware stats. Error: {stats.get('error', 'Unknown error')}",
                 )
             else:
-                logger.debug("Hardware stats retrieved successfully.")
+                ctx_log(ctx, logger, "debug", "Hardware stats retrieved successfully.")
             return stats
         except Exception as e:
-            logger.error(f"Exception while getting hardware stats: {str(e)}")
+            ctx_log(
+                ctx,
+                logger,
+                "error",
+                f"Exception while getting hardware stats: {str(e)}",
+            )
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -624,21 +682,29 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Performs a comprehensive system health check including CPU, memory, disk, swap, and top processes."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug("Performing system health check")
+        ctx_log(ctx, logger, "debug", "Performing system health check")
         try:
             manager = detect_and_create_manager(silent, log_file)
             result = manager.system_health_check()
             if not result.get("success"):
-                logger.error(
-                    f"System health check failed. Error: {result.get('error', 'Unknown error')}"
+                ctx_log(
+                    ctx,
+                    logger,
+                    "error",
+                    f"System health check failed. Error: {result.get('error', 'Unknown error')}",
                 )
             else:
-                logger.debug(
-                    f"System health check retrieved successfully. Status: {result.get('status', 'unknown')}"
+                ctx_log(
+                    ctx,
+                    logger,
+                    "debug",
+                    f"System health check retrieved successfully. Status: {result.get('status', 'unknown')}",
                 )
             return result
         except Exception as e:
-            logger.error(f"Exception during system health check: {str(e)}")
+            ctx_log(
+                ctx, logger, "error", f"Exception during system health check: {str(e)}"
+            )
             return {"success": False, "error": str(e)}
 
     @mcp.tool(
@@ -666,19 +732,22 @@ def register_system_tools(mcp: FastMCP):
     ) -> Dict:
         """Gets system uptime and boot time."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug("Fetching system uptime")
+        ctx_log(ctx, logger, "debug", "Fetching system uptime")
         try:
             manager = detect_and_create_manager(silent, log_file)
             result = manager.get_uptime()
             if not result.get("success"):
-                logger.error(
-                    f"Failed to get uptime. Error: {result.get('error', 'Unknown error')}"
+                ctx_log(
+                    ctx,
+                    logger,
+                    "error",
+                    f"Failed to get uptime. Error: {result.get('error', 'Unknown error')}",
                 )
             else:
-                logger.debug("Successfully retrieved system uptime.")
+                ctx_log(ctx, logger, "debug", "Successfully retrieved system uptime.")
             return result
         except Exception as e:
-            logger.error(f"Exception while getting uptime: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Exception while getting uptime: {str(e)}")
             return {"success": False, "error": str(e)}
 
     @mcp.tool(
@@ -829,8 +898,11 @@ def register_system_management_tools(mcp: FastMCP):
     ) -> List[Dict]:
         """Lists all Windows features and their status (Windows only)."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Listing Windows features, silent: {silent}, log_file: {log_file}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Listing Windows features, silent: {silent}, log_file: {log_file}",
         )
 
         try:
@@ -843,10 +915,10 @@ def register_system_management_tools(mcp: FastMCP):
                     }
                 ]
             features = manager.list_windows_features()
-            logger.debug(f"Windows features: {features}")
+            ctx_log(ctx, logger, "debug", f"Windows features: {features}")
             return features
         except Exception as e:
-            logger.error(f"Failed to list Windows features: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to list Windows features: {str(e)}")
             return [{"success": False, "error": f"Unexpected error: {str(e)}"}]
 
     @mcp.tool(
@@ -877,8 +949,11 @@ def register_system_management_tools(mcp: FastMCP):
     ) -> Dict:
         """Enables specified Windows features (Windows only)."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Enabling Windows features: {features}, silent: {silent}, log_file: {log_file}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Enabling Windows features: {features}, silent: {silent}, log_file: {log_file}",
         )
 
         if not features:
@@ -904,10 +979,14 @@ def register_system_management_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=current_step, total=total_steps)
 
-            logger.debug(f"Completed enabling Windows features: {features}")
+            ctx_log(
+                ctx, logger, "debug", f"Completed enabling Windows features: {features}"
+            )
             return result
         except Exception as e:
-            logger.error(f"Failed to enable Windows features: {str(e)}")
+            ctx_log(
+                ctx, logger, "error", f"Failed to enable Windows features: {str(e)}"
+            )
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -938,8 +1017,11 @@ def register_system_management_tools(mcp: FastMCP):
     ) -> Dict:
         """Disables specified Windows features (Windows only)."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Disabling Windows features: {features}, silent: {silent}, log_file: {log_file}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Disabling Windows features: {features}, silent: {silent}, log_file: {log_file}",
         )
 
         if not features:
@@ -965,10 +1047,17 @@ def register_system_management_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=current_step, total=total_steps)
 
-            logger.debug(f"Completed disabling Windows features: {features}")
+            ctx_log(
+                ctx,
+                logger,
+                "debug",
+                f"Completed disabling Windows features: {features}",
+            )
             return result
         except Exception as e:
-            logger.error(f"Failed to disable Windows features: {str(e)}")
+            ctx_log(
+                ctx, logger, "error", f"Failed to disable Windows features: {str(e)}"
+            )
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -1001,8 +1090,11 @@ def register_system_management_tools(mcp: FastMCP):
     ) -> Dict:
         """Adds an upstream repository to the package manager repository list (Linux only)."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Adding repository: {repo_url}, name: {name}, silent: {silent}, log_file: {log_file}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Adding repository: {repo_url}, name: {name}, silent: {silent}, log_file: {log_file}",
         )
 
         if not repo_url:
@@ -1028,10 +1120,10 @@ def register_system_management_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=current_step, total=total_steps)
 
-            logger.debug(f"Repository addition completed: {repo_url}")
+            ctx_log(ctx, logger, "debug", f"Repository addition completed: {repo_url}")
             return result
         except Exception as e:
-            logger.error(f"Failed to add repository: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to add repository: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -1063,8 +1155,11 @@ def register_system_management_tools(mcp: FastMCP):
     ) -> Dict:
         """Installs a local Linux package file using the appropriate tool (dpkg/rpm/dnf/zypper/pacman). (Linux only)"""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Installing local package: {file_path}, silent: {silent}, log_file: {log_file}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Installing local package: {file_path}, silent: {silent}, log_file: {log_file}",
         )
 
         if not file_path:
@@ -1088,10 +1183,15 @@ def register_system_management_tools(mcp: FastMCP):
             if ctx:
                 await ctx.report_progress(progress=total_steps, total=total_steps)
 
-            logger.debug(f"Local package installation completed: {file_path}")
+            ctx_log(
+                ctx,
+                logger,
+                "debug",
+                f"Local package installation completed: {file_path}",
+            )
             return result
         except Exception as e:
-            logger.error(f"Failed to install local package: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to install local package: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
     @mcp.tool(
@@ -1131,8 +1231,11 @@ def register_system_management_tools(mcp: FastMCP):
     ) -> Dict:
         """Runs a command on the host. Can run elevated for administrator or root privileges."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Running command: {command}, elevated: {elevated}, shell: {shell}, silent: {silent}, log_file: {log_file}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Running command: {command}, elevated: {elevated}, shell: {shell}, silent: {silent}, log_file: {log_file}",
         )
 
         try:
@@ -1150,15 +1253,20 @@ def register_system_management_tools(mcp: FastMCP):
 
             result = manager.run_command(
                 command=command, elevated=elevated, shell=shell
-            )
+            )  # nosec
 
             if ctx:
                 await ctx.report_progress(progress=total_steps, total=total_steps)
 
-            logger.debug(f"Command run completed: {command} Result: {result}")
+            ctx_log(
+                ctx,
+                logger,
+                "debug",
+                f"Command run completed: {command} Result: {result}",
+            )
             return result
         except Exception as e:
-            logger.error(f"Failed to install local package: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Failed to install local package: {str(e)}")
             return {"success": False, "error": f"Unexpected error: {str(e)}"}
 
 
@@ -1196,7 +1304,7 @@ def register_text_editor_tools(mcp: FastMCP):
         """
         View and edit files on the local filesystem.
         """
-        logger.debug(f"Text editor command: {command} on {path}")
+        ctx_log(ctx, logger, "debug", f"Text editor command: {command} on {path}")
         expanded_path = os.path.abspath(os.path.expanduser(path))
 
         try:
@@ -1389,6 +1497,9 @@ def register_service_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Stops a system service."""
+        if not await ctx_confirm_destructive(ctx, "stop service"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         try:
             manager = detect_and_create_manager(silent, log_file)
             result = manager.stop_service(name)
@@ -1421,6 +1532,9 @@ def register_service_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Restarts a system service."""
+        if not await ctx_confirm_destructive(ctx, "restart service"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         try:
             manager = detect_and_create_manager(silent, log_file)
             result = manager.restart_service(name)
@@ -1485,6 +1599,9 @@ def register_service_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Disables a system service from starting at boot."""
+        if not await ctx_confirm_destructive(ctx, "disable service"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         try:
             manager = detect_and_create_manager(silent, log_file)
             result = manager.disable_service(name)
@@ -1583,6 +1700,9 @@ def register_process_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Kills a process by PID. Default signal is SIGTERM (15), use 9 for SIGKILL."""
+        if not await ctx_confirm_destructive(ctx, "kill process"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         try:
             manager = detect_and_create_manager(silent, log_file)
             return manager.kill_process(pid, signal)
@@ -1914,21 +2034,29 @@ def register_log_tools(mcp: FastMCP):
     ) -> Dict:
         """Gets system logs from journalctl (Linux) or Event Log (Windows)."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(
-            f"Getting system logs, unit: {unit}, lines: {lines}, priority: {priority}"
+        ctx_log(
+            ctx,
+            logger,
+            "debug",
+            f"Getting system logs, unit: {unit}, lines: {lines}, priority: {priority}",
         )
         try:
             manager = detect_and_create_manager(silent, log_file)
             result = manager.get_system_logs(unit, lines, priority)
             if not result.get("success"):
-                logger.error(
-                    f"Failed to get system logs. Error: {result.get('error', result.get('logs', 'Unknown error'))}"
+                ctx_log(
+                    ctx,
+                    logger,
+                    "error",
+                    f"Failed to get system logs. Error: {result.get('error', result.get('logs', 'Unknown error'))}",
                 )
             else:
-                logger.debug("Successfully retrieved system logs.")
+                ctx_log(ctx, logger, "debug", "Successfully retrieved system logs.")
             return result
         except Exception as e:
-            logger.error(f"Exception while getting system logs: {str(e)}")
+            ctx_log(
+                ctx, logger, "error", f"Exception while getting system logs: {str(e)}"
+            )
             return {"success": False, "error": str(e)}
 
     @mcp.tool(
@@ -1960,19 +2088,22 @@ def register_log_tools(mcp: FastMCP):
     ) -> Dict:
         """Reads the last N lines of a log file."""
         logger = logging.getLogger("SystemsManager")
-        logger.debug(f"Tailing log file: {path}, lines: {lines}")
+        ctx_log(ctx, logger, "debug", f"Tailing log file: {path}, lines: {lines}")
         try:
             manager = detect_and_create_manager(silent, log_file)
             result = manager.tail_log_file(path, lines)
             if not result.get("success"):
-                logger.error(
-                    f"Failed to tail log file. Error: {result.get('error', result.get('logs', 'Unknown error'))}"
+                ctx_log(
+                    ctx,
+                    logger,
+                    "error",
+                    f"Failed to tail log file. Error: {result.get('error', result.get('logs', 'Unknown error'))}",
                 )
             else:
-                logger.debug("Successfully tailed log file.")
+                ctx_log(ctx, logger, "debug", "Successfully tailed log file.")
             return result
         except Exception as e:
-            logger.error(f"Exception while tailing log file: {str(e)}")
+            ctx_log(ctx, logger, "error", f"Exception while tailing log file: {str(e)}")
             return {"success": False, "error": str(e)}
 
 
@@ -2075,6 +2206,9 @@ def register_cron_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Removes cron jobs matching a pattern (Linux only)."""
+        if not await ctx_confirm_destructive(ctx, "remove cron job"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         try:
             manager = detect_and_create_manager(silent, log_file)
             return manager.remove_cron_job(pattern, user)
@@ -2201,6 +2335,9 @@ def register_firewall_management_tools(mcp: FastMCP):
         ),
     ) -> Dict:
         """Removes a firewall rule using the detected firewall tool."""
+        if not await ctx_confirm_destructive(ctx, "remove firewall rule"):
+            return {"status": "cancelled", "message": "Operation cancelled by user"}
+        await ctx_progress(ctx, 0, 100)
         try:
             manager = detect_and_create_manager(silent, log_file)
             return manager.remove_firewall_rule(rule)

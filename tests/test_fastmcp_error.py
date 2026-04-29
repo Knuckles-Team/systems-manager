@@ -1,17 +1,16 @@
-import asyncio
+import pytest
 from fastmcp import FastMCP
-
-mcp = FastMCP("test")
-
-
-@mcp.tool()
-def test_tool(num: int) -> int:
-    return num
+from pydantic_core import ValidationError
 
 
-async def run():
+@pytest.mark.asyncio
+async def test_fastmcp_validation_error():
+    """Test that FastMCP properly validates tool input."""
+    mcp = FastMCP("test")
 
-    print(await mcp.call_tool("test_tool", {"num": {}}))
+    @mcp.tool()
+    def test_tool(num: int) -> int:
+        return num
 
-
-asyncio.run(run())
+    with pytest.raises(ValidationError):
+        await mcp.call_tool("test_tool", {"num": {}})
