@@ -2,16 +2,18 @@
 
 import json
 import platform as platform_module
-from unittest.mock import Mock, patch, mock_open
-import pytest
 import subprocess
+from unittest.mock import Mock, mock_open, patch
+
 import psutil
+import pytest
+
 from systems_manager.systems_manager import (
-    SystemsManagerBase,
     FileSystemManager,
-    ShellProfileManager,
-    PythonManager,
     NodeManager,
+    PythonManager,
+    ShellProfileManager,
+    SystemsManagerBase,
     setup_logging,
 )
 

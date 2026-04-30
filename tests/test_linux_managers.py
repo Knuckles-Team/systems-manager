@@ -1,12 +1,14 @@
 """Tests for Linux package managers (AptManager, DnfManager, ZypperManager, PacmanManager)."""
 
 from unittest.mock import Mock, patch
+
 import pytest
+
 from systems_manager.systems_manager import (
     AptManager,
     DnfManager,
-    ZypperManager,
     PacmanManager,
+    ZypperManager,
 )
 
 

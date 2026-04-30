@@ -1,6 +1,7 @@
 """Tests for systems_manager.__main__ module."""
 
 from unittest.mock import patch
+
 import pytest
 
 

@@ -1,5 +1,6 @@
 import pytest
 from fastmcp import FastMCP
+
 from systems_manager.mcp_server import register_log_tools
 
 

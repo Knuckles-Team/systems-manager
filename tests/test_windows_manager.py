@@ -2,7 +2,9 @@
 
 import json
 from unittest.mock import Mock, patch
+
 import pytest
+
 from systems_manager.systems_manager import WindowsManager
 
 

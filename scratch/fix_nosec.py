@@ -2,7 +2,7 @@ import re
 
 file_path = "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
 
-with open(file_path, "r") as f:
+with open(file_path) as f:
     lines = f.readlines()
 
 new_lines = []

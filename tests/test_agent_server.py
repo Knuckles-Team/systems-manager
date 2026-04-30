@@ -1,8 +1,9 @@
 """Tests for systems_manager.agent_server module."""
 
-import sys
 import logging
+import sys
 from unittest.mock import Mock, patch
+
 import pytest
 
 
@@ -242,6 +243,7 @@ class TestAgentServerFunction:
     def test_agent_server_warning_filters(self, mock_parser, mock_create_server):
         """Test that agent_server() filters warnings appropriately."""
         import warnings
+
         from systems_manager.agent_server import agent_server
 
         mock_args = Mock()

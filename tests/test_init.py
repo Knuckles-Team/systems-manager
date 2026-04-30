@@ -1,7 +1,7 @@
 """Tests for systems_manager.__init__ module."""
 
-import sys
 import importlib
+import sys
 from unittest.mock import Mock, patch
 
 
@@ -30,7 +30,7 @@ class TestExposeMembers:
 
     def test_expose_public_classes_and_functions(self):
         """Test that public classes and functions are exposed."""
-        from systems_manager import _expose_members, __all__
+        from systems_manager import __all__, _expose_members
 
         # Save original __all__
         original_all = __all__.copy()
@@ -79,7 +79,7 @@ class TestExposeMembers:
 
     def test_expose_members_updates_all_list(self):
         """Test that _expose_members updates __all__ list."""
-        from systems_manager import _expose_members, __all__
+        from systems_manager import __all__, _expose_members
 
         initial_all_length = len(__all__)
 

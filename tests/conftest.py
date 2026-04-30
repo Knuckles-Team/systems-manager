@@ -1,6 +1,7 @@
 #!/usr/bin/python
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 
 @pytest.fixture
@@ -21,8 +22,9 @@ def mock_windows_platform(monkeypatch):
 @pytest.fixture
 def mock_linux_platform(monkeypatch):
     """Mock Linux platform fixture."""
-    import platform
     import os
+    import platform
+
     import distro
 
     monkeypatch.setattr(platform, "system", lambda: "Linux")
@@ -38,8 +40,9 @@ def mock_linux_platform(monkeypatch):
 @pytest.fixture
 def mock_rhel_platform(monkeypatch):
     """Mock RHEL platform fixture."""
-    import platform
     import os
+    import platform
+
     import distro
 
     monkeypatch.setattr(platform, "system", lambda: "Linux")
@@ -54,8 +57,9 @@ def mock_rhel_platform(monkeypatch):
 @pytest.fixture
 def mock_arch_platform(monkeypatch):
     """Mock Arch platform fixture."""
-    import platform
     import os
+    import platform
+
     import distro
 
     monkeypatch.setattr(platform, "system", lambda: "Linux")

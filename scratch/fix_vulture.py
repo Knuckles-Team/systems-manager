@@ -66,7 +66,7 @@ for line in vulture_output.strip().split("\n"):
     if not os.path.exists(abs_path):
         continue
 
-    with open(abs_path, "r") as f:
+    with open(abs_path) as f:
         file_lines = f.readlines()
 
     idx = line_num - 1

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import asyncio
-import httpx
 import json
 import uuid
+
+import httpx
 
 A2A_URL = "http://audio-transcriber-agent.arpa/a2a/"
 

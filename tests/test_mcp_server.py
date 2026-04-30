@@ -1,31 +1,32 @@
 """Comprehensive tests for systems_manager/mcp_server.py to achieve 95% coverage."""
 
 import os
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from fastmcp import FastMCP
 
 # Import the module to test
 from systems_manager.mcp_server import (
-    register_misc_tools,
-    register_system_tools,
-    register_system_management_tools,
-    register_text_editor_tools,
-    register_service_tools,
-    register_process_tools,
-    register_network_tools,
-    register_disk_tools,
-    register_user_tools,
-    register_log_tools,
-    register_cron_tools,
-    register_firewall_management_tools,
-    register_ssh_management_tools,
-    register_filesystem_tools,
-    register_shell_tools,
-    register_python_tools,
-    register_nodejs_tools,
     get_mcp_instance,
     mcp_server,
+    register_cron_tools,
+    register_disk_tools,
+    register_filesystem_tools,
+    register_firewall_management_tools,
+    register_log_tools,
+    register_misc_tools,
+    register_network_tools,
+    register_nodejs_tools,
+    register_process_tools,
+    register_python_tools,
+    register_service_tools,
+    register_shell_tools,
+    register_ssh_management_tools,
+    register_system_management_tools,
+    register_system_tools,
+    register_text_editor_tools,
+    register_user_tools,
 )
 from systems_manager.systems_manager import WindowsManager
 
