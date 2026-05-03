@@ -19,7 +19,7 @@ import distro
 import psutil
 import requests
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 
 def setup_logging(
