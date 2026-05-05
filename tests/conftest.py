@@ -102,5 +102,5 @@ def mock_requests_get(monkeypatch):
     mock_resp.content = b"fake content"
     mock_resp.raise_for_status = Mock()
 
-    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: mock_resp)
+    monkeypatch.setattr(requests, "get", lambda *args, **_kwargs: mock_resp)
     return mock_resp

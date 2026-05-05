@@ -497,6 +497,7 @@ class TestSystemsManagerBase:
         monkeypatch.setattr("zipfile.ZipFile", Mock())
         monkeypatch.setattr("glob.glob", Mock(return_value=[]))
 
+        concrete_manager.run_command = Mock(return_value={"success": True})
         result = concrete_manager.font()
         assert "success" in result
 
@@ -518,6 +519,7 @@ class TestSystemsManagerBase:
         monkeypatch.setattr("zipfile.ZipFile", Mock())
         monkeypatch.setattr("glob.glob", Mock(return_value=[]))
 
+        concrete_manager.run_command = Mock(return_value={"success": True})
         result = concrete_manager.font(["FiraCode"])
         assert "success" in result
 
@@ -543,6 +545,7 @@ class TestSystemsManagerBase:
         monkeypatch.setattr("zipfile.ZipFile", Mock())
         monkeypatch.setattr("glob.glob", Mock(return_value=[]))
 
+        concrete_manager.run_command = Mock(return_value={"success": True})
         result = concrete_manager.font(["all"])
         assert "success" in result
 
@@ -575,6 +578,7 @@ class TestSystemsManagerBase:
         monkeypatch.setattr("zipfile.ZipFile", Mock())
         monkeypatch.setattr("glob.glob", Mock(return_value=[]))
 
+        concrete_manager.run_command = Mock(return_value={"success": True})
         result = concrete_manager.font(["Hack"])
         assert "success" in result
         assert result["os"] == "Windows"

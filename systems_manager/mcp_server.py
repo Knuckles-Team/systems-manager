@@ -32,13 +32,15 @@ from dotenv import find_dotenv, load_dotenv
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from systems_manager.systems_manager import (
     WindowsManager,
     detect_and_create_manager,
 )
 
-__version__ = "1.5.0"
+__version__ = "1.6.0"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -47,13 +49,8 @@ logger = get_logger("SystemsManagerServer")
 
 
 def register_misc_tools(mcp: FastMCP):
-<<<<<<< HEAD
-    pass
-    pass
-=======
     async def health_check(_request: Request) -> JSONResponse:
         return JSONResponse({"status": "OK"})
->>>>>>> 4e14f6a (chore: manual fixes)
 
 
 def register_system_tools(mcp: FastMCP):
@@ -2876,6 +2873,28 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
     DEFAULT_NODEJSTOOL = to_boolean(os.getenv("NODEJSTOOL", "True"))
     if DEFAULT_NODEJSTOOL:
         register_nodejs_tools(mcp)
+
+    # ── Agent OS Tool Groups (AU-030/031/032/036/038) ──────────────
+    DEFAULT_AGENT_OSTOOL = to_boolean(os.getenv("AGENT_OSTOOL", "True"))
+    if DEFAULT_AGENT_OSTOOL:
+        try:
+            from systems_manager.agent_os_tools import (
+                register_agent_health_tools,
+                register_identity_tools,
+                register_maintenance_tools,
+                register_policy_tools,
+                register_specialist_registry_tools,
+                register_watchdog_tools,
+            )
+
+            register_identity_tools(mcp)
+            register_policy_tools(mcp)
+            register_specialist_registry_tools(mcp)
+            register_agent_health_tools(mcp)
+            register_watchdog_tools(mcp)
+            register_maintenance_tools(mcp)
+        except Exception as e:
+            logger.warning("Agent OS tools not available: %s", e)
 
     for mw in middlewares:
         mcp.add_middleware(mw)

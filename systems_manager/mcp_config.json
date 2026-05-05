@@ -24,6 +24,7 @@
         "PYTHONTOOL": "${ PYTHONTOOL:-True }",
         "MISCTOOL": "${ MISCTOOL:-True }",
         "DISKTOOL": "${ DISKTOOL:-True }",
+        "AGENT_OSTOOL": "${ AGENT_OSTOOL:-True }",
         "SYSTEMS_MANAGER_LOG_FILE": "${SYSTEMS_MANAGER_LOG_FILE}",
         "SYSTEMS_MANAGER_SILENT": "${SYSTEMS_MANAGER_SILENT}"
       }

@@ -19,7 +19,12 @@ import distro
 import psutil
 import requests
 
-__version__ = "1.5.0"
+from systems_manager.models import (
+    CommandResult,
+    SystemStats,
+)
+
+__version__ = "1.6.0"
 
 
 def setup_logging(
@@ -49,7 +54,9 @@ class FileSystemManager:
         try:
             expanded_path = os.path.abspath(os.path.expanduser(path))
             if not os.path.exists(expanded_path):
-                return {"success": False, "error": f"Path not found: {path}"}
+                return CommandResult(
+                    **{"success": False, "error": f"Path not found: {path}"}
+                )
 
             items = []
             if recursive:
@@ -82,14 +89,16 @@ class FileSystemManager:
                             "path": entry.path,
                         }
                     )
-            return {
-                "success": True,
-                "path": expanded_path,
-                "items": items,
-                "total": len(items),
-            }
+            return CommandResult(
+                **{
+                    "success": True,
+                    "path": expanded_path,
+                    "items": items,
+                    "total": len(items),
+                }
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def search_files(self, path: str, pattern: str) -> dict:
         try:
@@ -99,21 +108,25 @@ class FileSystemManager:
                 for name in files:
                     if pattern in name:
                         matches.append(os.path.join(root, name))
-            return {"success": True, "matches": matches, "total": len(matches)}
+            return CommandResult(
+                **{"success": True, "matches": matches, "total": len(matches)}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def grep_files(self, path: str, pattern: str, recursive: bool = False) -> dict:
         try:
             cmd = ["grep", "-rn" if recursive else "-n", pattern, path]
             result = self.manager.run_command(cmd)
-            return {
-                "success": result["success"],
-                "matches": result.get("stdout", ""),
-                "path": path,
-            }
+            return CommandResult(
+                **{
+                    "success": result["success"],
+                    "matches": result.get("stdout", ""),
+                    "path": path,
+                }
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def manage_file(self, action: str, path: str, content: str | None = None) -> dict:
         try:
@@ -122,21 +135,31 @@ class FileSystemManager:
                 os.makedirs(os.path.dirname(expanded_path), exist_ok=True)
                 with open(expanded_path, "w") as f:
                     f.write(content or "")
-                return {"success": True, "message": f"File {action}d: {path}"}
+                return CommandResult(
+                    **{"success": True, "message": f"File {action}d: {path}"}
+                )
             elif action == "delete":
                 if os.path.exists(expanded_path):
                     os.remove(expanded_path)
-                    return {"success": True, "message": f"File deleted: {path}"}
-                return {"success": False, "error": f"File not found: {path}"}
+                    return CommandResult(
+                        **{"success": True, "message": f"File deleted: {path}"}
+                    )
+                return CommandResult(
+                    **{"success": False, "error": f"File not found: {path}"}
+                )
             elif action == "read":
                 if os.path.exists(expanded_path):
                     with open(expanded_path) as f:
-                        return {"success": True, "content": f.read()}
-                return {"success": False, "error": f"File not found: {path}"}
+                        return CommandResult(**{"success": True, "content": f.read()})
+                return CommandResult(
+                    **{"success": False, "error": f"File not found: {path}"}
+                )
             else:
-                return {"success": False, "error": f"Unknown action: {action}"}
+                return CommandResult(
+                    **{"success": False, "error": f"Unknown action: {action}"}
+                )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
 
 class ShellProfileManager:
@@ -171,14 +194,18 @@ class ShellProfileManager:
             if os.path.exists(profile_path):
                 with open(profile_path) as f:
                     if alias_cmd in f.read():
-                        return {"success": True, "message": "Alias already exists"}
+                        return CommandResult(
+                            **{"success": True, "message": "Alias already exists"}
+                        )
 
             os.makedirs(os.path.dirname(profile_path), exist_ok=True)
             with open(profile_path, "a") as f:
                 f.write(f"\n{alias_cmd}\n")
-            return {"success": True, "message": f"Alias added to {profile_path}"}
+            return CommandResult(
+                **{"success": True, "message": f"Alias added to {profile_path}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
 
 class PythonManager:
@@ -200,7 +227,7 @@ class PythonManager:
                 )  # nosec
             return result
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def create_venv(self, path: str, python_version: str | None = None) -> dict:
         cmd = ["uv", "venv", path]
@@ -226,10 +253,12 @@ class NodeManager:
 
     def install_nvm(self) -> dict:
         if platform.system() == "Windows":
-            return {
-                "success": False,
-                "error": "NVM for Windows not supported directly via this tool yet. Use nvm-windows installer.",
-            }
+            return CommandResult(
+                **{
+                    "success": False,
+                    "error": "NVM for Windows not supported directly via this tool yet. Use nvm-windows installer.",
+                }
+            )
 
         cmd = "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
         return self.manager.run_command(cmd, shell=True)  # nosec
@@ -315,26 +344,30 @@ class SystemsManagerBase(ABC):
                 stdout = result_sp.stdout
                 stderr = result_sp.stderr
             self.log_command(command, result_sp)
-            return {
-                "success": True,
-                "returncode": result_sp.returncode,
-                "stdout": stdout,
-                "stderr": stderr,
-            }
+            return CommandResult(
+                **{
+                    "success": True,
+                    "returncode": result_sp.returncode,
+                    "stdout": stdout,
+                    "stderr": stderr,
+                }
+            )
         except subprocess.CalledProcessError as e:
             self.log_command(command, result=e, error=e)
             if not self.silent:
                 print(f"Error: {e.stderr}")
-            return {
-                "success": False,
-                "returncode": e.returncode,
-                "stdout": e.stdout,
-                "stderr": e.stderr,
-                "error": str(e),
-            }
+            return CommandResult(
+                **{
+                    "success": False,
+                    "returncode": e.returncode,
+                    "stdout": e.stdout,
+                    "stderr": e.stderr,
+                    "error": str(e),
+                }
+            )
         except Exception as e:
             self.log_command(command, error=e)
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     @abstractmethod
     def install_applications(self, apps: list[str]) -> dict:
@@ -390,11 +423,13 @@ class SystemsManagerBase(ABC):
             self.logger.info("Snap not found; installing snapd...")
             snapd_result = self.install_snapd()
             if not snapd_result["success"]:
-                return {
-                    "success": False,
-                    "error": "Failed to install snapd",
-                    "details": snapd_result,
-                }
+                return CommandResult(
+                    **{
+                        "success": False,
+                        "error": "Failed to install snapd",
+                        "details": snapd_result,
+                    }
+                )
             enable_result = self.run_command(
                 ["systemctl", "enable", "--now", "snapd.socket"], elevated=True
             )
@@ -406,11 +441,13 @@ class SystemsManagerBase(ABC):
             if not symlink_result["success"]:
                 self.logger.warning("Failed to create /snap symlink")
         install_result = self.run_command(["snap", "install", app], elevated=True)
-        return {
-            "success": install_result["success"],
-            "details": install_result,
-            "app": app,
-        }
+        return CommandResult(
+            **{
+                "success": install_result["success"],
+                "details": install_result,
+                "app": app,
+            }
+        )
 
     def install_python_modules(self, modules: list[str]) -> dict:
         results: dict[str, Any] = {
@@ -460,7 +497,9 @@ class SystemsManagerBase(ABC):
             ]
 
         if not assets:
-            return {"success": False, "error": f"No matching fonts found for {fonts}"}
+            return CommandResult(
+                **{"success": False, "error": f"No matching fonts found for {fonts}"}
+            )
 
         if platform.system() == "Linux":
             font_dir = os.path.expanduser("~/.local/share/fonts")
@@ -470,7 +509,9 @@ class SystemsManagerBase(ABC):
             font_dir = r"C:\Windows\Fonts"
             extract_path = "."
         else:
-            return {"success": False, "error": "Unsupported OS for font installation"}
+            return CommandResult(
+                **{"success": False, "error": "Unsupported OS for font installation"}
+            )
 
         successful_downloads = []
         for asset in assets:
@@ -527,33 +568,41 @@ class SystemsManagerBase(ABC):
                 self.logger.error("Failed to update font cache")
 
         overall_success = len(successful_downloads) > 0
-        return {
-            "success": overall_success,
-            "requested_fonts": fonts,
-            "downloaded": successful_downloads,
-            "installed_fonts": installed_fonts,
-            "total_fonts": len(font_files),
-            "os": platform.system(),
-        }
+        return CommandResult(
+            **{
+                "success": overall_success,
+                "requested_fonts": fonts,
+                "downloaded": successful_downloads,
+                "installed_fonts": installed_fonts,
+                "total_fonts": len(font_files),
+                "os": platform.system(),
+            }
+        )
 
     def get_os_statistics(self) -> dict:
-        return {
-            "system": platform.system(),
-            "release": platform.release(),
-            "version": platform.version(),
-            "machine": platform.machine(),
-            "processor": platform.processor(),
-            "load_avg": os.getloadavg() if platform.system() != "Windows" else "N/A",
-        }
+        return SystemStats(
+            **{
+                "system": platform.system(),
+                "release": platform.release(),
+                "version": platform.version(),
+                "machine": platform.machine(),
+                "processor": platform.processor(),
+                "load_avg": (
+                    os.getloadavg() if platform.system() != "Windows" else "N/A"
+                ),
+            }
+        )
 
     def get_hardware_statistics(self) -> dict:
-        return {
-            "cpu_percent": psutil.cpu_percent(interval=1),
-            "cpu_count": psutil.cpu_count(),
-            "memory": psutil.virtual_memory()._asdict(),
-            "disk_usage": psutil.disk_usage("/")._asdict(),
-            "network": psutil.net_io_counters()._asdict(),
-        }
+        return SystemStats(
+            **{
+                "cpu_percent": psutil.cpu_percent(interval=1),
+                "cpu_count": psutil.cpu_count(),
+                "memory": psutil.virtual_memory()._asdict(),
+                "disk_usage": psutil.disk_usage("/")._asdict(),
+                "network": psutil.net_io_counters()._asdict(),
+            }
+        )
 
     def list_services(self) -> dict:
         try:
@@ -584,7 +633,9 @@ class SystemsManagerBase(ABC):
                                 "description": parts[4] if len(parts) > 4 else "",
                             }
                         )
-                return {"success": True, "services": services, "total": len(services)}
+                return CommandResult(
+                    **{"success": True, "services": services, "total": len(services)}
+                )
             elif platform.system() == "Windows":
                 result = self.run_command(
                     [
@@ -600,27 +651,35 @@ class SystemsManagerBase(ABC):
                     services = json.loads(result.get("stdout", "[]"))
                     if isinstance(services, dict):
                         services = [services]
-                    return {
-                        "success": True,
-                        "services": services,
-                        "total": len(services),
-                    }
+                    return CommandResult(
+                        **{
+                            "success": True,
+                            "services": services,
+                            "total": len(services),
+                        }
+                    )
                 except json.JSONDecodeError:
-                    return {"success": False, "error": "Failed to parse service list"}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                    return CommandResult(
+                        **{"success": False, "error": "Failed to parse service list"}
+                    )
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def get_service_status(self, name: str) -> dict:
         try:
             if platform.system() == "Linux":
                 result = self.run_command(["systemctl", "status", name, "--no-pager"])
-                return {
-                    "success": True,
-                    "service": name,
-                    "output": result.get("stdout", ""),
-                    "returncode": result.get("returncode"),
-                }
+                return CommandResult(
+                    **{
+                        "success": True,
+                        "service": name,
+                        "output": result.get("stdout", ""),
+                        "returncode": result.get("returncode"),
+                    }
+                )
             elif platform.system() == "Windows":
                 result = self.run_command(
                     [
@@ -632,20 +691,26 @@ class SystemsManagerBase(ABC):
                 )  # nosec
                 if result["success"]:
                     try:
-                        return {
-                            "success": True,
-                            "service": json.loads(result.get("stdout", "{}")),
-                        }
+                        return CommandResult(
+                            **{
+                                "success": True,
+                                "service": json.loads(result.get("stdout", "{}")),
+                            }
+                        )
                     except json.JSONDecodeError:
                         pass
-                return {
-                    "success": result["success"],
-                    "service": name,
-                    "output": result.get("stdout", ""),
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                return CommandResult(
+                    **{
+                        "success": result["success"],
+                        "service": name,
+                        "output": result.get("stdout", ""),
+                    }
+                )
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def start_service(self, name: str) -> dict:
         if platform.system() == "Linux":
@@ -656,7 +721,9 @@ class SystemsManagerBase(ABC):
                 elevated=True,
                 shell=True,  # nosec
             )  # nosec
-        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        return CommandResult(
+            **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        )
 
     def stop_service(self, name: str) -> dict:
         if platform.system() == "Linux":
@@ -667,7 +734,9 @@ class SystemsManagerBase(ABC):
                 elevated=True,
                 shell=True,  # nosec
             )  # nosec
-        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        return CommandResult(
+            **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        )
 
     def restart_service(self, name: str) -> dict:
         if platform.system() == "Linux":
@@ -684,7 +753,9 @@ class SystemsManagerBase(ABC):
                 elevated=True,
                 shell=True,  # nosec
             )  # nosec
-        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        return CommandResult(
+            **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        )
 
     def enable_service(self, name: str) -> dict:
         if platform.system() == "Linux":
@@ -699,7 +770,9 @@ class SystemsManagerBase(ABC):
                 elevated=True,
                 shell=True,  # nosec
             )  # nosec
-        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        return CommandResult(
+            **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        )
 
     def disable_service(self, name: str) -> dict:
         if platform.system() == "Linux":
@@ -714,7 +787,9 @@ class SystemsManagerBase(ABC):
                 elevated=True,
                 shell=True,  # nosec
             )  # nosec
-        return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        return CommandResult(
+            **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+        )
 
     def list_processes(self) -> dict:
         try:
@@ -740,9 +815,11 @@ class SystemsManagerBase(ABC):
                     )
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
-            return {"success": True, "processes": processes, "total": len(processes)}
+            return CommandResult(
+                **{"success": True, "processes": processes, "total": len(processes)}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def get_process_info(self, pid: int) -> dict:
         try:
@@ -762,29 +839,39 @@ class SystemsManagerBase(ABC):
                     "cmdline": proc.cmdline(),
                     "num_threads": proc.num_threads(),
                 }
-            return {"success": True, "process": info}
+            return CommandResult(**{"success": True, "process": info})
         except psutil.NoSuchProcess:
-            return {"success": False, "error": f"No process found with PID {pid}"}
+            return CommandResult(
+                **{"success": False, "error": f"No process found with PID {pid}"}
+            )
         except psutil.AccessDenied:
-            return {"success": False, "error": f"Access denied to process {pid}"}
+            return CommandResult(
+                **{"success": False, "error": f"Access denied to process {pid}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def kill_process(self, pid: int, signal: int = 15) -> dict:
         try:
             proc = psutil.Process(pid)
             name = proc.name()
             proc.kill() if signal == 9 else proc.terminate()
-            return {
-                "success": True,
-                "message": f"Signal {signal} sent to process {pid} ({name})",
-            }
+            return CommandResult(
+                **{
+                    "success": True,
+                    "message": f"Signal {signal} sent to process {pid} ({name})",
+                }
+            )
         except psutil.NoSuchProcess:
-            return {"success": False, "error": f"No process found with PID {pid}"}
+            return CommandResult(
+                **{"success": False, "error": f"No process found with PID {pid}"}
+            )
         except psutil.AccessDenied:
-            return {"success": False, "error": f"Access denied to process {pid}"}
+            return CommandResult(
+                **{"success": False, "error": f"Access denied to process {pid}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_network_interfaces(self) -> dict:
         try:
@@ -811,9 +898,9 @@ class SystemsManagerBase(ABC):
                         }
                     )
                 interfaces[iface] = iface_info
-            return {"success": True, "interfaces": interfaces}
+            return CommandResult(**{"success": True, "interfaces": interfaces})
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_open_ports(self) -> dict:
         try:
@@ -828,34 +915,44 @@ class SystemsManagerBase(ABC):
                             "status": conn.status,
                         }
                     )
-            return {"success": True, "ports": connections, "total": len(connections)}
+            return CommandResult(
+                **{"success": True, "ports": connections, "total": len(connections)}
+            )
         except psutil.AccessDenied:
             cmd = (
                 ["ss", "-tlnp"] if platform.system() == "Linux" else ["netstat", "-an"]
             )
             result = self.run_command(cmd)
-            return {"success": result["success"], "output": result.get("stdout", "")}
+            return CommandResult(
+                **{"success": result["success"], "output": result.get("stdout", "")}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def ping_host(self, host: str, count: int = 4) -> dict:
         flag = "-n" if platform.system() == "Windows" else "-c"
         result = self.run_command(["ping", flag, str(count), host])
-        return {
-            "success": result["success"],
-            "host": host,
-            "output": result.get("stdout", ""),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "host": host,
+                "output": result.get("stdout", ""),
+            }
+        )
 
     def dns_lookup(self, hostname: str) -> dict:
         try:
             results = socket.getaddrinfo(hostname, None)
             addresses = list(set(addr[4][0] for addr in results))
-            return {"success": True, "hostname": hostname, "addresses": addresses}
+            return CommandResult(
+                **{"success": True, "hostname": hostname, "addresses": addresses}
+            )
         except socket.gaierror as e:
-            return {"success": False, "error": f"DNS lookup failed: {str(e)}"}
+            return CommandResult(
+                **{"success": False, "error": f"DNS lookup failed: {str(e)}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_disks(self) -> dict:
         try:
@@ -880,23 +977,27 @@ class SystemsManagerBase(ABC):
                 except (PermissionError, OSError):
                     pass
                 partitions.append(entry)
-            return {"success": True, "disks": partitions, "total": len(partitions)}
+            return CommandResult(
+                **{"success": True, "disks": partitions, "total": len(partitions)}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def get_disk_usage(self, path: str = "/") -> dict:
         try:
             usage = psutil.disk_usage(path)
-            return {
-                "success": True,
-                "path": path,
-                "total": usage.total,
-                "used": usage.used,
-                "free": usage.free,
-                "percent": usage.percent,
-            }
+            return CommandResult(
+                **{
+                    "success": True,
+                    "path": path,
+                    "total": usage.total,
+                    "used": usage.used,
+                    "free": usage.free,
+                    "percent": usage.percent,
+                }
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_users(self) -> dict:
         try:
@@ -915,7 +1016,9 @@ class SystemsManagerBase(ABC):
                                     "shell": parts[6],
                                 }
                             )
-                return {"success": True, "users": users, "total": len(users)}
+                return CommandResult(
+                    **{"success": True, "users": users, "total": len(users)}
+                )
             elif platform.system() == "Windows":
                 result = self.run_command(
                     [
@@ -930,13 +1033,19 @@ class SystemsManagerBase(ABC):
                         users = json.loads(result.get("stdout", "[]"))
                         if isinstance(users, dict):
                             users = [users]
-                        return {"success": True, "users": users, "total": len(users)}
+                        return CommandResult(
+                            **{"success": True, "users": users, "total": len(users)}
+                        )
                     except json.JSONDecodeError:
-                        return {"success": False, "error": "Failed to parse user list"}
+                        return CommandResult(
+                            **{"success": False, "error": "Failed to parse user list"}
+                        )
                 return result
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_groups(self) -> dict:
         try:
@@ -953,7 +1062,9 @@ class SystemsManagerBase(ABC):
                                     "members": parts[3].split(",") if parts[3] else [],
                                 }
                             )
-                return {"success": True, "groups": groups, "total": len(groups)}
+                return CommandResult(
+                    **{"success": True, "groups": groups, "total": len(groups)}
+                )
             elif platform.system() == "Windows":
                 result = self.run_command(
                     [
@@ -968,13 +1079,19 @@ class SystemsManagerBase(ABC):
                         groups = json.loads(result.get("stdout", "[]"))
                         if isinstance(groups, dict):
                             groups = [groups]
-                        return {"success": True, "groups": groups, "total": len(groups)}
+                        return CommandResult(
+                            **{"success": True, "groups": groups, "total": len(groups)}
+                        )
                     except json.JSONDecodeError:
-                        return {"success": False, "error": "Failed to parse group list"}
+                        return CommandResult(
+                            **{"success": False, "error": "Failed to parse group list"}
+                        )
                 return result
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def get_system_logs(
         self, unit: str | None = None, lines: int = 100, priority: str | None = None
@@ -992,7 +1109,7 @@ class SystemsManagerBase(ABC):
                     if result["success"]
                     else result.get("stderr", result.get("error", "Unknown error"))
                 )
-                return {"success": result["success"], "logs": logs}
+                return CommandResult(**{"success": result["success"], "logs": logs})
             elif platform.system() == "Windows":
                 result = self.run_command(
                     [
@@ -1007,26 +1124,32 @@ class SystemsManagerBase(ABC):
                     if result["success"]
                     else result.get("stderr", result.get("error", "Unknown error"))
                 )
-                return {"success": result["success"], "logs": logs}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                return CommandResult(**{"success": result["success"], "logs": logs})
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def tail_log_file(self, path: str, lines: int = 50) -> dict:
         try:
             if not os.path.exists(path):
-                return {"success": False, "error": f"File not found: {path}"}
+                return CommandResult(
+                    **{"success": False, "error": f"File not found: {path}"}
+                )
             with open(path, errors="replace") as f:
                 all_lines = f.readlines()
                 tail = all_lines[-lines:] if len(all_lines) > lines else all_lines
-            return {
-                "success": True,
-                "path": path,
-                "lines": len(tail),
-                "content": "".join(tail),
-            }
+            return CommandResult(
+                **{
+                    "success": True,
+                    "path": path,
+                    "lines": len(tail),
+                    "content": "".join(tail),
+                }
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def system_health_check(self) -> dict:
         try:
@@ -1069,35 +1192,39 @@ class SystemsManagerBase(ABC):
             for dw in disk_warnings:
                 warnings.append(f"DISK FULL: {dw['mountpoint']} at {dw['percent']}%")
             load_avg = os.getloadavg() if platform.system() != "Windows" else None
-            return {
-                "success": True,
-                "status": "warning" if warnings else "healthy",
-                "warnings": warnings,
-                "uptime_seconds": int(uptime.total_seconds()),
-                "uptime_human": str(uptime).split(".")[0],
-                "cpu_percent": cpu_percent,
-                "memory_percent": memory.percent,
-                "memory_available_gb": round(memory.available / (1024**3), 2),
-                "swap_percent": swap.percent,
-                "disk_warnings": disk_warnings,
-                "load_average": load_avg,
-                "top_memory_processes": top_procs,
-            }
+            return CommandResult(
+                **{
+                    "success": True,
+                    "status": "warning" if warnings else "healthy",
+                    "warnings": warnings,
+                    "uptime_seconds": int(uptime.total_seconds()),
+                    "uptime_human": str(uptime).split(".")[0],
+                    "cpu_percent": cpu_percent,
+                    "memory_percent": memory.percent,
+                    "memory_available_gb": round(memory.available / (1024**3), 2),
+                    "swap_percent": swap.percent,
+                    "disk_warnings": disk_warnings,
+                    "load_average": load_avg,
+                    "top_memory_processes": top_procs,
+                }
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def get_uptime(self) -> dict:
         try:
             boot_time = datetime.fromtimestamp(psutil.boot_time())
             uptime = datetime.now() - boot_time
-            return {
-                "success": True,
-                "boot_time": boot_time.isoformat(),
-                "uptime_seconds": int(uptime.total_seconds()),
-                "uptime_human": str(uptime).split(".")[0],
-            }
+            return CommandResult(
+                **{
+                    "success": True,
+                    "boot_time": boot_time.isoformat(),
+                    "uptime_seconds": int(uptime.total_seconds()),
+                    "uptime_human": str(uptime).split(".")[0],
+                }
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_cron_jobs(self, user: str | None = None) -> dict:
         try:
@@ -1109,28 +1236,36 @@ class SystemsManagerBase(ABC):
                     for line in (result.get("stdout") or "").strip().splitlines():
                         if line.strip() and not line.strip().startswith("#"):
                             jobs.append(line.strip())
-                return {"success": True, "jobs": jobs, "total": len(jobs)}
+                return CommandResult(
+                    **{"success": True, "jobs": jobs, "total": len(jobs)}
+                )
             elif platform.system() == "Windows":
                 result = self.run_command(
                     ["schtasks", "/query", "/fo", "CSV", "/v"], shell=True  # nosec
                 )  # nosec
-                return {
-                    "success": result["success"],
-                    "output": result.get("stdout", ""),
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                return CommandResult(
+                    **{
+                        "success": result["success"],
+                        "output": result.get("stdout", ""),
+                    }
+                )
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def add_cron_job(
         self, schedule: str, command: str, user: str | None = None
     ) -> dict:
         try:
             if platform.system() != "Linux":
-                return {
-                    "success": False,
-                    "error": "Cron jobs are only supported on Linux",
-                }
+                return CommandResult(
+                    **{
+                        "success": False,
+                        "error": "Cron jobs are only supported on Linux",
+                    }
+                )
             cron_entry = f"{schedule} {command}"
             list_cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
             existing = self.run_command(list_cmd)
@@ -1146,31 +1281,37 @@ class SystemsManagerBase(ABC):
                     ["crontab", "-u", user, tmp_path] if user else ["crontab", tmp_path]
                 )
                 result = self.run_command(install_cmd, elevated=bool(user))
-                return {
-                    "success": result["success"],
-                    "message": (
-                        f"Cron job added: {cron_entry}"
-                        if result["success"]
-                        else "Failed"
-                    ),
-                    "details": result,
-                }
+                return CommandResult(
+                    **{
+                        "success": result["success"],
+                        "message": (
+                            f"Cron job added: {cron_entry}"
+                            if result["success"]
+                            else "Failed"
+                        ),
+                        "details": result,
+                    }
+                )
             finally:
                 os.remove(tmp_path)
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def remove_cron_job(self, pattern: str, user: str | None = None) -> dict:
         try:
             if platform.system() != "Linux":
-                return {
-                    "success": False,
-                    "error": "Cron jobs are only supported on Linux",
-                }
+                return CommandResult(
+                    **{
+                        "success": False,
+                        "error": "Cron jobs are only supported on Linux",
+                    }
+                )
             list_cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
             existing = self.run_command(list_cmd)
             if not existing["success"]:
-                return {"success": False, "error": "Failed to read current crontab"}
+                return CommandResult(
+                    **{"success": False, "error": "Failed to read current crontab"}
+                )
             lines = (existing.get("stdout") or "").splitlines()
             removed = [
                 line_content for line_content in lines if pattern in line_content
@@ -1179,17 +1320,21 @@ class SystemsManagerBase(ABC):
                 line_content for line_content in lines if pattern not in line_content
             ]
             if not removed:
-                return {
-                    "success": False,
-                    "error": f"Cron job with pattern '{pattern}' not found",
-                }
+                return CommandResult(
+                    **{
+                        "success": False,
+                        "error": f"Cron job with pattern '{pattern}' not found",
+                    }
+                )
 
             if not removed:
-                return {
-                    "success": True,
-                    "message": "No matching cron jobs found",
-                    "removed": [],
-                }
+                return CommandResult(
+                    **{
+                        "success": True,
+                        "message": "No matching cron jobs found",
+                        "removed": [],
+                    }
+                )
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".cron", delete=False
             ) as tmp:
@@ -1200,83 +1345,101 @@ class SystemsManagerBase(ABC):
                     ["crontab", "-u", user, tmp_path] if user else ["crontab", tmp_path]
                 )
                 result = self.run_command(install_cmd, elevated=bool(user))
-                return {
-                    "success": result["success"],
-                    "removed": removed,
-                    "message": (
-                        f"Removed {len(removed)} cron job(s)"
-                        if result["success"]
-                        else "Failed"
-                    ),
-                }
+                return CommandResult(
+                    **{
+                        "success": result["success"],
+                        "removed": removed,
+                        "message": (
+                            f"Removed {len(removed)} cron job(s)"
+                            if result["success"]
+                            else "Failed"
+                        ),
+                    }
+                )
             finally:
                 os.remove(tmp_path)
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def get_firewall_status(self) -> dict:
         try:
             if platform.system() == "Linux":
                 if shutil.which("ufw"):
                     r = self.run_command(["ufw", "status", "verbose"], elevated=True)
-                    return {
-                        "success": r["success"],
-                        "tool": "ufw",
-                        "output": r.get("stdout", ""),
-                    }
+                    return CommandResult(
+                        **{
+                            "success": r["success"],
+                            "tool": "ufw",
+                            "output": r.get("stdout", ""),
+                        }
+                    )
                 if shutil.which("firewall-cmd"):
                     r = self.run_command(["firewall-cmd", "--state"], elevated=True)
-                    return {
-                        "success": r["success"],
-                        "tool": "firewalld",
-                        "output": r.get("stdout", ""),
-                    }
+                    return CommandResult(
+                        **{
+                            "success": r["success"],
+                            "tool": "firewalld",
+                            "output": r.get("stdout", ""),
+                        }
+                    )
                 r = self.run_command(
                     ["iptables", "-L", "-n", "--line-numbers"], elevated=True
                 )
-                return {
-                    "success": r["success"],
-                    "tool": "iptables",
-                    "output": r.get("stdout", ""),
-                }
+                return CommandResult(
+                    **{
+                        "success": r["success"],
+                        "tool": "iptables",
+                        "output": r.get("stdout", ""),
+                    }
+                )
             elif platform.system() == "Windows":
                 r = self.run_command(
                     ["netsh", "advfirewall", "show", "allprofiles"], shell=True  # nosec
                 )  # nosec
-                return {
-                    "success": r["success"],
-                    "tool": "netsh",
-                    "output": r.get("stdout", ""),
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                return CommandResult(
+                    **{
+                        "success": r["success"],
+                        "tool": "netsh",
+                        "output": r.get("stdout", ""),
+                    }
+                )
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_firewall_rules(self) -> dict:
         try:
             if platform.system() == "Linux":
                 if shutil.which("ufw"):
                     r = self.run_command(["ufw", "status", "numbered"], elevated=True)
-                    return {
-                        "success": r["success"],
-                        "tool": "ufw",
-                        "output": r.get("stdout", ""),
-                    }
+                    return CommandResult(
+                        **{
+                            "success": r["success"],
+                            "tool": "ufw",
+                            "output": r.get("stdout", ""),
+                        }
+                    )
                 if shutil.which("firewall-cmd"):
                     r = self.run_command(["firewall-cmd", "--list-all"], elevated=True)
-                    return {
-                        "success": r["success"],
-                        "tool": "firewalld",
-                        "output": r.get("stdout", ""),
-                    }
+                    return CommandResult(
+                        **{
+                            "success": r["success"],
+                            "tool": "firewalld",
+                            "output": r.get("stdout", ""),
+                        }
+                    )
                 r = self.run_command(
                     ["iptables", "-L", "-n", "-v", "--line-numbers"], elevated=True
                 )
-                return {
-                    "success": r["success"],
-                    "tool": "iptables",
-                    "output": r.get("stdout", ""),
-                }
+                return CommandResult(
+                    **{
+                        "success": r["success"],
+                        "tool": "iptables",
+                        "output": r.get("stdout", ""),
+                    }
+                )
             elif platform.system() == "Windows":
                 r = self.run_command(
                     [
@@ -1292,44 +1455,60 @@ class SystemsManagerBase(ABC):
                         rules = json.loads(r.get("stdout", "[]"))
                         if isinstance(rules, dict):
                             rules = [rules]
-                        return {
-                            "success": True,
-                            "tool": "netsh",
-                            "rules": rules,
-                            "total": len(rules),
-                        }
+                        return CommandResult(
+                            **{
+                                "success": True,
+                                "tool": "netsh",
+                                "rules": rules,
+                                "total": len(rules),
+                            }
+                        )
                     except json.JSONDecodeError:
                         pass
-                return {
-                    "success": r["success"],
-                    "tool": "netsh",
-                    "output": r.get("stdout", ""),
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                return CommandResult(
+                    **{
+                        "success": r["success"],
+                        "tool": "netsh",
+                        "output": r.get("stdout", ""),
+                    }
+                )
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def add_firewall_rule(self, rule: str) -> dict:
         try:
             if platform.system() == "Linux":
                 if shutil.which("ufw"):
                     r = self.run_command(["ufw"] + rule.split(), elevated=True)
-                    return {"success": r["success"], "tool": "ufw", "details": r}
+                    return CommandResult(
+                        **{"success": r["success"], "tool": "ufw", "details": r}
+                    )
                 if shutil.which("firewall-cmd"):
                     r = self.run_command(["firewall-cmd"] + rule.split(), elevated=True)
-                    return {"success": r["success"], "tool": "firewalld", "details": r}
+                    return CommandResult(
+                        **{"success": r["success"], "tool": "firewalld", "details": r}
+                    )
                 r = self.run_command(["iptables"] + rule.split(), elevated=True)
-                return {"success": r["success"], "tool": "iptables", "details": r}
+                return CommandResult(
+                    **{"success": r["success"], "tool": "iptables", "details": r}
+                )
             elif platform.system() == "Windows":
                 r = self.run_command(
                     ["netsh", "advfirewall", "firewall", "add", "rule"] + rule.split(),
                     shell=True,  # nosec
                     elevated=True,
                 )
-                return {"success": r["success"], "tool": "netsh", "details": r}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                return CommandResult(
+                    **{"success": r["success"], "tool": "netsh", "details": r}
+                )
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def remove_firewall_rule(self, rule: str) -> dict:
         try:
@@ -1338,14 +1517,20 @@ class SystemsManagerBase(ABC):
                     r = self.run_command(
                         ["ufw", "delete"] + rule.split(), elevated=True
                     )
-                    return {"success": r["success"], "tool": "ufw", "details": r}
+                    return CommandResult(
+                        **{"success": r["success"], "tool": "ufw", "details": r}
+                    )
                 if shutil.which("firewall-cmd"):
                     r = self.run_command(
                         ["firewall-cmd", "--remove-" + rule], elevated=True
                     )
-                    return {"success": r["success"], "tool": "firewalld", "details": r}
+                    return CommandResult(
+                        **{"success": r["success"], "tool": "firewalld", "details": r}
+                    )
                 r = self.run_command(["iptables", "-D"] + rule.split(), elevated=True)
-                return {"success": r["success"], "tool": "iptables", "details": r}
+                return CommandResult(
+                    **{"success": r["success"], "tool": "iptables", "details": r}
+                )
             elif platform.system() == "Windows":
                 r = self.run_command(
                     ["netsh", "advfirewall", "firewall", "delete", "rule"]
@@ -1353,20 +1538,26 @@ class SystemsManagerBase(ABC):
                     shell=True,  # nosec
                     elevated=True,
                 )
-                return {"success": r["success"], "tool": "netsh", "details": r}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                return CommandResult(
+                    **{"success": r["success"], "tool": "netsh", "details": r}
+                )
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_ssh_keys(self) -> dict:
         try:
             ssh_dir = os.path.expanduser("~/.ssh")
             if not os.path.exists(ssh_dir):
-                return {
-                    "success": True,
-                    "keys": [],
-                    "message": "No .ssh directory found",
-                }
+                return CommandResult(
+                    **{
+                        "success": True,
+                        "keys": [],
+                        "message": "No .ssh directory found",
+                    }
+                )
             keys = []
             for filename in os.listdir(ssh_dir):
                 filepath = os.path.join(ssh_dir, filename)
@@ -1381,9 +1572,9 @@ class SystemsManagerBase(ABC):
                             "permissions": oct(stat.st_mode)[-3:],
                         }
                     )
-            return {"success": True, "keys": keys, "total": len(keys)}
+            return CommandResult(**{"success": True, "keys": keys, "total": len(keys)})
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def generate_ssh_key(
         self,
@@ -1396,7 +1587,9 @@ class SystemsManagerBase(ABC):
             os.makedirs(ssh_dir, exist_ok=True)
             key_path = os.path.join(ssh_dir, f"id_{key_type}")
             if os.path.exists(key_path):
-                return {"success": False, "error": f"Key already exists: {key_path}"}
+                return CommandResult(
+                    **{"success": False, "error": f"Key already exists: {key_path}"}
+                )
             result = self.run_command(
                 [
                     "ssh-keygen",
@@ -1410,14 +1603,16 @@ class SystemsManagerBase(ABC):
                     comment,
                 ]
             )
-            return {
-                "success": result["success"],
-                "key_path": key_path,
-                "public_key_path": f"{key_path}.pub",
-                "details": result,
-            }
+            return CommandResult(
+                **{
+                    "success": result["success"],
+                    "key_path": key_path,
+                    "public_key_path": f"{key_path}.pub",
+                    "details": result,
+                }
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def add_authorized_key(self, public_key: str) -> dict:
         try:
@@ -1427,32 +1622,40 @@ class SystemsManagerBase(ABC):
             if os.path.exists(auth_keys):
                 with open(auth_keys) as f:
                     if public_key.strip() in f.read():
-                        return {
-                            "success": True,
-                            "message": "Key already exists in authorized_keys",
-                        }
+                        return CommandResult(
+                            **{
+                                "success": True,
+                                "message": "Key already exists in authorized_keys",
+                            }
+                        )
             with open(auth_keys, "a") as f:
                 f.write(public_key.strip() + "\n")
             os.chmod(auth_keys, 0o600)
-            return {"success": True, "message": "Public key added to authorized_keys"}
+            return CommandResult(
+                **{"success": True, "message": "Public key added to authorized_keys"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def list_env_vars(self) -> dict:
-        return {
-            "success": True,
-            "variables": dict(os.environ),
-            "total": len(os.environ),
-        }
+        return CommandResult(
+            **{
+                "success": True,
+                "variables": dict(os.environ),
+                "total": len(os.environ),
+            }
+        )
 
     def get_env_var(self, name: str) -> dict:
         value = os.environ.get(name)
         if value is None:
-            return {
-                "success": False,
-                "error": f"Environment variable '{name}' not found",
-            }
-        return {"success": True, "name": name, "value": value}
+            return CommandResult(
+                **{
+                    "success": False,
+                    "error": f"Environment variable '{name}' not found",
+                }
+            )
+        return CommandResult(**{"success": True, "name": name, "value": value})
 
     def clean_temp_files(self) -> dict:
         try:
@@ -1468,14 +1671,16 @@ class SystemsManagerBase(ABC):
                     cleaned += 1
                 except (PermissionError, OSError):
                     errors += 1
-            return {
-                "success": True,
-                "temp_dir": temp_dir,
-                "cleaned": cleaned,
-                "errors": errors,
-            }
+            return CommandResult(
+                **{
+                    "success": True,
+                    "temp_dir": temp_dir,
+                    "cleaned": cleaned,
+                    "errors": errors,
+                }
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def get_disk_space_report(self, path: str = "/", top_n: int = 10) -> dict:
         try:
@@ -1491,11 +1696,13 @@ class SystemsManagerBase(ABC):
                         if len(parts) == 2:
                             entries.append({"size": parts[0], "path": parts[1]})
                     entries.sort(key=lambda x: x["size"], reverse=True)
-                    return {
-                        "success": True,
-                        "entries": entries[:top_n],
-                        "base_path": path,
-                    }
+                    return CommandResult(
+                        **{
+                            "success": True,
+                            "entries": entries[:top_n],
+                            "base_path": path,
+                        }
+                    )
                 return result
             elif platform.system() == "Windows":
                 ps_cmd = (
@@ -1513,16 +1720,22 @@ class SystemsManagerBase(ABC):
                         entries = json.loads(result.get("stdout", "[]"))
                         if isinstance(entries, dict):
                             entries = [entries]
-                        return {"success": True, "entries": entries, "base_path": path}
+                        return CommandResult(
+                            **{"success": True, "entries": entries, "base_path": path}
+                        )
                     except json.JSONDecodeError:
                         pass
-                return {
-                    "success": result["success"],
-                    "output": result.get("stdout", ""),
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+                return CommandResult(
+                    **{
+                        "success": result["success"],
+                        "output": result.get("stdout", ""),
+                    }
+                )
+            return CommandResult(
+                **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            )
         except Exception as e:
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
 
 class AptManager(SystemsManagerBase):
@@ -1576,22 +1789,28 @@ class AptManager(SystemsManagerBase):
         try:
             update_result = self.run_command(["apt", "update"], elevated=True)
             if not update_result["success"]:
-                return {
-                    "success": False,
-                    "error": "apt update failed",
-                    "details": update_result,
-                }
+                return CommandResult(
+                    **{
+                        "success": False,
+                        "error": "apt update failed",
+                        "details": update_result,
+                    }
+                )
             upgrade_result = self.run_command(["apt", "upgrade", "-y"], elevated=True)
             if not upgrade_result["success"]:
-                return {
-                    "success": False,
-                    "error": "apt upgrade failed",
-                    "details": upgrade_result,
-                }
-            return {"success": True, "message": "System and packages updated"}
+                return CommandResult(
+                    **{
+                        "success": False,
+                        "error": "apt upgrade failed",
+                        "details": upgrade_result,
+                    }
+                )
+            return CommandResult(
+                **{"success": True, "message": "System and packages updated"}
+            )
         except Exception as e:
             self.logger.error(f"Unexpected error in update: {e}")
-            return {"success": False, "error": str(e)}
+            return CommandResult(**{"success": False, "error": str(e)})
 
     def clean(self) -> dict:
         install_result = self.run_command(
@@ -1601,35 +1820,46 @@ class AptManager(SystemsManagerBase):
             self.logger.warning("Failed to install trash-cli")
         empty_result = self.run_command(["trash-empty"])
         if empty_result["success"]:
-            return {"success": True, "message": "Trash emptied"}
+            return CommandResult(**{"success": True, "message": "Trash emptied"})
         else:
-            return {
-                "success": False,
-                "error": "Failed to empty trash",
-                "details": empty_result,
-            }
+            return CommandResult(
+                **{
+                    "success": False,
+                    "error": "Failed to empty trash",
+                    "details": empty_result,
+                }
+            )
 
     def optimize(self) -> dict:
         autoremove_result = self.run_command(["apt", "autoremove", "-y"], elevated=True)
         autoclean_result = self.run_command(["apt", "autoclean"], elevated=True)
         overall_success = autoremove_result["success"] and autoclean_result["success"]
-        return {
-            "success": overall_success,
-            "message": (
-                "System optimized" if overall_success else "Partial optimization"
-            ),
-            "details": {"autoremove": autoremove_result, "autoclean": autoclean_result},
-        }
+        return CommandResult(
+            **{
+                "success": overall_success,
+                "message": (
+                    "System optimized" if overall_success else "Partial optimization"
+                ),
+                "details": {
+                    "autoremove": autoremove_result,
+                    "autoclean": autoclean_result,
+                },
+            }
+        )
 
     def install_snapd(self) -> dict:
         result = self.run_command(["apt", "install", "-y", "snapd"], elevated=True)
-        return {
-            "success": result["success"],
-            "details": result,
-            "message": (
-                "snapd installed" if result["success"] else "Failed to install snapd"
-            ),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "details": result,
+                "message": (
+                    "snapd installed"
+                    if result["success"]
+                    else "Failed to install snapd"
+                ),
+            }
+        )
 
     def add_repository(self, repo_url: str, name: str | None = None) -> dict:
         add_result = self.run_command(
@@ -1637,22 +1867,26 @@ class AptManager(SystemsManagerBase):
         )
         if add_result["success"]:
             update_result = self.run_command(["apt", "update"], elevated=True)
-            return {
-                "success": update_result["success"],
-                "details": [add_result, update_result],
-            }
+            return CommandResult(
+                **{
+                    "success": update_result["success"],
+                    "details": [add_result, update_result],
+                }
+            )
         return add_result
 
     def install_local_package(self, file_path: str) -> dict:
         if not file_path.endswith(".deb"):
-            return {"success": False, "error": "Not a .deb file"}
+            return CommandResult(**{"success": False, "error": "Not a .deb file"})
         install_result = self.run_command(["dpkg", "-i", file_path], elevated=True)
         if install_result["success"]:
             fix_result = self.run_command(["apt", "install", "-f", "-y"], elevated=True)
-            return {
-                "success": fix_result["success"],
-                "details": [install_result, fix_result],
-            }
+            return CommandResult(
+                **{
+                    "success": fix_result["success"],
+                    "details": [install_result, fix_result],
+                }
+            )
         return install_result
 
     def search_package(self, query: str):
@@ -1665,15 +1899,19 @@ class AptManager(SystemsManagerBase):
                     packages.append(
                         {"name": parts[0].strip(), "description": parts[1].strip()}
                     )
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def get_package_info(self, package: str):
         result = self.run_command(["apt-cache", "show", package])
-        return {"success": result["success"], "info": result.get("stdout", "")}
+        return CommandResult(
+            **{"success": result["success"], "info": result.get("stdout", "")}
+        )
 
     def list_installed_packages(self):
         result = self.run_command(["dpkg", "--get-selections"])
@@ -1683,11 +1921,13 @@ class AptManager(SystemsManagerBase):
                 parts = line.split()
                 if len(parts) >= 2 and parts[1] == "install":
                     packages.append(parts[0])
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def list_upgradable_packages(self):
         self.run_command(["apt", "update"], elevated=True)
@@ -1697,18 +1937,22 @@ class AptManager(SystemsManagerBase):
             for line in (result.get("stdout") or "").strip().splitlines():
                 if "/" in line and "Listing" not in line:
                     packages.append(line.split("/")[0])
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def clean_package_cache(self):
         result = self.run_command(["apt-get", "clean"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "APT cache cleaned" if result["success"] else "Failed",
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "APT cache cleaned" if result["success"] else "Failed",
+            }
+        )
 
 
 class DnfManager(SystemsManagerBase):
@@ -1752,52 +1996,66 @@ class DnfManager(SystemsManagerBase):
 
     def update(self) -> dict:
         result = self.run_command(["dnf", "update", "-y"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "System updated" if result["success"] else "Update failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "System updated" if result["success"] else "Update failed",
+                "details": result,
+            }
+        )
 
     def clean(self) -> dict:
         result = self.run_command(["dnf", "clean", "all"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "Cache cleaned" if result["success"] else "Clean failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "Cache cleaned" if result["success"] else "Clean failed",
+                "details": result,
+            }
+        )
 
     def optimize(self) -> dict:
         result = self.run_command(["dnf", "autoremove", "-y"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "Orphans removed" if result["success"] else "Optimize failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": (
+                    "Orphans removed" if result["success"] else "Optimize failed"
+                ),
+                "details": result,
+            }
+        )
 
     def install_snapd(self) -> dict:
         result = self.run_command(["dnf", "install", "-y", "snapd"], elevated=True)
-        return {
-            "success": result["success"],
-            "details": result,
-            "message": (
-                "snapd installed" if result["success"] else "Failed to install snapd"
-            ),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "details": result,
+                "message": (
+                    "snapd installed"
+                    if result["success"]
+                    else "Failed to install snapd"
+                ),
+            }
+        )
 
     def add_repository(self, repo_url: str, name: str | None = None) -> dict:
         command = ["dnf", "config-manager", "--add-repo", repo_url]
         add_result = self.run_command(command, elevated=True)
         if add_result["success"]:
             update_result = self.run_command(["dnf", "makecache"], elevated=True)
-            return {
-                "success": update_result["success"],
-                "details": [add_result, update_result],
-            }
+            return CommandResult(
+                **{
+                    "success": update_result["success"],
+                    "details": [add_result, update_result],
+                }
+            )
         return add_result
 
     def install_local_package(self, file_path: str) -> dict:
         if not file_path.endswith(".rpm"):
-            return {"success": False, "error": "Not a .rpm file"}
+            return CommandResult(**{"success": False, "error": "Not a .rpm file"})
         return self.run_command(["dnf", "install", "-y", file_path], elevated=True)
 
     def search_package(self, query: str):
@@ -1813,15 +2071,19 @@ class DnfManager(SystemsManagerBase):
                             "description": parts[1].strip(),
                         }
                     )
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def get_package_info(self, package: str):
         result = self.run_command(["dnf", "info", package])
-        return {"success": result["success"], "info": result.get("stdout", "")}
+        return CommandResult(
+            **{"success": result["success"], "info": result.get("stdout", "")}
+        )
 
     def list_installed_packages(self):
         result = self.run_command(["dnf", "list", "installed"])
@@ -1832,11 +2094,13 @@ class DnfManager(SystemsManagerBase):
                     parts = line.split()
                     if parts:
                         packages.append(parts[0].split(".")[0])
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def list_upgradable_packages(self):
         result = self.run_command(["dnf", "check-update"])
@@ -1846,14 +2110,18 @@ class DnfManager(SystemsManagerBase):
                 parts = line.split()
                 if len(parts) >= 3 and "." in parts[0]:
                     packages.append(parts[0].split(".")[0])
-        return {"success": True, "packages": packages, "total": len(packages)}
+        return CommandResult(
+            **{"success": True, "packages": packages, "total": len(packages)}
+        )
 
     def clean_package_cache(self):
         result = self.run_command(["dnf", "clean", "all"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "DNF cache cleaned" if result["success"] else "Failed",
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "DNF cache cleaned" if result["success"] else "Failed",
+            }
+        )
 
 
 class ZypperManager(SystemsManagerBase):
@@ -1894,37 +2162,49 @@ class ZypperManager(SystemsManagerBase):
 
     def update(self) -> dict:
         result = self.run_command(["zypper", "update", "-y"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "System updated" if result["success"] else "Update failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "System updated" if result["success"] else "Update failed",
+                "details": result,
+            }
+        )
 
     def clean(self) -> dict:
         result = self.run_command(["zypper", "clean", "--all"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "Cache cleaned" if result["success"] else "Clean failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "Cache cleaned" if result["success"] else "Clean failed",
+                "details": result,
+            }
+        )
 
     def optimize(self) -> dict:
         result = self.run_command(["zypper", "rm", "-u"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "Unneeded removed" if result["success"] else "Optimize failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": (
+                    "Unneeded removed" if result["success"] else "Optimize failed"
+                ),
+                "details": result,
+            }
+        )
 
     def install_snapd(self) -> dict:
         result = self.run_command(["zypper", "install", "-y", "snapd"], elevated=True)
-        return {
-            "success": result["success"],
-            "details": result,
-            "message": (
-                "snapd installed" if result["success"] else "Failed to install snapd"
-            ),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "details": result,
+                "message": (
+                    "snapd installed"
+                    if result["success"]
+                    else "Failed to install snapd"
+                ),
+            }
+        )
 
     def add_repository(self, repo_url: str, name: str | None = None) -> dict:
         if not name:
@@ -1934,15 +2214,17 @@ class ZypperManager(SystemsManagerBase):
         )
         if add_result["success"]:
             refresh_result = self.run_command(["zypper", "refresh"], elevated=True)
-            return {
-                "success": refresh_result["success"],
-                "details": [add_result, refresh_result],
-            }
+            return CommandResult(
+                **{
+                    "success": refresh_result["success"],
+                    "details": [add_result, refresh_result],
+                }
+            )
         return add_result
 
     def install_local_package(self, file_path: str) -> dict:
         if not file_path.endswith(".rpm"):
-            return {"success": False, "error": "Not a .rpm file"}
+            return CommandResult(**{"success": False, "error": "Not a .rpm file"})
         return self.run_command(["zypper", "install", "-y", file_path], elevated=True)
 
     def search_package(self, query: str):
@@ -1958,15 +2240,19 @@ class ZypperManager(SystemsManagerBase):
                             "description": parts[2].strip() if len(parts) > 2 else "",
                         }
                     )
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def get_package_info(self, package: str):
         result = self.run_command(["zypper", "info", package])
-        return {"success": result["success"], "info": result.get("stdout", "")}
+        return CommandResult(
+            **{"success": result["success"], "info": result.get("stdout", "")}
+        )
 
     def list_installed_packages(self):
         result = self.run_command(["zypper", "search", "--installed-only"])
@@ -1976,11 +2262,13 @@ class ZypperManager(SystemsManagerBase):
                 parts = line.split("|")
                 if len(parts) >= 2 and parts[0].strip() == "i":
                     packages.append(parts[1].strip())
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def list_upgradable_packages(self):
         result = self.run_command(["zypper", "list-updates"])
@@ -1992,18 +2280,22 @@ class ZypperManager(SystemsManagerBase):
                     packages.append(
                         parts[2].strip() if len(parts) > 2 else parts[1].strip()
                     )
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def clean_package_cache(self):
         result = self.run_command(["zypper", "clean", "--all"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "Zypper cache cleaned" if result["success"] else "Failed",
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "Zypper cache cleaned" if result["success"] else "Failed",
+            }
+        )
 
 
 class PacmanManager(SystemsManagerBase):
@@ -2044,40 +2336,52 @@ class PacmanManager(SystemsManagerBase):
 
     def update(self) -> dict:
         result = self.run_command(["pacman", "-Syu", "--noconfirm"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "System updated" if result["success"] else "Update failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "System updated" if result["success"] else "Update failed",
+                "details": result,
+            }
+        )
 
     def clean(self) -> dict:
         result = self.run_command(["pacman", "-Sc", "--noconfirm"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "Cache cleaned" if result["success"] else "Clean failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "Cache cleaned" if result["success"] else "Clean failed",
+                "details": result,
+            }
+        )
 
     def optimize(self) -> dict:
         orphans_cmd = ["pacman", "-Rns", "$(pacman -Qdtq)", "--noconfirm"]
         result = self.run_command(orphans_cmd, elevated=True, shell=True)  # nosec
-        return {
-            "success": result["success"],
-            "message": "Orphans removed" if result["success"] else "Optimize failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": (
+                    "Orphans removed" if result["success"] else "Optimize failed"
+                ),
+                "details": result,
+            }
+        )
 
     def install_snapd(self) -> dict:
         result = self.run_command(
             ["pacman", "-S", "--noconfirm", "snapd"], elevated=True
         )
-        return {
-            "success": result["success"],
-            "details": result,
-            "message": (
-                "snapd installed" if result["success"] else "Failed to install snapd"
-            ),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "details": result,
+                "message": (
+                    "snapd installed"
+                    if result["success"]
+                    else "Failed to install snapd"
+                ),
+            }
+        )
 
     def add_repository(self, repo_url: str, name: str | None = None) -> dict:
         if not name:
@@ -2090,10 +2394,12 @@ class PacmanManager(SystemsManagerBase):
             sync_result = self.run_command(
                 ["pacman", "-Sy", "--noconfirm"], elevated=True
             )
-            return {
-                "success": sync_result["success"],
-                "details": [add_result, sync_result],
-            }
+            return CommandResult(
+                **{
+                    "success": sync_result["success"],
+                    "details": [add_result, sync_result],
+                }
+            )
         return add_result
 
     def install_local_package(self, file_path: str) -> dict:
@@ -2113,17 +2419,21 @@ class PacmanManager(SystemsManagerBase):
                 if len(parts) == 2:
                     pkg_name = parts[1].split()[0]
                     packages.append({"name": pkg_name, "description": desc})
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def get_package_info(self, package: str):
         result = self.run_command(["pacman", "-Si", package])
         if not result["success"]:
             result = self.run_command(["pacman", "-Qi", package])
-        return {"success": result["success"], "info": result.get("stdout", "")}
+        return CommandResult(
+            **{"success": result["success"], "info": result.get("stdout", "")}
+        )
 
     def list_installed_packages(self):
         result = self.run_command(["pacman", "-Qq"])
@@ -2134,11 +2444,13 @@ class PacmanManager(SystemsManagerBase):
                 for p in (result.get("stdout") or "").strip().splitlines()
                 if p.strip()
             ]
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def list_upgradable_packages(self):
         result = self.run_command(["pacman", "-Qu"])
@@ -2148,18 +2460,22 @@ class PacmanManager(SystemsManagerBase):
                 parts = line.split()
                 if parts:
                     packages.append(parts[0])
-        return {
-            "success": result["success"],
-            "packages": packages,
-            "total": len(packages),
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "packages": packages,
+                "total": len(packages),
+            }
+        )
 
     def clean_package_cache(self):
         result = self.run_command(["pacman", "-Sc", "--noconfirm"], elevated=True)
-        return {
-            "success": result["success"],
-            "message": "Pacman cache cleaned" if result["success"] else "Failed",
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": "Pacman cache cleaned" if result["success"] else "Failed",
+            }
+        )
 
 
 class WindowsManager(SystemsManagerBase):
@@ -2223,21 +2539,27 @@ class WindowsManager(SystemsManagerBase):
         ]
         wu_result = self.run_command(wu_cmd, shell=True, elevated=True)  # nosec
         overall_success = winget_result["success"] and wu_result["success"]
-        return {
-            "success": overall_success,
-            "message": (
-                "System and apps updated" if overall_success else "Partial update"
-            ),
-            "details": {"winget": winget_result, "windows_update": wu_result},
-        }
+        return CommandResult(
+            **{
+                "success": overall_success,
+                "message": (
+                    "System and apps updated" if overall_success else "Partial update"
+                ),
+                "details": {"winget": winget_result, "windows_update": wu_result},
+            }
+        )
 
     def clean(self) -> dict:
         result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)  # nosec
-        return {
-            "success": result["success"],
-            "message": "Cleanup initiated" if result["success"] else "Cleanup failed",
-            "details": result,
-        }
+        return CommandResult(
+            **{
+                "success": result["success"],
+                "message": (
+                    "Cleanup initiated" if result["success"] else "Cleanup failed"
+                ),
+                "details": result,
+            }
+        )
 
     def optimize(self) -> dict:
         clean_result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)  # nosec
@@ -2246,13 +2568,15 @@ class WindowsManager(SystemsManagerBase):
             elevated=True,
         )
         overall_success = clean_result["success"] and defrag_result["success"]
-        return {
-            "success": overall_success,
-            "message": (
-                "System optimized" if overall_success else "Partial optimization"
-            ),
-            "details": {"cleanup": clean_result, "defrag": defrag_result},
-        }
+        return CommandResult(
+            **{
+                "success": overall_success,
+                "message": (
+                    "System optimized" if overall_success else "Partial optimization"
+                ),
+                "details": {"cleanup": clean_result, "defrag": defrag_result},
+            }
+        )
 
     def list_windows_features(self) -> list[dict]:
         cmd = [
@@ -2320,43 +2644,57 @@ class WindowsManager(SystemsManagerBase):
         return results
 
     def install_snapd(self) -> dict:
-        return {"success": False, "error": "Snap not supported on Windows"}
+        return CommandResult(
+            **{"success": False, "error": "Snap not supported on Windows"}
+        )
 
     def add_repository(self, repo_url: str, name: str | None = None) -> dict:
-        return {
-            "success": False,
-            "error": "Repository addition not supported on Windows",
-        }
+        return CommandResult(
+            **{
+                "success": False,
+                "error": "Repository addition not supported on Windows",
+            }
+        )
 
     def install_local_package(self, file_path: str) -> dict:
-        return {
-            "success": False,
-            "error": "Local package installation not supported on Windows",
-        }
+        return CommandResult(
+            **{
+                "success": False,
+                "error": "Local package installation not supported on Windows",
+            }
+        )
 
     def search_package(self, query: str):
         result = self.run_command(
             [self.winget_bin, "search", query, "--accept-source-agreements"]
         )
-        return {"success": result["success"], "output": result.get("stdout", "")}
+        return CommandResult(
+            **{"success": result["success"], "output": result.get("stdout", "")}
+        )
 
     def get_package_info(self, package: str):
         result = self.run_command(
             [self.winget_bin, "show", package, "--accept-source-agreements"]
         )
-        return {"success": result["success"], "info": result.get("stdout", "")}
+        return CommandResult(
+            **{"success": result["success"], "info": result.get("stdout", "")}
+        )
 
     def list_installed_packages(self):
         result = self.run_command(
             [self.winget_bin, "list", "--accept-source-agreements"]
         )
-        return {"success": result["success"], "output": result.get("stdout", "")}
+        return CommandResult(
+            **{"success": result["success"], "output": result.get("stdout", "")}
+        )
 
     def list_upgradable_packages(self):
         result = self.run_command(
             [self.winget_bin, "upgrade", "--accept-source-agreements"]
         )
-        return {"success": result["success"], "output": result.get("stdout", "")}
+        return CommandResult(
+            **{"success": result["success"], "output": result.get("stdout", "")}
+        )
 
     def clean_package_cache(self):
         result = self.run_command(
@@ -2367,10 +2705,12 @@ class WindowsManager(SystemsManagerBase):
             ],
             shell=True,  # nosec
         )  # nosec
-        return {
-            "success": True,
-            "message": f"Windows package cache cleaned: \n{result}",
-        }
+        return CommandResult(
+            **{
+                "success": True,
+                "message": f"Windows package cache cleaned: \n{result}",
+            }
+        )
 
 
 def detect_and_create_manager(

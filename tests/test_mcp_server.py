@@ -803,7 +803,7 @@ class TestRequestsMocking:
     @pytest.mark.asyncio
     async def test_requests_get_mock(self, _mock_requests_get):
         """Test that requests.get is properly mocked."""
-        # The mock_requests_get fixture should be available from conftest
+        # The _mock_requests_get fixture should be available from conftest
         # If not, we'll skip this test
         try:
             import requests
