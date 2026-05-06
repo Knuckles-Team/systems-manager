@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "systems-manager": {
+      "command": "uv",
+      "args": [
+        "run",
+        "systems-manager-mcp"
+      ],
+      "env": {
+        "AGENT_POLICIES_PATH": "<YOUR_AGENT_POLICIES_PATH>",
+        "MCP_CONFIG_PATH": "<YOUR_MCP_CONFIG_PATH>",
+        "PERMISSIONS_SIGNING_KEY": "<YOUR_PERMISSIONS_SIGNING_KEY>",
+        "SPECIALIST_REGISTRY_PATH": "<YOUR_SPECIALIST_REGISTRY_PATH>",
+        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
+        "AGENT_OSTOOL": "True",
+        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
+        "CRONTOOL": "True",
+        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
+        "DISKTOOL": "True",
+        "FILESYSTEMTOOL": "True",
+        "FIREWALL_MANAGEMENTTOOL": "True",
+        "LOGTOOL": "True",
+        "MAINTENANCE_PRIORITY": "<YOUR_MAINTENANCE_PRIORITY>",
+        "MAINTENANCE_TOKEN_BUDGET": "<YOUR_MAINTENANCE_TOKEN_BUDGET>",
+        "MAX_CONCURRENT_AGENTS": "<YOUR_MAX_CONCURRENT_AGENTS>",
+        "MISCTOOL": "True",
+        "NETWORKTOOL": "True",
+        "NODEJSTOOL": "True",
+        "PROCESSTOOL": "True",
+        "PROJECT_ROOT": "<YOUR_PROJECT_ROOT>",
+        "PYTHONTOOL": "True",
+        "SERVICETOOL": "True",
+        "SHELLTOOL": "True",
+        "SSH_MANAGEMENTTOOL": "True",
+        "SYSTEMS_MANAGER_LOG_FILE": "<YOUR_SYSTEMS_MANAGER_LOG_FILE>",
+        "SYSTEMS_MANAGER_SILENT": "<YOUR_SYSTEMS_MANAGER_SILENT>",
+        "SYSTEMTOOL": "True",
+        "SYSTEM_MANAGEMENTTOOL": "True",
+        "TEXT_EDITORTOOL": "True",
+        "USERTOOL": "True"
+      }
+    }
+  }
+}

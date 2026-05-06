@@ -21,7 +21,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 1.6.0*
+*Version: 1.7.0*
 
 ## Overview
 
@@ -412,3 +412,110 @@ uv pip install --upgrade systems-manager
 
 ![GitHub followers](https://img.shields.io/github/followers/Knucklessg1)
 ![GitHub User's stars](https://img.shields.io/github/stars/Knucklessg1)
+
+
+## MCP Configuration Examples
+
+### 1. Standard IO (stdio) Deployment
+
+```json
+{
+  "mcpServers": {
+    "systems-manager": {
+      "command": "uv",
+      "args": [
+        "run",
+        "systems-manager-mcp"
+      ],
+      "env": {
+        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
+        "AGENT_OSTOOL": "True",
+        "AGENT_POLICIES_PATH": "<YOUR_AGENT_POLICIES_PATH>",
+        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
+        "CRONTOOL": "True",
+        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
+        "DISKTOOL": "True",
+        "FILESYSTEMTOOL": "True",
+        "FIREWALL_MANAGEMENTTOOL": "True",
+        "LOGTOOL": "True",
+        "MAINTENANCE_PRIORITY": "<YOUR_MAINTENANCE_PRIORITY>",
+        "MAINTENANCE_TOKEN_BUDGET": "<YOUR_MAINTENANCE_TOKEN_BUDGET>",
+        "MAX_CONCURRENT_AGENTS": "<YOUR_MAX_CONCURRENT_AGENTS>",
+        "MCP_CONFIG_PATH": "<YOUR_MCP_CONFIG_PATH>",
+        "MISCTOOL": "True",
+        "NETWORKTOOL": "True",
+        "NODEJSTOOL": "True",
+        "PERMISSIONS_SIGNING_KEY": "<YOUR_PERMISSIONS_SIGNING_KEY>",
+        "PROCESSTOOL": "True",
+        "PROJECT_ROOT": "<YOUR_PROJECT_ROOT>",
+        "PYTHONTOOL": "True",
+        "SERVICETOOL": "True",
+        "SHELLTOOL": "True",
+        "SPECIALIST_REGISTRY_PATH": "<YOUR_SPECIALIST_REGISTRY_PATH>",
+        "SSH_MANAGEMENTTOOL": "True",
+        "SYSTEMS_MANAGER_LOG_FILE": "<YOUR_SYSTEMS_MANAGER_LOG_FILE>",
+        "SYSTEMS_MANAGER_SILENT": "<YOUR_SYSTEMS_MANAGER_SILENT>",
+        "SYSTEMTOOL": "True",
+        "SYSTEM_MANAGEMENTTOOL": "True",
+        "TEXT_EDITORTOOL": "True",
+        "USERTOOL": "True"
+      }
+    }
+  }
+}
+```
+
+### 2. Streamable HTTP (SSE) Deployment
+
+```json
+{
+  "mcpServers": {
+    "systems-manager": {
+      "command": "uv",
+      "args": [
+        "run",
+        "systems-manager-mcp",
+        "--transport",
+        "http",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "env": {
+        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
+        "AGENT_OSTOOL": "True",
+        "AGENT_POLICIES_PATH": "<YOUR_AGENT_POLICIES_PATH>",
+        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
+        "CRONTOOL": "True",
+        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
+        "DISKTOOL": "True",
+        "FILESYSTEMTOOL": "True",
+        "FIREWALL_MANAGEMENTTOOL": "True",
+        "LOGTOOL": "True",
+        "MAINTENANCE_PRIORITY": "<YOUR_MAINTENANCE_PRIORITY>",
+        "MAINTENANCE_TOKEN_BUDGET": "<YOUR_MAINTENANCE_TOKEN_BUDGET>",
+        "MAX_CONCURRENT_AGENTS": "<YOUR_MAX_CONCURRENT_AGENTS>",
+        "MCP_CONFIG_PATH": "<YOUR_MCP_CONFIG_PATH>",
+        "MISCTOOL": "True",
+        "NETWORKTOOL": "True",
+        "NODEJSTOOL": "True",
+        "PERMISSIONS_SIGNING_KEY": "<YOUR_PERMISSIONS_SIGNING_KEY>",
+        "PROCESSTOOL": "True",
+        "PROJECT_ROOT": "<YOUR_PROJECT_ROOT>",
+        "PYTHONTOOL": "True",
+        "SERVICETOOL": "True",
+        "SHELLTOOL": "True",
+        "SPECIALIST_REGISTRY_PATH": "<YOUR_SPECIALIST_REGISTRY_PATH>",
+        "SSH_MANAGEMENTTOOL": "True",
+        "SYSTEMS_MANAGER_LOG_FILE": "<YOUR_SYSTEMS_MANAGER_LOG_FILE>",
+        "SYSTEMS_MANAGER_SILENT": "<YOUR_SYSTEMS_MANAGER_SILENT>",
+        "SYSTEMTOOL": "True",
+        "SYSTEM_MANAGEMENTTOOL": "True",
+        "TEXT_EDITORTOOL": "True",
+        "USERTOOL": "True"
+      }
+    }
+  }
+}
+```
