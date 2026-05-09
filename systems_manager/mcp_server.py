@@ -35,12 +35,13 @@ from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from systems_manager.os_provider_tools import register_os_provider_tools
 from systems_manager.systems_manager import (
     WindowsManager,
     detect_and_create_manager,
 )
 
-__version__ = "1.9.0"
+__version__ = "1.10.0"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -2824,6 +2825,10 @@ def get_mcp_instance() -> tuple[Any, Any, Any, Any]:
     DEFAULT_SYSTEMTOOL = to_boolean(os.getenv("SYSTEMTOOL", "True"))
     if DEFAULT_SYSTEMTOOL:
         register_system_tools(mcp)
+
+    DEFAULT_OSPROVIDERTOOL = to_boolean(os.getenv("OSPROVIDERTOOL", "True"))
+    if DEFAULT_OSPROVIDERTOOL:
+        register_os_provider_tools(mcp)
     DEFAULT_SYSTEM_MANAGEMENTTOOL = to_boolean(
         os.getenv("SYSTEM_MANAGEMENTTOOL", "True")
     )
