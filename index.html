@@ -1,0 +1,1853 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+        <link rel="next" href="overview/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>systems-manager</title>
+      
+    
+    
+      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#systems-manager-a2a-ag-ui-mcp" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="systems-manager" class="md-header__button md-logo" aria-label="systems-manager" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            systems-manager
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Home
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Knuckles-Team/systems-manager" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Knuckles-Team/systems-manager
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="systems-manager" class="md-nav__button md-logo" aria-label="systems-manager" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    systems-manager
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Knuckles-Team/systems-manager" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Knuckles-Team/systems-manager
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="." class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mcp-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP tools:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-os-mcp-tools-via-agent-utilities-030" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent OS MCP Tools (via agent-utilities &gt;= 0.3.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a2a-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2A Agent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="A2A Agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-interaction-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Interaction Diagram
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mcp-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-as-an-mcp-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using as an MCP Server
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using as an MCP Server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run-in-stdio-mode-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run in stdio mode (default):
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-in-http-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run in HTTP mode:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-to-agent-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent-to-Agent (A2A) Server
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent-to-Agent (A2A) Server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2a-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2A CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run A2A Server
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-mcp-server-as-a-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploy MCP Server as a Service
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deploy MCP Server as a Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-docker-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Docker Run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Docker Compose
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-mcpjson-for-ai-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configure mcp.json for AI Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-python-package" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install Python Package
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repository-owners" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repository Owners
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-configuration-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP Configuration Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP Configuration Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-standard-io-stdio-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Standard IO (stdio) Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-streamable-http-sse-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Streamable HTTP (SSE) Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mcp-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP tools:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-os-mcp-tools-via-agent-utilities-030" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent OS MCP Tools (via agent-utilities &gt;= 0.3.0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a2a-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2A Agent
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="A2A Agent">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-interaction-diagram" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Interaction Diagram
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Graph Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mcp-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-as-an-mcp-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using as an MCP Server
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using as an MCP Server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#run-in-stdio-mode-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run in stdio mode (default):
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-in-http-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run in HTTP mode:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-to-agent-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent-to-Agent (A2A) Server
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent-to-Agent (A2A) Server">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#endpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Endpoints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a2a-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A2A CLI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-a2a-server" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run A2A Server
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-mcp-server-as-a-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploy MCP Server as a Service
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deploy MCP Server as a Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-docker-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Docker Run
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-docker-compose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Docker Compose
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-mcpjson-for-ai-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configure mcp.json for AI Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#install-python-package" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install Python Package
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#repository-owners" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Repository Owners
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mcp-configuration-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MCP Configuration Examples
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MCP Configuration Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-standard-io-stdio-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Standard IO (stdio) Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-streamable-http-sse-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Streamable HTTP (SSE) Deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="systems-manager-a2a-ag-ui-mcp">Systems-Manager - A2A | AG-UI | MCP<a class="headerlink" href="#systems-manager-a2a-ag-ui-mcp" title="Permanent link">&para;</a></h1>
+<p><img alt="PyPI - Version" src="https://img.shields.io/pypi/v/systems-manager" />
+<img alt="MCP Server" src="https://badge.mcpx.dev?type=server" title="MCP Server" />
+<img alt="PyPI - Downloads" src="https://img.shields.io/pypi/dd/systems-manager" />
+<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/Knuckles-Team/systems-manager" />
+<img alt="GitHub forks" src="https://img.shields.io/github/forks/Knuckles-Team/systems-manager" />
+<img alt="GitHub contributors" src="https://img.shields.io/github/contributors/Knuckles-Team/systems-manager" />
+<img alt="PyPI - License" src="https://img.shields.io/pypi/l/systems-manager" />
+<img alt="GitHub" src="https://img.shields.io/github/license/Knuckles-Team/systems-manager" /></p>
+<p><img alt="GitHub last commit (by committer)" src="https://img.shields.io/github/last-commit/Knuckles-Team/systems-manager" />
+<img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/Knuckles-Team/systems-manager" />
+<img alt="GitHub closed pull requests" src="https://img.shields.io/github/issues-pr-closed/Knuckles-Team/systems-manager" />
+<img alt="GitHub issues" src="https://img.shields.io/github/issues/Knuckles-Team/systems-manager" /></p>
+<p><img alt="GitHub top language" src="https://img.shields.io/github/languages/top/Knuckles-Team/systems-manager" />
+<img alt="GitHub language count" src="https://img.shields.io/github/languages/count/Knuckles-Team/systems-manager" />
+<img alt="GitHub repo size" src="https://img.shields.io/github/repo-size/Knuckles-Team/systems-manager" />
+<img alt="GitHub repo file count (file type)" src="https://img.shields.io/github/directory-file-count/Knuckles-Team/systems-manager" />
+<img alt="PyPI - Wheel" src="https://img.shields.io/pypi/wheel/systems-manager" />
+<img alt="PyPI - Implementation" src="https://img.shields.io/pypi/implementation/systems-manager" /></p>
+<p><em>Version: 1.9.0</em></p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>Systems-Manager is a powerful CLI and MCP server tool to manage your system across multiple operating systems. It supports updating, installing, and optimizing applications, managing Windows features, installing Nerd Fonts, and retrieving system and hardware statistics. It now supports Ubuntu, Debian, Red Hat, Oracle Linux, SLES, Arch, and Windows, with Snap fallback for Linux application installations.</p>
+<p>This repository is actively maintained - Contributions are welcome!</p>
+<h3 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Multi-OS Support</strong>: Works on Windows, Ubuntu, Debian, Red Hat, Oracle Linux, SLES, and Arch.</li>
+<li><strong>Application Management</strong>: Install and update applications using native package managers (apt, dnf, zypper, pacman, winget) with automatic Snap fallback for Linux.</li>
+<li><strong>Font Installation</strong>: Install specific Nerd Fonts (default: Hack) or all available fonts from the latest release.</li>
+<li><strong>Windows Feature Management</strong>: List, enable, or disable Windows optional features (Windows only).</li>
+<li><strong>System Optimization</strong>: Clean and optimize system resources (e.g., trash/recycle bin, autoremove, defragmentation on Windows).</li>
+<li><strong>System and Hardware Stats</strong>: Retrieve detailed OS and hardware information using <code>psutil</code>.</li>
+<li><strong>Logging</strong>: Optional logging to a specified file or default <code>systems_manager.log</code> in the script directory.</li>
+<li><strong>FastMCP Server</strong>: Expose all functionality via a Model Context Protocol (MCP) server over stdio or HTTP for integration with AI or automation systems.</li>
+</ul>
+<h2 id="mcp">MCP<a class="headerlink" href="#mcp" title="Permanent link">&para;</a></h2>
+<h3 id="mcp-tools">MCP tools:<a class="headerlink" href="#mcp-tools" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>install_applications</code>: Install applications with Snap fallback (Linux).</li>
+<li><code>update</code>: Update system and applications.</li>
+<li><code>clean</code>: Clean system resources (e.g., trash/recycle bin).</li>
+<li><code>optimize</code>: Optimize system (e.g., autoremove, defrag on Windows).</li>
+<li><code>install_python_modules</code>: Install Python modules via pip.</li>
+<li><code>install_fonts</code>: Install specified Nerd Fonts (default: Hack) or all fonts.</li>
+<li><code>get_os_stats</code>: Retrieve OS statistics.</li>
+<li><code>get_hardware_stats</code>: Retrieve hardware statistics.</li>
+<li><code>list_windows_features</code>: List Windows features (Windows only).</li>
+<li><code>enable_windows_features</code>: Enable Windows features (Windows only).</li>
+<li><code>disable_windows_features</code>: Disable Windows features (Windows only).</li>
+<li><code>run_command</code>: Run elevated commands on shell (Enable at your own risk).</li>
+</ul>
+<h3 id="agent-os-mcp-tools-via-agent-utilities-030">Agent OS MCP Tools (via <code>agent-utilities &gt;= 0.3.0</code>)<a class="headerlink" href="#agent-os-mcp-tools-via-agent-utilities-030" title="Permanent link">&para;</a></h3>
+<p>When <code>agent-utilities</code> is installed (which it is by default), the following Agent OS tool groups are automatically registered.
+Toggled via <code>AGENT_OSTOOL=True</code> (default: enabled).</p>
+<p><strong>Identity Management (AU-031)</strong>:
+- <code>issue_agent_identity</code>: Issues a signed HMAC identity token for an agent
+- <code>verify_agent_identity</code>: Verifies an agent's identity token validity
+- <code>revoke_agent_identity</code>: Revokes an agent identity
+- <code>list_agent_identities</code>: Lists all registered agent identities</p>
+<p><strong>Policy Management (AU-031)</strong>:
+- <code>list_agent_policies</code>: Lists all role-based agent policies
+- <code>get_agent_policy</code>: Gets policy details for a specific role
+- <code>update_agent_policy</code>: Updates allowed/denied tool patterns for a role
+- <code>reload_policies</code>: Reloads policies from disk</p>
+<p><strong>Specialist Registry (AU-032)</strong>:
+- <code>install_specialist</code>: Installs a specialist package (MCP config merge + KG hydration)
+- <code>uninstall_specialist</code>: Uninstalls a specialist package
+- <code>list_specialists</code>: Lists installed/available specialist packages
+- <code>search_specialists</code>: Searches the registry by name, tags, or description</p>
+<p><strong>Agent Health (AU-030)</strong>:
+- <code>get_scheduler_stats</code>: Returns cognitive scheduler statistics
+- <code>list_agent_processes</code>: Lists all processes in the scheduler
+- <code>preempt_process</code>: Preempts a running agent process
+- <code>reset_agent_quota</code>: Resets token usage for a process</p>
+<p><strong>File Watcher (AU-036)</strong>:
+- <code>check_file_change</code>: Evaluates a file change against trigger rules
+- <code>list_active_watchers</code>: Lists configured file watcher triggers
+- <code>drain_pending_triggers</code>: Drains pending triggers for processing</p>
+<p><strong>Maintenance (AU-038)</strong>:
+- <code>list_maintenance_tasks</code>: Lists all maintenance tasks and due status
+- <code>run_maintenance_now</code>: Triggers immediate maintenance task execution
+- <code>schedule_maintenance</code>: Adds a custom maintenance task
+- <code>get_maintenance_log</code>: Returns maintenance execution statistics</p>
+<blockquote>
+<p><strong>Architecture</strong>: Systems-manager is part of the Agent OS Triad. All tools are discoverable through the Knowledge Graph in <code>agent-utilities</code>.
+See the <a href="https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/agent-os-triad.md">Agent OS Triad Architecture</a> for the full reference.</p>
+</blockquote>
+<h2 id="a2a-agent">A2A Agent<a class="headerlink" href="#a2a-agent" title="Permanent link">&para;</a></h2>
+<h3 id="architecture">Architecture:<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>---
+config:
+  layout: dagre
+---
+flowchart TB
+ subgraph subGraph0["Agent Capabilities"]
+        C["Agent"]
+        B["A2A Server - Uvicorn/FastAPI"]
+        D["MCP Tools"]
+        F["Agent Skills"]
+  end
+    C --&gt; D &amp; F
+    A["User Query"] --&gt; B
+    B --&gt; C
+    D --&gt; E["Platform API"]
+
+     C:::agent
+     B:::server
+     A:::server
+    classDef server fill:#f9f,stroke:#333
+    classDef agent fill:#bbf,stroke:#333,stroke-width:2px
+    style B stroke:#000000,fill:#FFD600
+    style D stroke:#000000,fill:#BBDEFB
+    style F fill:#BBDEFB
+    style A fill:#C8E6C9
+    style subGraph0 fill:#FFF9C4</code></pre>
+<h3 id="component-interaction-diagram">Component Interaction Diagram<a class="headerlink" href="#component-interaction-diagram" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>sequenceDiagram
+    participant User
+    participant Server as A2A Server
+    participant Agent as Agent
+    participant Skill as Agent Skills
+    participant MCP as MCP Tools
+
+    User-&gt;&gt;Server: Send Query
+    Server-&gt;&gt;Agent: Invoke Agent
+    Agent-&gt;&gt;Skill: Analyze Skills Available
+    Skill-&gt;&gt;Agent: Provide Guidance on Next Steps
+    Agent-&gt;&gt;MCP: Invoke Tool
+    MCP--&gt;&gt;Agent: Tool Response Returned
+    Agent--&gt;&gt;Agent: Return Results Summarized
+    Agent--&gt;&gt;Server: Final Response
+    Server--&gt;&gt;User: Output</code></pre>
+<h2 id="graph-architecture">Graph Architecture<a class="headerlink" href="#graph-architecture" title="Permanent link">&para;</a></h2>
+<p>This agent uses <code>pydantic-graph</code> orchestration for intelligent routing and optimal context management.</p>
+<pre class="mermaid"><code>---
+title: Systems Manager Graph Agent
+---
+stateDiagram-v2
+  [*] --&gt; RouterNode: User Query
+  RouterNode --&gt; DomainNode: Classified Domain
+  RouterNode --&gt; [*]: Low confidence / Error
+  DomainNode --&gt; [*]: Domain Result</code></pre>
+<ul>
+<li><strong>RouterNode</strong>: A fast, lightweight LLM (e.g., <code>nvidia/nemotron-3-super</code>) that classifies the user's query into one of the specialized domains.</li>
+<li><strong>DomainNode</strong>: The executor node. For the selected domain, it dynamically sets environment variables to temporarily enable ONLY the tools relevant to that domain, creating a highly focused sub-agent (e.g., <code>gpt-4o</code>) to complete the request. This preserves LLM context and prevents tool hallucination.</li>
+</ul>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
+<h3 id="cli">CLI<a class="headerlink" href="#cli" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Short Flag</th>
+<th>Long Flag</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-h</td>
+<td>--help</td>
+<td>See usage for script</td>
+</tr>
+<tr>
+<td>-c</td>
+<td>--clean</td>
+<td>Clean Recycle/Trash bin</td>
+</tr>
+<tr>
+<td>-e</td>
+<td>--enable-features</td>
+<td>Enable Windows features (comma-separated, Windows only)</td>
+</tr>
+<tr>
+<td>-d</td>
+<td>--disable-features</td>
+<td>Disable Windows features (comma-separated, Windows only)</td>
+</tr>
+<tr>
+<td>-l</td>
+<td>--list-features</td>
+<td>List all Windows features and their status (Windows only)</td>
+</tr>
+<tr>
+<td>-f</td>
+<td>--fonts</td>
+<td>Install Nerd Fonts (comma-separated, e.g., Hack,Meslo or 'all'; default: Hack)</td>
+</tr>
+<tr>
+<td>-i</td>
+<td>--install</td>
+<td>Install applications (comma-separated, e.g., python3,git)</td>
+</tr>
+<tr>
+<td>-p</td>
+<td>--python</td>
+<td>Install Python modules (comma-separated)</td>
+</tr>
+<tr>
+<td>-s</td>
+<td>--silent</td>
+<td>Suppress output to stdout</td>
+</tr>
+<tr>
+<td>-u</td>
+<td>--update</td>
+<td>Update applications and Operating System</td>
+</tr>
+<tr>
+<td>-o</td>
+<td>--optimize</td>
+<td>Optimize system (e.g., autoremove, clean cache, defrag)</td>
+</tr>
+<tr>
+<td></td>
+<td>--os-stats</td>
+<td>Print OS statistics (e.g., system, release, version)</td>
+</tr>
+<tr>
+<td></td>
+<td>--hw-stats</td>
+<td>Print hardware statistics (e.g., CPU, memory, disk)</td>
+</tr>
+<tr>
+<td></td>
+<td>--log-file</td>
+<td>Log to specified file (default: systems_manager.log)</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>systems-manager<span class="w"> </span>--fonts<span class="w"> </span>Hack,Meslo<span class="w"> </span>--update<span class="w"> </span>--clean<span class="w"> </span>--python<span class="w"> </span>geniusbot<span class="w"> </span>--install<span class="w"> </span>python3,git<span class="w"> </span>--enable-features<span class="w"> </span>Microsoft-Hyper-V-All,Containers<span class="w"> </span>--log-file<span class="w"> </span>/path/to/log.log
+</code></pre></div>
+<h3 id="mcp-cli">MCP CLI<a class="headerlink" href="#mcp-cli" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Short Flag</th>
+<th>Long Flag</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--mcp-url</td>
+<td>MCP Server URL to connect to</td>
+<td>http://systems-manager-mcp.arpa/mcp</td>
+</tr>
+<tr>
+<td>--allowed-tools</td>
+<td>List of allowed MCP tools</td>
+<td>system_management</td>
+</tr>
+<tr>
+<td>--web</td>
+<td>Enable Pydantic AI Web UI</td>
+<td>False (Env: ENABLE_WEB_UI)</td>
+</tr>
+<tr>
+<td>-t</td>
+<td>--transport</td>
+<td>Transport method: 'stdio', 'http', or 'sse' [legacy] (default: stdio)</td>
+</tr>
+<tr>
+<td>-s</td>
+<td>--host</td>
+<td>Host address for HTTP transport (default: 0.0.0.0)</td>
+</tr>
+<tr>
+<td>-p</td>
+<td>--port</td>
+<td>Port number for HTTP transport (default: 8000)</td>
+</tr>
+<tr>
+<td></td>
+<td>--auth-type</td>
+<td>Authentication type: 'none', 'static', 'jwt', 'oauth-proxy', 'oidc-proxy', 'remote-oauth' (default: none)</td>
+</tr>
+<tr>
+<td></td>
+<td>--token-jwks-uri</td>
+<td>JWKS URI for JWT verification</td>
+</tr>
+<tr>
+<td></td>
+<td>--token-issuer</td>
+<td>Issuer for JWT verification</td>
+</tr>
+<tr>
+<td></td>
+<td>--token-audience</td>
+<td>Audience for JWT verification</td>
+</tr>
+<tr>
+<td></td>
+<td>--oauth-upstream-auth-endpoint</td>
+<td>Upstream authorization endpoint for OAuth Proxy</td>
+</tr>
+<tr>
+<td></td>
+<td>--oauth-upstream-token-endpoint</td>
+<td>Upstream token endpoint for OAuth Proxy</td>
+</tr>
+<tr>
+<td></td>
+<td>--oauth-upstream-client-id</td>
+<td>Upstream client ID for OAuth Proxy</td>
+</tr>
+<tr>
+<td></td>
+<td>--oauth-upstream-client-secret</td>
+<td>Upstream client secret for OAuth Proxy</td>
+</tr>
+<tr>
+<td></td>
+<td>--oauth-base-url</td>
+<td>Base URL for OAuth Proxy</td>
+</tr>
+<tr>
+<td></td>
+<td>--oidc-config-url</td>
+<td>OIDC configuration URL</td>
+</tr>
+<tr>
+<td></td>
+<td>--oidc-client-id</td>
+<td>OIDC client ID</td>
+</tr>
+<tr>
+<td></td>
+<td>--oidc-client-secret</td>
+<td>OIDC client secret</td>
+</tr>
+<tr>
+<td></td>
+<td>--oidc-base-url</td>
+<td>Base URL for OIDC Proxy</td>
+</tr>
+<tr>
+<td></td>
+<td>--remote-auth-servers</td>
+<td>Comma-separated list of authorization servers for Remote OAuth</td>
+</tr>
+<tr>
+<td></td>
+<td>--remote-base-url</td>
+<td>Base URL for Remote OAuth</td>
+</tr>
+<tr>
+<td></td>
+<td>--allowed-client-redirect-uris</td>
+<td>Comma-separated list of allowed client redirect URIs</td>
+</tr>
+<tr>
+<td></td>
+<td>--eunomia-type</td>
+<td>Eunomia authorization type: 'none', 'embedded', 'remote' (default: none)</td>
+</tr>
+<tr>
+<td></td>
+<td>--eunomia-policy-file</td>
+<td>Policy file for embedded Eunomia (default: mcp_policies.json)</td>
+</tr>
+<tr>
+<td></td>
+<td>--eunomia-remote-url</td>
+<td>URL for remote Eunomia server</td>
+</tr>
+</tbody>
+</table>
+<h3 id="using-as-an-mcp-server">Using as an MCP Server<a class="headerlink" href="#using-as-an-mcp-server" title="Permanent link">&para;</a></h3>
+<p>The MCP Server can be run in two modes: <code>stdio</code> (for local testing) or <code>http</code> (for networked access). To start the server, use the following commands:</p>
+<h4 id="run-in-stdio-mode-default">Run in stdio mode (default):<a class="headerlink" href="#run-in-stdio-mode-default" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>systems-manager-mcp<span class="w"> </span>--transport<span class="w"> </span><span class="s2">&quot;stdio&quot;</span>
+</code></pre></div>
+<h4 id="run-in-http-mode">Run in HTTP mode:<a class="headerlink" href="#run-in-http-mode" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>systems-manager-mcp<span class="w"> </span>--transport<span class="w"> </span><span class="s2">&quot;http&quot;</span><span class="w">  </span>--host<span class="w"> </span><span class="s2">&quot;0.0.0.0&quot;</span><span class="w">  </span>--port<span class="w"> </span><span class="s2">&quot;8000&quot;</span>
+</code></pre></div>
+<h3 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h3>
+<p>The following Python packages are automatically installed if missing:
+- <code>distro</code>: For Linux distribution detection.
+- <code>psutil</code>: For system and hardware statistics.
+- <code>requests</code>: For downloading Nerd Fonts.
+- <code>fastmcp</code>: For MCP server functionality (required for <code>systems-manager-mcp</code>).</p>
+<h3 id="agent-to-agent-a2a-server">Agent-to-Agent (A2A) Server<a class="headerlink" href="#agent-to-agent-a2a-server" title="Permanent link">&para;</a></h3>
+<p>This package includes an Agent utilizing <code>pydantic-ai</code> that can be deployed as an A2A server.</p>
+<h4 id="endpoints">Endpoints<a class="headerlink" href="#endpoints" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Web UI</strong>: <code>http://localhost:8000/</code> (if enabled)</li>
+<li><strong>A2A</strong>: <code>http://localhost:8000/a2a</code> (Discovery: <code>/a2a/.well-known/agent.json</code>)</li>
+<li><strong>AG-UI</strong>: <code>http://localhost:8000/ag-ui</code> (POST)</li>
+</ul>
+<h4 id="a2a-cli">A2A CLI<a class="headerlink" href="#a2a-cli" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Long Flag</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>--host</td>
+<td>Host to bind the server to</td>
+<td>0.0.0.0</td>
+</tr>
+<tr>
+<td>--port</td>
+<td>Port to bind the server to</td>
+<td>9000</td>
+</tr>
+<tr>
+<td>--reload</td>
+<td>Enable auto-reload</td>
+<td>False</td>
+</tr>
+<tr>
+<td>--provider</td>
+<td>LLM Provider (openai, anthropic, google, etc)</td>
+<td>openai</td>
+</tr>
+<tr>
+<td>--model-id</td>
+<td>LLM Model ID</td>
+<td>nvidia/nemotron-3-super</td>
+</tr>
+<tr>
+<td>--base-url</td>
+<td>LLM Base URL (for OpenAI compatible providers)</td>
+<td>http://host.docker.internal:1234/v1</td>
+</tr>
+<tr>
+<td>--api-key</td>
+<td>LLM API Key</td>
+<td>ollama</td>
+</tr>
+<tr>
+<td>--mcp-url</td>
+<td>MCP Server URL to connect to</td>
+<td>None</td>
+</tr>
+<tr>
+<td>--mcp-config</td>
+<td>MCP Server Config</td>
+<td>...</td>
+</tr>
+<tr>
+<td>--skills-directory</td>
+<td>Directory containing agent skills</td>
+<td>...</td>
+</tr>
+<tr>
+<td>--web</td>
+<td>Enable Pydantic AI Web UI</td>
+<td>False (Env: ENABLE_WEB_UI)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="run-a2a-server">Run A2A Server<a class="headerlink" href="#run-a2a-server" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>systems-manager-agent<span class="w"> </span>--provider<span class="w"> </span>openai<span class="w"> </span>--model-id<span class="w"> </span>nvidia/nemotron-3-super
+</code></pre></div>
+<h3 id="deploy-mcp-server-as-a-service">Deploy MCP Server as a Service<a class="headerlink" href="#deploy-mcp-server-as-a-service" title="Permanent link">&para;</a></h3>
+<p>The MCP server can be deployed using Docker, with configurable authentication, middleware, and Eunomia authorization.</p>
+<h4 id="using-docker-run">Using Docker Run<a class="headerlink" href="#using-docker-run" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>knucklessg1/systems-manager:latest
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>--name<span class="w"> </span>systems-manager-mcp<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">8004</span>:8004<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">HOST</span><span class="o">=</span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">PORT</span><span class="o">=</span><span class="m">8004</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">TRANSPORT</span><span class="o">=</span>http<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">AUTH_TYPE</span><span class="o">=</span>none<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">EUNOMIA_TYPE</span><span class="o">=</span>none<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span>knucklessg1/systems-manager:latest
+</code></pre></div>
+<p>For advanced authentication (e.g., JWT, OAuth Proxy, OIDC Proxy, Remote OAuth) or Eunomia, add the relevant environment variables:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>--name<span class="w"> </span>systems-manager-mcp<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">8004</span>:8004<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">HOST</span><span class="o">=</span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">PORT</span><span class="o">=</span><span class="m">8004</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">TRANSPORT</span><span class="o">=</span>http<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">AUTH_TYPE</span><span class="o">=</span>oidc-proxy<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">OIDC_CONFIG_URL</span><span class="o">=</span>https://provider.com/.well-known/openid-configuration<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">OIDC_CLIENT_ID</span><span class="o">=</span>your-client-id<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">OIDC_CLIENT_SECRET</span><span class="o">=</span>your-client-secret<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">OIDC_BASE_URL</span><span class="o">=</span>https://your-server.com<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">ALLOWED_CLIENT_REDIRECT_URIS</span><span class="o">=</span>http://localhost:*,https://*.example.com/*<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">EUNOMIA_TYPE</span><span class="o">=</span>embedded<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">EUNOMIA_POLICY_FILE</span><span class="o">=</span>/app/mcp_policies.json<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">  </span>knucklessg1/systems-manager:latest
+</code></pre></div>
+<h4 id="using-docker-compose">Using Docker Compose<a class="headerlink" href="#using-docker-compose" title="Permanent link">&para;</a></h4>
+<p>Create a <code>docker-compose.yml</code> file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">systems-manager-mcp</span><span class="p">:</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">knucklessg1/systems-manager:latest</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HOST=0.0.0.0</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PORT=8004</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TRANSPORT=http</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AUTH_TYPE=none</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EUNOMIA_TYPE=none</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8004:8004</span>
+</code></pre></div>
+<p>For advanced setups with authentication and Eunomia:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">services</span><span class="p">:</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">systems-manager-mcp</span><span class="p">:</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">knucklessg1/systems-manager:latest</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HOST=0.0.0.0</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PORT=8004</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TRANSPORT=http</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AUTH_TYPE=oidc-proxy</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OIDC_CONFIG_URL=https://provider.com/.well-known/openid-configuration</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OIDC_CLIENT_ID=your-client-id</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OIDC_CLIENT_SECRET=your-client-secret</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OIDC_BASE_URL=https://your-server.com</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ALLOWED_CLIENT_REDIRECT_URIS=http://localhost:*,https://*.example.com/*</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EUNOMIA_TYPE=embedded</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">EUNOMIA_POLICY_FILE=/app/mcp_policies.json</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8004:8004</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./mcp_policies.json:/app/mcp_policies.json</span>
+</code></pre></div>
+<p>Run the service:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker-compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<h4 id="configure-mcpjson-for-ai-integration">Configure <code>mcp.json</code> for AI Integration<a class="headerlink" href="#configure-mcpjson-for-ai-integration" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="nt">&quot;systems_manager&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">        </span><span class="s2">&quot;run&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">        </span><span class="s2">&quot;--with&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">        </span><span class="s2">&quot;systems-manager&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">        </span><span class="s2">&quot;systems-manager-mcp&quot;</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">      </span><span class="p">],</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">        </span><span class="nt">&quot;SYSTEMS_MANAGER_SILENT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;False&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">        </span><span class="nt">&quot;SYSTEMS_MANAGER_LOG_FILE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;~/Documents/systems_manager_mcp.log&quot;</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">      </span><span class="nt">&quot;timeout&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">200000</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="p">}</span>
+</code></pre></div>
+<h2 id="install-python-package">Install Python Package<a class="headerlink" href="#install-python-package" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>systems-manager
+</code></pre></div>
+<p>or</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>systems-manager
+</code></pre></div>
+<h2 id="repository-owners">Repository Owners<a class="headerlink" href="#repository-owners" title="Permanent link">&para;</a></h2>
+<p><img width="100%" height="180em" src="https://github-readme-stats.vercel.app/api?username=Knucklessg1&show_icons=true&hide_border=true&&count_private=true&include_all_commits=true" /></p>
+<p><img alt="GitHub followers" src="https://img.shields.io/github/followers/Knucklessg1" />
+<img alt="GitHub User's stars" src="https://img.shields.io/github/stars/Knucklessg1" /></p>
+<h2 id="mcp-configuration-examples">MCP Configuration Examples<a class="headerlink" href="#mcp-configuration-examples" title="Permanent link">&para;</a></h2>
+<h3 id="1-standard-io-stdio-deployment">1. Standard IO (stdio) Deployment<a class="headerlink" href="#1-standard-io-stdio-deployment" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p">{</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">        </span><span class="s2">&quot;run&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">        </span><span class="s2">&quot;systems-manager-mcp&quot;</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">      </span><span class="p">],</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">        </span><span class="nt">&quot;AGENT_DESCRIPTION&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_AGENT_DESCRIPTION&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">        </span><span class="nt">&quot;AGENT_OSTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">        </span><span class="nt">&quot;AGENT_POLICIES_PATH&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_AGENT_POLICIES_PATH&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="w">        </span><span class="nt">&quot;AGENT_SYSTEM_PROMPT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_AGENT_SYSTEM_PROMPT&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="w">        </span><span class="nt">&quot;CRONTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="w">        </span><span class="nt">&quot;DEFAULT_AGENT_NAME&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_DEFAULT_AGENT_NAME&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="w">        </span><span class="nt">&quot;DISKTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="w">        </span><span class="nt">&quot;FILESYSTEMTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="w">        </span><span class="nt">&quot;FIREWALL_MANAGEMENTTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="w">        </span><span class="nt">&quot;LOGTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a><span class="w">        </span><span class="nt">&quot;MAINTENANCE_PRIORITY&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_MAINTENANCE_PRIORITY&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a><span class="w">        </span><span class="nt">&quot;MAINTENANCE_TOKEN_BUDGET&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_MAINTENANCE_TOKEN_BUDGET&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a><span class="w">        </span><span class="nt">&quot;MAX_CONCURRENT_AGENTS&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_MAX_CONCURRENT_AGENTS&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a><span class="w">        </span><span class="nt">&quot;MCP_CONFIG_PATH&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_MCP_CONFIG_PATH&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a><span class="w">        </span><span class="nt">&quot;MISCTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a><span class="w">        </span><span class="nt">&quot;NETWORKTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a><span class="w">        </span><span class="nt">&quot;NODEJSTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a><span class="w">        </span><span class="nt">&quot;PERMISSIONS_SIGNING_KEY&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_PERMISSIONS_SIGNING_KEY&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a><span class="w">        </span><span class="nt">&quot;PROCESSTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a><span class="w">        </span><span class="nt">&quot;PROJECT_ROOT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_PROJECT_ROOT&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a><span class="w">        </span><span class="nt">&quot;PYTHONTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a><span class="w">        </span><span class="nt">&quot;SERVICETOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a><span class="w">        </span><span class="nt">&quot;SHELLTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a><span class="w">        </span><span class="nt">&quot;SPECIALIST_REGISTRY_PATH&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_SPECIALIST_REGISTRY_PATH&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a><span class="w">        </span><span class="nt">&quot;SSH_MANAGEMENTTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a><span class="w">        </span><span class="nt">&quot;SYSTEMS_MANAGER_LOG_FILE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_SYSTEMS_MANAGER_LOG_FILE&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a><span class="w">        </span><span class="nt">&quot;SYSTEMS_MANAGER_SILENT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_SYSTEMS_MANAGER_SILENT&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a><span class="w">        </span><span class="nt">&quot;SYSTEMTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a><span class="w">        </span><span class="nt">&quot;SYSTEM_MANAGEMENTTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a><span class="w">        </span><span class="nt">&quot;TEXT_EDITORTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a><span class="w">        </span><span class="nt">&quot;USERTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span>
+<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-12-44" name="__codelineno-12-44" href="#__codelineno-12-44"></a><span class="p">}</span>
+</code></pre></div>
+<h3 id="2-streamable-http-sse-deployment">2. Streamable HTTP (SSE) Deployment<a class="headerlink" href="#2-streamable-http-sse-deployment" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">        </span><span class="s2">&quot;run&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">        </span><span class="s2">&quot;systems-manager-mcp&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">        </span><span class="s2">&quot;--transport&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">        </span><span class="s2">&quot;http&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">        </span><span class="s2">&quot;--host&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">        </span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">        </span><span class="s2">&quot;--port&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">        </span><span class="s2">&quot;8000&quot;</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">      </span><span class="p">],</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="w">        </span><span class="nt">&quot;AGENT_DESCRIPTION&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_AGENT_DESCRIPTION&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="w">        </span><span class="nt">&quot;AGENT_OSTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">        </span><span class="nt">&quot;AGENT_POLICIES_PATH&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_AGENT_POLICIES_PATH&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="w">        </span><span class="nt">&quot;AGENT_SYSTEM_PROMPT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_AGENT_SYSTEM_PROMPT&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="w">        </span><span class="nt">&quot;CRONTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-21" name="__codelineno-13-21" href="#__codelineno-13-21"></a><span class="w">        </span><span class="nt">&quot;DEFAULT_AGENT_NAME&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_DEFAULT_AGENT_NAME&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-22" name="__codelineno-13-22" href="#__codelineno-13-22"></a><span class="w">        </span><span class="nt">&quot;DISKTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="w">        </span><span class="nt">&quot;FILESYSTEMTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="w">        </span><span class="nt">&quot;FIREWALL_MANAGEMENTTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="w">        </span><span class="nt">&quot;LOGTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="w">        </span><span class="nt">&quot;MAINTENANCE_PRIORITY&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_MAINTENANCE_PRIORITY&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="w">        </span><span class="nt">&quot;MAINTENANCE_TOKEN_BUDGET&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_MAINTENANCE_TOKEN_BUDGET&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="w">        </span><span class="nt">&quot;MAX_CONCURRENT_AGENTS&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_MAX_CONCURRENT_AGENTS&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="w">        </span><span class="nt">&quot;MCP_CONFIG_PATH&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_MCP_CONFIG_PATH&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-30" name="__codelineno-13-30" href="#__codelineno-13-30"></a><span class="w">        </span><span class="nt">&quot;MISCTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a><span class="w">        </span><span class="nt">&quot;NETWORKTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a><span class="w">        </span><span class="nt">&quot;NODEJSTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a><span class="w">        </span><span class="nt">&quot;PERMISSIONS_SIGNING_KEY&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_PERMISSIONS_SIGNING_KEY&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a><span class="w">        </span><span class="nt">&quot;PROCESSTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a><span class="w">        </span><span class="nt">&quot;PROJECT_ROOT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_PROJECT_ROOT&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a><span class="w">        </span><span class="nt">&quot;PYTHONTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a><span class="w">        </span><span class="nt">&quot;SERVICETOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-38" name="__codelineno-13-38" href="#__codelineno-13-38"></a><span class="w">        </span><span class="nt">&quot;SHELLTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-39" name="__codelineno-13-39" href="#__codelineno-13-39"></a><span class="w">        </span><span class="nt">&quot;SPECIALIST_REGISTRY_PATH&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_SPECIALIST_REGISTRY_PATH&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-40" name="__codelineno-13-40" href="#__codelineno-13-40"></a><span class="w">        </span><span class="nt">&quot;SSH_MANAGEMENTTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-41" name="__codelineno-13-41" href="#__codelineno-13-41"></a><span class="w">        </span><span class="nt">&quot;SYSTEMS_MANAGER_LOG_FILE&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_SYSTEMS_MANAGER_LOG_FILE&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-42" name="__codelineno-13-42" href="#__codelineno-13-42"></a><span class="w">        </span><span class="nt">&quot;SYSTEMS_MANAGER_SILENT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;YOUR_SYSTEMS_MANAGER_SILENT&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-43" name="__codelineno-13-43" href="#__codelineno-13-43"></a><span class="w">        </span><span class="nt">&quot;SYSTEMTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-44" name="__codelineno-13-44" href="#__codelineno-13-44"></a><span class="w">        </span><span class="nt">&quot;SYSTEM_MANAGEMENTTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-45" name="__codelineno-13-45" href="#__codelineno-13-45"></a><span class="w">        </span><span class="nt">&quot;TEXT_EDITORTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-46" name="__codelineno-13-46" href="#__codelineno-13-46"></a><span class="w">        </span><span class="nt">&quot;USERTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span>
+<a id="__codelineno-13-47" name="__codelineno-13-47" href="#__codelineno-13-47"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-13-48" name="__codelineno-13-48" href="#__codelineno-13-48"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-13-49" name="__codelineno-13-49" href="#__codelineno-13-49"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-13-50" name="__codelineno-13-50" href="#__codelineno-13-50"></a><span class="p">}</span>
+</code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
