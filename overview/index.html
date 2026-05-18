@@ -687,12 +687,12 @@ Built on <a href="https://github.com/Knuckles-Team/agent-utilities"><code>agent-
 <h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
 <p>The <code>systems-manager</code> acts as the physical execution layer (Agent OS Layer) driven by the core <code>agent-utilities</code> kernel.</p>
 <pre class="mermaid"><code>flowchart TD
-    subgraph Agent OS Kernel (agent-utilities)
+    subgraph "Agent OS Kernel (agent-utilities)"
         Orchestrator[Graph Orchestrator]
         Auth[Permissions Kernel]
     end
 
-    subgraph Agent OS Layer (systems-manager)
+    subgraph "Agent OS Layer (systems-manager)"
         MCP[MCP Server]
         OSProvider[Abstracted OS Provider]
         Linux[Linux Backend]
