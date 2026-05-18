@@ -42,62 +42,28 @@ This repository is actively maintained - Contributions are welcome!
 
 ## MCP
 
-### MCP tools:
-- `install_applications`: Install applications with Snap fallback (Linux).
-- `update`: Update system and applications.
-- `clean`: Clean system resources (e.g., trash/recycle bin).
-- `optimize`: Optimize system (e.g., autoremove, defrag on Windows).
-- `install_python_modules`: Install Python modules via pip.
-- `install_fonts`: Install specified Nerd Fonts (default: Hack) or all fonts.
-- `get_os_stats`: Retrieve OS statistics.
-- `get_hardware_stats`: Retrieve hardware statistics.
-- `list_windows_features`: List Windows features (Windows only).
-- `enable_windows_features`: Enable Windows features (Windows only).
-- `disable_windows_features`: Disable Windows features (Windows only).
-- `run_command`: Run elevated commands on shell (Enable at your own risk).
+### Available MCP Tools
 
-### Agent OS MCP Tools (via `agent-utilities >= 0.3.0`)
+This server utilizes dynamic Action-Routed tools to optimize token overhead and maximize IDE compatibility.
 
-When `agent-utilities` is installed (which it is by default), the following Agent OS tool groups are automatically registered.
-Toggled via `AGENT_OSTOOL=True` (default: enabled).
-
-**Identity Management (AU-031)**:
-- `issue_agent_identity`: Issues a signed HMAC identity token for an agent
-- `verify_agent_identity`: Verifies an agent's identity token validity
-- `revoke_agent_identity`: Revokes an agent identity
-- `list_agent_identities`: Lists all registered agent identities
-
-**Policy Management (AU-031)**:
-- `list_agent_policies`: Lists all role-based agent policies
-- `get_agent_policy`: Gets policy details for a specific role
-- `update_agent_policy`: Updates allowed/denied tool patterns for a role
-- `reload_policies`: Reloads policies from disk
-
-**Specialist Registry (AU-032)**:
-- `install_specialist`: Installs a specialist package (MCP config merge + KG hydration)
-- `uninstall_specialist`: Uninstalls a specialist package
-- `list_specialists`: Lists installed/available specialist packages
-- `search_specialists`: Searches the registry by name, tags, or description
-
-**Agent Health (AU-030)**:
-- `get_scheduler_stats`: Returns cognitive scheduler statistics
-- `list_agent_processes`: Lists all processes in the scheduler
-- `preempt_process`: Preempts a running agent process
-- `reset_agent_quota`: Resets token usage for a process
-
-**File Watcher (AU-036)**:
-- `check_file_change`: Evaluates a file change against trigger rules
-- `list_active_watchers`: Lists configured file watcher triggers
-- `drain_pending_triggers`: Drains pending triggers for processing
-
-**Maintenance (AU-038)**:
-- `list_maintenance_tasks`: Lists all maintenance tasks and due status
-- `run_maintenance_now`: Triggers immediate maintenance task execution
-- `schedule_maintenance`: Adds a custom maintenance task
-- `get_maintenance_log`: Returns maintenance execution statistics
-
-> **Architecture**: Systems-manager is part of the Agent OS Triad. All tools are discoverable through the Knowledge Graph in `agent-utilities`.
-> See the [Agent OS Triad Architecture](https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/agent-os-triad.md) for the full reference.
+| Tool Name | Description |
+|-----------|-------------|
+| `system_cron` | Consolidated Action-Routed tool for cron. Methods: add_cron_job, remove_cron_job, list_cron_jobs |
+| `system_disk` | Consolidated Action-Routed tool for disk. Methods: get_disk_usage, list_disks, get_disk_space_report |
+| `system_filesystem` | Consolidated Action-Routed tool for filesystem. Methods: search_files, manage_file, grep_files, list_files |
+| `system_firewall_management` | Consolidated Action-Routed tool for firewall_management. Methods: get_firewall_status, add_firewall_rule, list_firewall_rules, remove_firewall_rule |
+| `system_log` | Consolidated Action-Routed tool for log. Methods: get_logs, tail_log_file |
+| `system_network` | Consolidated Action-Routed tool for network. Methods: list_network_interfaces, list_open_ports, dns_lookup, ping_host |
+| `system_nodejs` | Consolidated Action-Routed tool for nodejs. Methods: use_node, install_node, install_nvm |
+| `system_process` | Consolidated Action-Routed tool for process. Methods: get_process_info, kill_process, list_processes |
+| `system_python` | Consolidated Action-Routed tool for python. Methods: install_python_package_uv, create_python_venv, install_uv |
+| `system_service` | Consolidated Action-Routed tool for service. Methods: restart_service, enable_service, get_service_status, disable_service, stop_service, start_service, list_services |
+| `system_shell` | Consolidated Action-Routed tool for shell. Methods: add_shell_alias |
+| `system_ssh_management` | Consolidated Action-Routed tool for ssh_management. Methods: add_authorized_key, list_ssh_keys, generate_ssh_key |
+| `system_system` | Consolidated Action-Routed tool for system. Methods: install_fonts, get_os_statistics, clean_package_cache, update, get_package_info, install_applications, list_env_vars, health_check, get_hardware_statistics, install_python_modules, clean_temp_files, get_uptime, list_upgradable_packages, clean, search_package, optimize, list_installed_packages, get_env_var |
+| `system_system_management` | Consolidated Action-Routed tool for system_management. Methods: run_command, disable_windows_features, install_local_package, add_repository, list_windows_features, enable_windows_features |
+| `system_text_editor` | Consolidated Action-Routed tool for text_editor. Methods: text_editor |
+| `system_user` | Consolidated Action-Routed tool for user. Methods: list_groups, list_users |
 
 ## A2A Agent
 

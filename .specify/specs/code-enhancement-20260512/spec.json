@@ -1,0 +1,217 @@
+{
+  "feature_id": "code-enhancement-20260512",
+  "title": "Code Enhancement: systems-manager",
+  "created": "2026-05-12T14:14:41.038568+00:00",
+  "overview": "Automated code enhancement review for systems-manager. Covers 17 analysis domains.",
+  "user_stories": [
+    {
+      "role": "developer",
+      "action": "address Project Analysis findings (grade: C, score: 74)",
+      "value": "improve project project analysis from C to at least B (80+)"
+    },
+    {
+      "role": "developer",
+      "action": "address Codebase Optimization findings (grade: F, score: 56)",
+      "value": "improve project codebase optimization from F to at least B (80+)"
+    },
+    {
+      "role": "developer",
+      "action": "address Architecture & Design Patterns findings (grade: D, score: 65)",
+      "value": "improve project architecture & design patterns from D to at least B (80+)"
+    },
+    {
+      "role": "developer",
+      "action": "address Concept Traceability findings (grade: F, score: 25)",
+      "value": "improve project concept traceability from F to at least B (80+)"
+    },
+    {
+      "role": "developer",
+      "action": "address Linting & Formatting findings (grade: F, score: 0)",
+      "value": "improve project linting & formatting from F to at least B (80+)"
+    },
+    {
+      "role": "developer",
+      "action": "address Changelog Audit findings (grade: C, score: 75)",
+      "value": "improve project changelog audit from C to at least B (80+)"
+    },
+    {
+      "role": "developer",
+      "action": "address Pytest Quality findings (grade: D, score: 64)",
+      "value": "improve project pytest quality from D to at least B (80+)"
+    }
+  ],
+  "functional_requirements": [
+    {
+      "id": "FR-001",
+      "description": "4 functions exceed 200 lines (actionable refactoring targets): register_system_tools (818L), register_system_management_tools (396L), register_os_provider_tools (268L), register_service_tools (240L)",
+      "testable": true
+    },
+    {
+      "id": "FR-002",
+      "description": "Monolithic: mcp_server.py (2989L) \u2014 5 functions with high complexity (worst: register_system_tools at 818L, CC=62); Low cohesion: 20 distinct concepts in one file",
+      "testable": true
+    },
+    {
+      "id": "FR-003",
+      "description": "Monolithic: systems_manager.py (2885L) \u2014 9 functions with high complexity (worst: systems_manager at 140L, CC=21); Low cohesion: 16 distinct concepts in one file",
+      "testable": true
+    },
+    {
+      "id": "FR-004",
+      "description": "Needs attention: agent_os_tools.py (735L) \u2014 Low cohesion: 14 distinct concepts in one file",
+      "testable": true
+    },
+    {
+      "id": "FR-005",
+      "description": "14 functions with nesting depth >4",
+      "testable": true
+    },
+    {
+      "id": "FR-006",
+      "description": "17 potential doc-test drift items",
+      "testable": true
+    },
+    {
+      "id": "FR-007",
+      "description": "README.md missing sections: installation",
+      "testable": true
+    },
+    {
+      "id": "FR-008",
+      "description": "README missing: Has a Table of Contents",
+      "testable": true
+    },
+    {
+      "id": "FR-009",
+      "description": "README missing: References /docs directory material",
+      "testable": true
+    },
+    {
+      "id": "FR-010",
+      "description": "SRP: 7 modules exceed 500 lines (god modules)",
+      "testable": true
+    },
+    {
+      "id": "FR-011",
+      "description": "SRP: 8 classes have >15 methods",
+      "testable": true
+    },
+    {
+      "id": "FR-012",
+      "description": "No discernible layer architecture (no domain/service/adapter separation)",
+      "testable": true
+    },
+    {
+      "id": "FR-013",
+      "description": "Low dependency injection ratio: 9%",
+      "testable": true
+    },
+    {
+      "id": "FR-014",
+      "description": "Low traceability ratio: 0% concepts fully traced",
+      "testable": true
+    },
+    {
+      "id": "FR-015",
+      "description": "8 orphaned concepts (only in one source)",
+      "testable": true
+    },
+    {
+      "id": "FR-016",
+      "description": "359 test functions missing concept markers",
+      "testable": true
+    },
+    {
+      "id": "FR-017",
+      "description": "218 significant functions (>10 lines) missing concept markers in docstrings",
+      "testable": true
+    },
+    {
+      "id": "FR-018",
+      "description": "Total lint findings: 326 (high/error: 324, medium/warning: 2, low: 0)",
+      "testable": true
+    },
+    {
+      "id": "FR-019",
+      "description": "1 hook(s) may be outdated: ruff-pre-commit",
+      "testable": true
+    },
+    {
+      "id": "FR-020",
+      "description": "124 test execution error(s)",
+      "testable": true
+    },
+    {
+      "id": "FR-021",
+      "description": "1 rogue/throwaway scripts detected (fix_*, validate_*, patch_*, etc.): scripts/validate_a2a_agent.py",
+      "testable": true
+    },
+    {
+      "id": "FR-022",
+      "description": "CHANGELOG.md is missing \u2014 create one following Keep a Changelog format",
+      "testable": true
+    },
+    {
+      "id": "FR-023",
+      "description": "CHANGELOG.md is missing",
+      "testable": true
+    },
+    {
+      "id": "FR-024",
+      "description": "4 test files exceed 500 lines \u2014 split into focused modules",
+      "testable": true
+    },
+    {
+      "id": "FR-025",
+      "description": "4 test files have >30 tests \u2014 too dense",
+      "testable": true
+    },
+    {
+      "id": "FR-026",
+      "description": "Test directory lacks subdirectory organization (consider unit/, integration/, e2e/)",
+      "testable": true
+    },
+    {
+      "id": "FR-027",
+      "description": "No @pytest.mark.parametrize usage \u2014 consider data-driven tests",
+      "testable": true
+    },
+    {
+      "id": "FR-028",
+      "description": "4 tests have no assertions",
+      "testable": true
+    },
+    {
+      "id": "FR-029",
+      "description": "252 tests use weak assertions (assert result is not None, assert True, etc.)",
+      "testable": true
+    },
+    {
+      "id": "FR-030",
+      "description": "Undocumented env vars: ENABLE_OTEL, EUNOMIA_REMOTE_URL, LLM_API_KEY, LLM_BASE_URL, OAUTH_BASE_URL, OAUTH_UPSTREAM_AUTH_ENDPOINT, OAUTH_UPSTREAM_CLIENT_ID, OAUTH_UPSTREAM_CLIENT_SECRET, OAUTH_UPSTREAM_TOKEN_ENDPOINT, OSPROVIDERTOOL",
+      "testable": true
+    },
+    {
+      "id": "FR-031",
+      "description": "29 Python env vars not in .env.example: AGENT_OSTOOL, AGENT_POLICIES_PATH, CRONTOOL, DISKTOOL, FILESYSTEMTOOL",
+      "testable": true
+    }
+  ],
+  "success_criteria": [
+    {
+      "metric": "Overall GPA",
+      "current": 2.53,
+      "target": 3.0
+    },
+    {
+      "metric": "Domains at B or above",
+      "current": 10,
+      "target": 17
+    },
+    {
+      "metric": "Actionable findings",
+      "current": 31,
+      "target": 0
+    }
+  ]
+}

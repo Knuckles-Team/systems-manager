@@ -1,0 +1,67 @@
+# Tasks: Code Enhancement: systems-manager
+
+Generated: 2026-05-12T14:14:41.038568+00:00
+Skipped informational: 4
+
+- [ ] [P] **T001** [Codebase Optimization] 4 functions exceed 200 lines (actionable refactoring targets): register_system_t
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T002** [Codebase Optimization] Monolithic: mcp_server.py (2989L) — 5 functions with high complexity (worst: reg
+  - Priority: P1-High | Effort: Large
+- [ ] [P] **T003** [Codebase Optimization] Monolithic: systems_manager.py (2885L) — 9 functions with high complexity (worst
+  - Priority: P1-High | Effort: Large
+- [ ] [P] **T004** [Codebase Optimization] Needs attention: agent_os_tools.py (735L) — Low cohesion: 14 distinct concepts i
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T005** [Codebase Optimization] 14 functions with nesting depth >4
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T006** [Test Coverage] 17 potential doc-test drift items
+  - Priority: P3-Low | Effort: Medium
+- [ ] [P] **T007** [Documentation & Governance] README.md missing sections: installation
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T008** [Documentation & Governance] README missing: Has a Table of Contents
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T009** [Documentation & Governance] README missing: References /docs directory material
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T010** [Architecture & Design Patterns] SRP: 7 modules exceed 500 lines (god modules)
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T011** [Architecture & Design Patterns] SRP: 8 classes have >15 methods
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T012** [Architecture & Design Patterns] No discernible layer architecture (no domain/service/adapter separation)
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T013** [Architecture & Design Patterns] Low dependency injection ratio: 9%
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T014** [Concept Traceability] Low traceability ratio: 0% concepts fully traced
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T015** [Concept Traceability] 8 orphaned concepts (only in one source)
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T016** [Concept Traceability] 359 test functions missing concept markers
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T017** [Concept Traceability] 218 significant functions (>10 lines) missing concept markers in docstrings
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T018** [Linting & Formatting] Total lint findings: 326 (high/error: 324, medium/warning: 2, low: 0)
+  - Priority: P1-High | Effort: Medium
+- [ ] [P] **T019** [Pre-Commit Compliance] 1 hook(s) may be outdated: ruff-pre-commit
+  - Priority: P2-Medium | Effort: Small
+- [ ] [P] **T020** [Test Execution] 124 test execution error(s)
+  - Priority: P3-Low | Effort: Medium
+- [ ] [P] **T021** [Directory Organization] 1 rogue/throwaway scripts detected (fix_*, validate_*, patch_*, etc.): scripts/v
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T022** [Changelog Audit] CHANGELOG.md is missing — create one following Keep a Changelog format
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T023** [Changelog Audit] CHANGELOG.md is missing
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T024** [Pytest Quality] 4 test files exceed 500 lines — split into focused modules
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T025** [Pytest Quality] 4 test files have >30 tests — too dense
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T026** [Pytest Quality] Test directory lacks subdirectory organization (consider unit/, integration/, e2
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T027** [Pytest Quality] No @pytest.mark.parametrize usage — consider data-driven tests
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T028** [Pytest Quality] 4 tests have no assertions
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T029** [Pytest Quality] 252 tests use weak assertions (assert result is not None, assert True, etc.)
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T030** [Environment Variables] Undocumented env vars: ENABLE_OTEL, EUNOMIA_REMOTE_URL, LLM_API_KEY, LLM_BASE_UR
+  - Priority: P3-Low | Effort: Medium
+- [ ] [P] **T031** [Environment Variables] 29 Python env vars not in .env.example: AGENT_OSTOOL, AGENT_POLICIES_PATH, CRONT
+  - Priority: P3-Low | Effort: Medium

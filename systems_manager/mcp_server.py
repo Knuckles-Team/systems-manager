@@ -70,12 +70,12 @@ def register_system_tools(mcp: FastMCP):
             description="List of application names to install", default_factory=list
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -136,12 +136,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def update(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -190,12 +190,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def clean(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -244,12 +244,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def optimize(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -301,12 +301,12 @@ def register_system_tools(mcp: FastMCP):
             description="List of Python modules to install", default_factory=list
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -367,12 +367,12 @@ def register_system_tools(mcp: FastMCP):
             default_factory=lambda: [],
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -446,12 +446,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def get_os_statistics(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -495,12 +495,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def get_hardware_statistics(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -550,12 +550,12 @@ def register_system_tools(mcp: FastMCP):
     async def search_package(
         query: str = Field(description="Search query for packages"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -581,12 +581,12 @@ def register_system_tools(mcp: FastMCP):
     async def get_package_info(
         package: str = Field(description="Package name to get info about"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -611,12 +611,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def list_installed_packages(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -641,12 +641,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def list_upgradable_packages(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -671,12 +671,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def system_health_check(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -721,12 +721,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def get_uptime(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -764,12 +764,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def list_env_vars(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -795,12 +795,12 @@ def register_system_tools(mcp: FastMCP):
     async def get_env_var(
         name: str = Field(description="Name of the environment variable"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -825,12 +825,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def clean_temp_files(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -855,12 +855,12 @@ def register_system_tools(mcp: FastMCP):
     )
     async def clean_package_cache(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -887,12 +887,12 @@ def register_system_management_tools(mcp: FastMCP):
     )
     async def list_windows_features(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -938,12 +938,12 @@ def register_system_management_tools(mcp: FastMCP):
             description="List of Windows features to enable", default_factory=list
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1006,12 +1006,12 @@ def register_system_management_tools(mcp: FastMCP):
             description="List of Windows features to disable", default_factory=list
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1073,18 +1073,18 @@ def register_system_management_tools(mcp: FastMCP):
         tags={"system_management", "linux"},
     )
     async def add_repository(
-        repo_url: str = Field(description="URL of the repository to add", default=""),
+        repo_url: str = Field(default="", description="URL of the repository to add"),
         name: str | None = Field(
-            description="Name of the repository (optional, auto-generated if not provided)",
             default="",
+            description="Name of the repository (optional, auto-generated if not provided)",
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1140,16 +1140,16 @@ def register_system_management_tools(mcp: FastMCP):
     )
     async def install_local_package(
         file_path: str = Field(
-            description="Path to the local package file to install (.deb or .rpm)",
             default="",
+            description="Path to the local package file to install (.deb or .rpm)",
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1207,25 +1207,19 @@ def register_system_management_tools(mcp: FastMCP):
         tags={"system_management", "linux"},
     )
     async def run_command(
-        command: str = Field(
-            description="Command to run on the system",
-            default="",
-        ),
+        command: str = Field(default="", description="Command to run on the system"),
         elevated: bool = Field(
+            default=False,
             description="Elevate the shell to root or administrator privileges",
-            default=False,
         ),
-        shell: bool = Field(
-            description="Optionally execute in shell",
-            default=False,
-        ),
+        shell: bool = Field(default=False, description="Optionally execute in shell"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1289,14 +1283,14 @@ def register_text_editor_tools(mcp: FastMCP):
         ),
         path: str = Field(description="Path to the file"),
         file_text: str | None = Field(
-            description="Content to write or insert", default=""
+            default="", description="Content to write or insert"
         ),
         view_range: list[int] | None = Field(
-            description="Line range to view [start, end]", default=None
+            default=None, description="Line range to view [start, end]"
         ),
-        old_str: str | None = Field(description="String to replace", default=""),
-        new_str: str | None = Field(description="Replacement string", default=""),
-        insert_line: int = Field(description="Line number to insert at", default=None),
+        old_str: str | None = Field(default="", description="String to replace"),
+        new_str: str | None = Field(default="", description="Replacement string"),
+        insert_line: int = Field(default=None, description="Line number to insert at"),
         ctx: Context = Field(
             description="MCP context for progress reporting.", default=None
         ),
@@ -1381,12 +1375,12 @@ def register_service_tools(mcp: FastMCP):
     )
     async def list_services(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1417,12 +1411,12 @@ def register_service_tools(mcp: FastMCP):
     async def get_service_status(
         name: str = Field(description="Name of the service to check"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1453,12 +1447,12 @@ def register_service_tools(mcp: FastMCP):
     async def start_service(
         name: str = Field(description="Name of the service to start"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1485,12 +1479,12 @@ def register_service_tools(mcp: FastMCP):
     async def stop_service(
         name: str = Field(description="Name of the service to stop"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1520,12 +1514,12 @@ def register_service_tools(mcp: FastMCP):
     async def restart_service(
         name: str = Field(description="Name of the service to restart"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1555,12 +1549,12 @@ def register_service_tools(mcp: FastMCP):
     async def enable_service(
         name: str = Field(description="Name of the service to enable at boot"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1587,12 +1581,12 @@ def register_service_tools(mcp: FastMCP):
     async def disable_service(
         name: str = Field(description="Name of the service to disable at boot"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1623,12 +1617,12 @@ def register_process_tools(mcp: FastMCP):
     )
     async def list_processes(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1654,12 +1648,12 @@ def register_process_tools(mcp: FastMCP):
     async def get_process_info(
         pid: int = Field(description="Process ID to get information about"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1685,16 +1679,16 @@ def register_process_tools(mcp: FastMCP):
     async def kill_process(
         pid: int = Field(description="Process ID to kill"),
         signal: int = Field(
-            description="Signal to send (e.g., 15 for SIGTERM, 9 for SIGKILL)",
             default=15,
+            description="Signal to send (e.g., 15 for SIGTERM, 9 for SIGKILL)",
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=None
@@ -1727,12 +1721,12 @@ def register_network_tools(mcp: FastMCP):
     )
     async def list_network_interfaces(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -1757,12 +1751,12 @@ def register_network_tools(mcp: FastMCP):
     )
     async def list_open_ports(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -1787,14 +1781,14 @@ def register_network_tools(mcp: FastMCP):
     )
     async def ping_host(
         host: str = Field(description="Hostname or IP address to ping"),
-        count: int = Field(description="Number of ping packets to send", default=4),
+        count: int = Field(default=4, description="Number of ping packets to send"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -1820,12 +1814,12 @@ def register_network_tools(mcp: FastMCP):
     async def dns_lookup(
         hostname: str = Field(description="Hostname to resolve"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -1852,12 +1846,12 @@ def register_disk_tools(mcp: FastMCP):
     )
     async def list_disks(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -1881,14 +1875,14 @@ def register_disk_tools(mcp: FastMCP):
         tags={"disk"},
     )
     async def get_disk_usage(
-        path: str = Field(description="Path to check disk usage for", default="/"),
+        path: str = Field(default="/", description="Path to check disk usage for"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -1912,17 +1906,17 @@ def register_disk_tools(mcp: FastMCP):
         tags={"disk"},
     )
     async def get_disk_space_report(
-        path: str = Field(description="Base path to analyze", default="/"),
+        path: str = Field(default="/", description="Base path to analyze"),
         top_n: int = Field(
-            description="Number of largest directories to show", default=10
+            default=10, description="Number of largest directories to show"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -1949,12 +1943,12 @@ def register_user_tools(mcp: FastMCP):
     )
     async def list_users(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -1979,12 +1973,12 @@ def register_user_tools(mcp: FastMCP):
     )
     async def list_groups(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2011,20 +2005,20 @@ def register_log_tools(mcp: FastMCP):
     )
     async def get_system_logs(
         unit: str | None = Field(
-            description="Systemd unit to filter logs by", default=""
+            default="", description="Systemd unit to filter logs by"
         ),
-        lines: int = Field(description="Number of log lines to return", default=100),
+        lines: int = Field(default=100, description="Number of log lines to return"),
         priority: str | None = Field(
-            description="Log priority filter (emerg,alert,crit,err,warning,notice,info,debug)",
             default="",
+            description="Log priority filter (emerg,alert,crit,err,warning,notice,info,debug)",
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2070,15 +2064,15 @@ def register_log_tools(mcp: FastMCP):
     async def tail_log_file(
         path: str = Field(description="Path to the log file to tail"),
         lines: int = Field(
-            description="Number of lines to read from the end", default=50
+            default=50, description="Number of lines to read from the end"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2118,15 +2112,15 @@ def register_cron_tools(mcp: FastMCP):
     )
     async def list_cron_jobs(
         user: str | None = Field(
-            description="User whose cron jobs to list (Linux only)", default=""
+            default="", description="User whose cron jobs to list (Linux only)"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2155,15 +2149,15 @@ def register_cron_tools(mcp: FastMCP):
         ),
         command: str = Field(description="Command to run on schedule"),
         user: str | None = Field(
-            description="User to add cron job for (Linux only)", default=""
+            default="", description="User to add cron job for (Linux only)"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2189,15 +2183,15 @@ def register_cron_tools(mcp: FastMCP):
     async def remove_cron_job(
         pattern: str = Field(description="Pattern to match cron jobs for removal"),
         user: str | None = Field(
-            description="User whose cron tab to modify (Linux only)", default=""
+            default="", description="User whose cron tab to modify (Linux only)"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2227,12 +2221,12 @@ def register_firewall_management_tools(mcp: FastMCP):
     )
     async def get_firewall_status(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2257,12 +2251,12 @@ def register_firewall_management_tools(mcp: FastMCP):
     )
     async def list_firewall_rules(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2290,12 +2284,12 @@ def register_firewall_management_tools(mcp: FastMCP):
             description="Firewall rule specification (e.g. 'allow 80/tcp' for ufw)"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2321,12 +2315,12 @@ def register_firewall_management_tools(mcp: FastMCP):
     async def remove_firewall_rule(
         rule: str = Field(description="Firewall rule specification to remove"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2356,12 +2350,12 @@ def register_ssh_management_tools(mcp: FastMCP):
     )
     async def list_ssh_keys(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2386,19 +2380,19 @@ def register_ssh_management_tools(mcp: FastMCP):
     )
     async def generate_ssh_key(
         key_type: str | None = Field(
-            description="Key type (ed25519, rsa, ecdsa)", default="ed25519"
+            default="ed25519", description="Key type (ed25519, rsa, ecdsa)"
         ),
-        comment: str | None = Field(description="Comment for the key", default=""),
+        comment: str | None = Field(default="", description="Comment for the key"),
         passphrase: str | None = Field(
-            description="Passphrase for the key (empty for no passphrase)", default=""
+            default="", description="Passphrase for the key (empty for no passphrase)"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2426,12 +2420,12 @@ def register_ssh_management_tools(mcp: FastMCP):
             description="Public key string to add to authorized_keys"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2457,16 +2451,16 @@ def register_filesystem_tools(mcp: FastMCP):
         tags={"filesystem"},
     )
     async def list_files(
-        path: str = Field(description="Path to list files from", default="."),
-        recursive: bool = Field(description="List recursively", default=False),
-        depth: int = Field(description="Recursion depth", default=1),
+        path: str = Field(default=".", description="Path to list files from"),
+        recursive: bool = Field(default=False, description="List recursively"),
+        depth: int = Field(default=1, description="Recursion depth"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2493,12 +2487,12 @@ def register_filesystem_tools(mcp: FastMCP):
         path: str = Field(description="Path to search in"),
         pattern: str = Field(description="Pattern to search for in filenames"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2524,14 +2518,14 @@ def register_filesystem_tools(mcp: FastMCP):
     async def grep_files(
         path: str = Field(description="Path to search within"),
         pattern: str = Field(description="Text pattern to search for inside files"),
-        recursive: bool = Field(description="Search recursively", default=False),
+        recursive: bool = Field(default=False, description="Search recursively"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2560,15 +2554,15 @@ def register_filesystem_tools(mcp: FastMCP):
         ),
         path: str = Field(description="Path to the file"),
         content: str | None = Field(
-            description="Content for create/update", default=""
+            default="", description="Content for create/update"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2596,14 +2590,14 @@ def register_shell_tools(mcp: FastMCP):
     async def add_shell_alias(
         name: str = Field(description="Alias name"),
         command: str = Field(description="Command to alias"),
-        shell: str = Field(description="Shell type (bash, zsh, fish)", default="bash"),
+        shell: str = Field(default="bash", description="Shell type (bash, zsh, fish)"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2630,12 +2624,12 @@ def register_python_tools(mcp: FastMCP):
     )
     async def install_uv(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2661,15 +2655,15 @@ def register_python_tools(mcp: FastMCP):
     async def create_python_venv(
         path: str = Field(description="Path to create venv at"),
         python_version: str | None = Field(
-            description="Python version to use (e.g., 3.11)", default=""
+            default="", description="Python version to use (e.g., 3.11)"
         ),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2694,14 +2688,14 @@ def register_python_tools(mcp: FastMCP):
     )
     async def install_python_package_uv(
         package: str = Field(description="Package name"),
-        venv_path: str = Field(description="Path to virtual environment", default=""),
+        venv_path: str = Field(default="", description="Path to virtual environment"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2728,12 +2722,12 @@ def register_nodejs_tools(mcp: FastMCP):
     )
     async def install_nvm(
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2757,14 +2751,14 @@ def register_nodejs_tools(mcp: FastMCP):
         tags={"nodejs"},
     )
     async def install_node(
-        version: str = Field(description="Node version to install", default="--lts"),
+        version: str = Field(default="--lts", description="Node version to install"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""
@@ -2790,12 +2784,12 @@ def register_nodejs_tools(mcp: FastMCP):
     async def use_node(
         version: str = Field(description="Node version to use"),
         silent: bool = Field(
-            description="Suppress output",
             default=to_boolean(os.environ.get("SYSTEMS_MANAGER_SILENT", False)),
+            description="Suppress output",
         ),
         log_file: str | None = Field(
-            description="Path to log file",
             default=os.environ.get("SYSTEMS_MANAGER_LOG_FILE", None),
+            description="Path to log file",
         ),
         ctx: Context = Field(
             description="MCP context for progress reporting", default=""

@@ -48,12 +48,12 @@ The `systems-manager` acts as the physical execution layer (Agent OS Layer) driv
 
 ```mermaid
 flowchart TD
-    subgraph Agent OS Kernel (agent-utilities)
+    subgraph "Agent OS Kernel (agent-utilities)"
         Orchestrator[Graph Orchestrator]
         Auth[Permissions Kernel]
     end
 
-    subgraph Agent OS Layer (systems-manager)
+    subgraph "Agent OS Layer (systems-manager)"
         MCP[MCP Server]
         OSProvider[Abstracted OS Provider]
         Linux[Linux Backend]

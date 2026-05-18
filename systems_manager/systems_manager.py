@@ -333,7 +333,7 @@ class SystemsManagerBase(ABC):
                 stdout = None
                 stderr = None
             else:
-                print(f"Running: {' '.join(command)}")
+                print(f"Running: {' '.join(command)}", file=sys.stderr)
                 result_sp = subprocess.run(
                     command,
                     capture_output=True,
@@ -355,7 +355,7 @@ class SystemsManagerBase(ABC):
         except subprocess.CalledProcessError as e:
             self.log_command(command, result=e, error=e)
             if not self.silent:
-                print(f"Error: {e.stderr}")
+                print(f"Error: {e.stderr}", file=sys.stderr)
             return CommandResult(
                 **{
                     "success": False,
@@ -519,7 +519,7 @@ class SystemsManagerBase(ABC):
             url = asset["browser_download_url"]
             self.logger.info(f"Downloading {zip_name} from {url}")
             if not self.silent:
-                print(f"Downloading {zip_name} from {url}")
+                print(f"Downloading {zip_name} from {url}", file=sys.stderr)
             try:
                 r = requests.get(url, timeout=10)
                 r.raise_for_status()
@@ -543,7 +543,7 @@ class SystemsManagerBase(ABC):
                 dest = os.path.join(font_dir, os.path.basename(font))
                 self.logger.info(f"Moving {font} to {dest}")
                 if not self.silent:
-                    print(f"Moving {font} to {dest}")
+                    print(f"Moving {font} to {dest}", file=sys.stderr)
                 copy_cmd = [
                     "powershell.exe",
                     "Copy-Item",
@@ -1764,7 +1764,7 @@ class AptManager(SystemsManagerBase):
             else:
                 if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
-                        print(f"Falling back to Snap for {app}...")
+                        print(f"Falling back to Snap for {app}...", file=sys.stderr)
                     self.logger.info(
                         f"Native install failed for {app}; falling back to Snap..."
                     )
@@ -1979,7 +1979,7 @@ class DnfManager(SystemsManagerBase):
             else:
                 if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
-                        print(f"Falling back to Snap for {app}...")
+                        print(f"Falling back to Snap for {app}...", file=sys.stderr)
                     self.logger.info(
                         f"Native install failed for {app}; falling back to Snap..."
                     )
@@ -2145,7 +2145,7 @@ class ZypperManager(SystemsManagerBase):
             else:
                 if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
-                        print(f"Falling back to Snap for {app}...")
+                        print(f"Falling back to Snap for {app}...", file=sys.stderr)
                     self.logger.info(
                         f"Native install failed for {app}; falling back to Snap..."
                     )
@@ -2319,7 +2319,7 @@ class PacmanManager(SystemsManagerBase):
             else:
                 if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
-                        print(f"Falling back to Snap for {app}...")
+                        print(f"Falling back to Snap for {app}...", file=sys.stderr)
                     self.logger.info(
                         f"Native install failed for {app}; falling back to Snap..."
                     )
@@ -2486,7 +2486,7 @@ class WindowsManager(SystemsManagerBase):
         )
         if not os.path.exists(self.winget_bin):
             if not self.silent:
-                print("Installing Winget...")
+                print("Installing Winget...", file=sys.stderr)
             self.logger.info("Installing Winget...")
             register_result = self.run_command(
                 [
@@ -2740,7 +2740,7 @@ def detect_and_create_manager(
 
 
 def systems_manager():
-    print(f"systems_manager v{__version__}")
+    print(f"systems_manager v{__version__}", file=sys.stderr)
     parser = argparse.ArgumentParser(
         add_help=False, description="System Manager Utility"
     )
@@ -2858,27 +2858,27 @@ def systems_manager():
         for f in files:
             manager.install_local_package(f)
     if os_stats:
-        print(json.dumps(manager.get_os_statistics(), indent=2))
+        print(json.dumps(manager.get_os_statistics(), indent=2), file=sys.stderr)
     if hw_stats:
-        print(json.dumps(manager.get_hardware_statistics(), indent=2))
+        print(json.dumps(manager.get_hardware_statistics(), indent=2), file=sys.stderr)
     if list_features:
         if isinstance(manager, WindowsManager):
             features = manager.list_windows_features()
-            print(json.dumps(features, indent=2))
+            print(json.dumps(features, indent=2), file=sys.stderr)
         else:
-            print("Feature listing is only available on Windows.")
+            print("Feature listing is only available on Windows.", file=sys.stderr)
     if enable_features:
         if isinstance(manager, WindowsManager):
             manager.enable_windows_features(enable_features_list)
         else:
-            print("Feature enabling is only available on Windows.")
+            print("Feature enabling is only available on Windows.", file=sys.stderr)
     if disable_features:
         if isinstance(manager, WindowsManager):
             manager.disable_windows_features(disable_features_list)
         else:
-            print("Feature disabling is only available on Windows.")
+            print("Feature disabling is only available on Windows.", file=sys.stderr)
 
-    print("Done!")
+    print("Done!", file=sys.stderr)
 
 
 if __name__ == "__main__":

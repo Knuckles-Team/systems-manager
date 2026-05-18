@@ -3,8 +3,8 @@ services:
   systems-manager-mcp:
     # image: docker.io/knucklessg1/systems-manager:latest
     build:
-     context: . # Debug
-     dockerfile: debug.Dockerfile
+     context: .. # Debug
+     dockerfile: docker/debug.Dockerfile
     container_name: systems-manager-mcp
     hostname: systems-manager-mcp
     command: [ "systems-manager-mcp" ]
@@ -17,7 +17,7 @@ services:
         max-file: "3"
     restart: always
     env_file:
-      - .env
+      - ../.env
     environment:
       - "PYTHONUNBUFFERED=1"
       - "HOST=0.0.0.0"
@@ -35,8 +35,8 @@ services:
   systems-manager-agent:
     # image: docker.io/knucklessg1/systems-manager:latest
     build:
-     context: . # Debug
-     dockerfile: debug.Dockerfile
+     context: .. # Debug
+     dockerfile: docker/debug.Dockerfile
     container_name: systems-manager-agent
     hostname: systems-manager-agent
     command: [ "systems-manager-agent" ]
@@ -51,7 +51,7 @@ services:
         max-file: "3"
     restart: always
     env_file:
-      - .env
+      - ../.env
     environment:
       - "PYTHONUNBUFFERED=1"
       - "HOST=0.0.0.0"
