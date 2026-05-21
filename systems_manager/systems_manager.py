@@ -24,7 +24,7 @@ from systems_manager.models import (
     SystemStats,
 )
 
-__version__ = "1.12.0"
+__version__ = "1.12.1"
 
 
 def setup_logging(
@@ -50,7 +50,7 @@ class FileSystemManager:
 
     def list_files(
         self, path: str = ".", recursive: bool = False, depth: int = 1
-    ) -> dict:
+    ) -> CommandResult:
         try:
             expanded_path = os.path.abspath(os.path.expanduser(path))
             if not os.path.exists(expanded_path):
@@ -100,7 +100,7 @@ class FileSystemManager:
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def search_files(self, path: str, pattern: str) -> dict:
+    def search_files(self, path: str, pattern: str) -> CommandResult:
         try:
             expanded_path = os.path.abspath(os.path.expanduser(path))
             matches = []
@@ -114,7 +114,9 @@ class FileSystemManager:
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def grep_files(self, path: str, pattern: str, recursive: bool = False) -> dict:
+    def grep_files(
+        self, path: str, pattern: str, recursive: bool = False
+    ) -> CommandResult:
         try:
             cmd = ["grep", "-rn" if recursive else "-n", pattern, path]
             result = self.manager.run_command(cmd)
@@ -128,7 +130,9 @@ class FileSystemManager:
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def manage_file(self, action: str, path: str, content: str | None = None) -> dict:
+    def manage_file(
+        self, action: str, path: str, content: str | None = None
+    ) -> CommandResult:
         try:
             expanded_path = os.path.abspath(os.path.expanduser(path))
             if action == "create" or action == "update":
@@ -183,7 +187,7 @@ class ShellProfileManager:
             )
         return os.path.join(home, ".profile")
 
-    def add_alias(self, name: str, command: str, shell: str = "bash") -> dict:
+    def add_alias(self, name: str, command: str, shell: str = "bash") -> CommandResult:
         try:
             profile_path = self.get_profile_path(shell)
             alias_cmd = f'alias {name}="{command}"'
@@ -212,7 +216,7 @@ class PythonManager:
     def __init__(self, manager):
         self.manager = manager
 
-    def install_uv(self) -> dict:
+    def install_uv(self) -> CommandResult:
         cmd = ["curl", "-LsSf", "https://astral.sh/uv/install.sh", "|", "sh"]
         if platform.system() == "Windows":
             cmd = ["powershell", "-c", "irm https://astral.sh/uv/install.ps1 | iex"]
@@ -229,13 +233,17 @@ class PythonManager:
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def create_venv(self, path: str, python_version: str | None = None) -> dict:
+    def create_venv(
+        self, path: str, python_version: str | None = None
+    ) -> CommandResult:
         cmd = ["uv", "venv", path]
         if python_version:
             cmd.extend(["--python", python_version])
         return self.manager.run_command(cmd)
 
-    def install_package(self, package: str, venv_path: str | None = None) -> dict:
+    def install_package(
+        self, package: str, venv_path: str | None = None
+    ) -> CommandResult:
         cmd = ["uv", "pip", "install", package]
         env = os.environ.copy()
         if venv_path:
@@ -251,7 +259,7 @@ class NodeManager:
     def __init__(self, manager):
         self.manager = manager
 
-    def install_nvm(self) -> dict:
+    def install_nvm(self) -> CommandResult:
         if platform.system() == "Windows":
             return CommandResult(
                 **{
@@ -263,12 +271,12 @@ class NodeManager:
         cmd = "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
         return self.manager.run_command(cmd, shell=True)  # nosec
 
-    def install_node(self, version: str = "--lts") -> dict:
+    def install_node(self, version: str = "--lts") -> CommandResult:
 
         cmd = f". ~/.nvm/nvm.sh && nvm install {version}"
         return self.manager.run_command(cmd, shell=True)  # nosec
 
-    def use_node(self, version: str) -> dict:
+    def use_node(self, version: str) -> CommandResult:
         cmd = f". ~/.nvm/nvm.sh && nvm use {version}"
         return self.manager.run_command(cmd, shell=True)  # nosec
 
@@ -276,7 +284,7 @@ class NodeManager:
 class SystemsManagerBase(ABC):
     def __init__(self, silent: bool = False, log_file: str | None = None):
         self.silent = silent
-        self.logger = setup_logging(log_file)
+        self.logger = setup_logging(log_file)  # type: ignore
         self.fs_manager = FileSystemManager(self)
         self.shell_manager = ShellProfileManager(self)
         self.python_manager = PythonManager(self)
@@ -285,7 +293,9 @@ class SystemsManagerBase(ABC):
     def log_command(
         self,
         command: list[str] | str,
-        result: subprocess.CompletedProcess | None = None,
+        result: (
+            subprocess.CompletedProcess | subprocess.CalledProcessError | None
+        ) = None,
         error: Exception | None = None,
     ):
         if isinstance(command, str):
@@ -303,7 +313,7 @@ class SystemsManagerBase(ABC):
         command: list[str] | str,
         elevated: bool = False,
         shell: bool = False,
-    ) -> dict:
+    ) -> CommandResult:
         if isinstance(command, str):
             command = command.split()
         if elevated and platform.system() == "Linux":
@@ -323,7 +333,7 @@ class SystemsManagerBase(ABC):
             shell = True
         try:
             if self.silent:
-                result_sp = subprocess.run(
+                result_sp: subprocess.CompletedProcess[Any] = subprocess.run(
                     command,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
@@ -334,7 +344,7 @@ class SystemsManagerBase(ABC):
                 stderr = None
             else:
                 print(f"Running: {' '.join(command)}", file=sys.stderr)
-                result_sp = subprocess.run(
+                result_sp: subprocess.CompletedProcess[Any] = subprocess.run(  # type: ignore
                     command,
                     capture_output=True,
                     text=True,
@@ -370,54 +380,54 @@ class SystemsManagerBase(ABC):
             return CommandResult(**{"success": False, "error": str(e)})
 
     @abstractmethod
-    def install_applications(self, apps: list[str]) -> dict:
+    def install_applications(self, apps: list[str]) -> CommandResult:
         pass
 
     @abstractmethod
-    def update(self) -> dict:
+    def update(self) -> CommandResult:
         pass
 
     @abstractmethod
-    def clean(self) -> dict:
+    def clean(self) -> CommandResult:
         pass
 
     @abstractmethod
-    def optimize(self) -> dict:
+    def optimize(self) -> CommandResult:
         pass
 
     @abstractmethod
-    def install_snapd(self) -> dict:
+    def install_snapd(self) -> CommandResult:
         pass
 
     @abstractmethod
-    def add_repository(self, repo_url: str, name: str | None = None) -> dict:
+    def add_repository(self, repo_url: str, name: str | None = None) -> CommandResult:
         pass
 
     @abstractmethod
-    def install_local_package(self, file_path: str) -> dict:
+    def install_local_package(self, file_path: str) -> CommandResult:
         pass
 
     @abstractmethod
-    def search_package(self, query: str) -> dict:
+    def search_package(self, query: str) -> CommandResult:
         pass
 
     @abstractmethod
-    def get_package_info(self, package: str) -> dict:
+    def get_package_info(self, package: str) -> CommandResult:
         pass
 
     @abstractmethod
-    def list_installed_packages(self) -> dict:
+    def list_installed_packages(self) -> CommandResult:
         pass
 
     @abstractmethod
-    def list_upgradable_packages(self) -> dict:
+    def list_upgradable_packages(self) -> CommandResult:
         pass
 
     @abstractmethod
-    def clean_package_cache(self) -> dict:
+    def clean_package_cache(self) -> CommandResult:
         pass
 
-    def install_via_snap(self, app: str) -> dict:
+    def install_via_snap(self, app: str) -> CommandResult:
         snap_bin = shutil.which("snap")
         if snap_bin is None:
             self.logger.info("Snap not found; installing snapd...")
@@ -449,7 +459,7 @@ class SystemsManagerBase(ABC):
             }
         )
 
-    def install_python_modules(self, modules: list[str]) -> dict:
+    def install_python_modules(self, modules: list[str]) -> dict[str, Any]:
         results: dict[str, Any] = {
             "upgraded_pip": False,
             "installed": [],
@@ -476,7 +486,7 @@ class SystemsManagerBase(ABC):
                 )
         return results
 
-    def font(self, fonts: list[str] | None = None) -> dict:
+    def font(self, fonts: list[str] | None = None) -> CommandResult:
         if not fonts:
             fonts = ["Hack"]
         api_url = "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest"
@@ -579,9 +589,9 @@ class SystemsManagerBase(ABC):
             }
         )
 
-    def get_os_statistics(self) -> dict:
+    def get_os_statistics(self) -> SystemStats:
         return SystemStats(
-            **{
+            **{  # type: ignore
                 "system": platform.system(),
                 "release": platform.release(),
                 "version": platform.version(),
@@ -593,7 +603,7 @@ class SystemsManagerBase(ABC):
             }
         )
 
-    def get_hardware_statistics(self) -> dict:
+    def get_hardware_statistics(self) -> SystemStats:
         return SystemStats(
             **{
                 "cpu_percent": psutil.cpu_percent(interval=1),
@@ -604,7 +614,7 @@ class SystemsManagerBase(ABC):
             }
         )
 
-    def list_services(self) -> dict:
+    def list_services(self) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 result = self.run_command(
@@ -668,7 +678,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def get_service_status(self, name: str) -> dict:
+    def get_service_status(self, name: str) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 result = self.run_command(["systemctl", "status", name, "--no-pager"])
@@ -712,7 +722,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def start_service(self, name: str) -> dict:
+    def start_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
             return self.run_command(["systemctl", "start", name], elevated=True)
         elif platform.system() == "Windows":
@@ -725,7 +735,7 @@ class SystemsManagerBase(ABC):
             **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
         )
 
-    def stop_service(self, name: str) -> dict:
+    def stop_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
             return self.run_command(["systemctl", "stop", name], elevated=True)
         elif platform.system() == "Windows":
@@ -738,11 +748,11 @@ class SystemsManagerBase(ABC):
             **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
         )
 
-    def restart_service(self, name: str) -> dict:
+    def restart_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
             return self.run_command(["systemctl", "restart", name], elevated=True)
         elif platform.system() == "Windows":
-            if not os.path.exists(self.winget_bin):
+            if not os.path.exists(self.winget_bin):  # type: ignore
                 self.winget_bin = "winget.exe"
             return self.run_command(
                 [
@@ -757,7 +767,7 @@ class SystemsManagerBase(ABC):
             **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
         )
 
-    def enable_service(self, name: str) -> dict:
+    def enable_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
             return self.run_command(["systemctl", "enable", name], elevated=True)
         elif platform.system() == "Windows":
@@ -774,7 +784,7 @@ class SystemsManagerBase(ABC):
             **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
         )
 
-    def disable_service(self, name: str) -> dict:
+    def disable_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
             return self.run_command(["systemctl", "disable", name], elevated=True)
         elif platform.system() == "Windows":
@@ -791,7 +801,7 @@ class SystemsManagerBase(ABC):
             **{"success": False, "error": f"Unsupported OS: {platform.system()}"}
         )
 
-    def list_processes(self) -> dict:
+    def list_processes(self) -> CommandResult:
         try:
             processes = []
             for proc in psutil.process_iter(
@@ -821,7 +831,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def get_process_info(self, pid: int) -> dict:
+    def get_process_info(self, pid: int) -> CommandResult:
         try:
             proc = psutil.Process(pid)
             with proc.oneshot():
@@ -851,7 +861,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def kill_process(self, pid: int, signal: int = 15) -> dict:
+    def kill_process(self, pid: int, signal: int = 15) -> CommandResult:
         try:
             proc = psutil.Process(pid)
             name = proc.name()
@@ -873,7 +883,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_network_interfaces(self) -> dict:
+    def list_network_interfaces(self) -> CommandResult:
         try:
             interfaces = {}
             addrs = psutil.net_if_addrs()
@@ -889,7 +899,7 @@ class SystemsManagerBase(ABC):
                         }
                     )
                 for addr in addr_list:
-                    iface_info["addresses"].append(
+                    iface_info["addresses"].append(  # type: ignore
                         {
                             "family": str(addr.family),
                             "address": addr.address,
@@ -902,7 +912,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_open_ports(self) -> dict:
+    def list_open_ports(self) -> CommandResult:
         try:
             connections = []
             for conn in psutil.net_connections(kind="inet"):
@@ -929,7 +939,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def ping_host(self, host: str, count: int = 4) -> dict:
+    def ping_host(self, host: str, count: int = 4) -> CommandResult:
         flag = "-n" if platform.system() == "Windows" else "-c"
         result = self.run_command(["ping", flag, str(count), host])
         return CommandResult(
@@ -940,7 +950,7 @@ class SystemsManagerBase(ABC):
             }
         )
 
-    def dns_lookup(self, hostname: str) -> dict:
+    def dns_lookup(self, hostname: str) -> CommandResult:
         try:
             results = socket.getaddrinfo(hostname, None)
             addresses = list(set(addr[4][0] for addr in results))
@@ -954,7 +964,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_disks(self) -> dict:
+    def list_disks(self) -> CommandResult:
         try:
             partitions = []
             for part in psutil.disk_partitions(all=False):
@@ -983,7 +993,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def get_disk_usage(self, path: str = "/") -> dict:
+    def get_disk_usage(self, path: str = "/") -> CommandResult:
         try:
             usage = psutil.disk_usage(path)
             return CommandResult(
@@ -999,7 +1009,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_users(self) -> dict:
+    def list_users(self) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 users = []
@@ -1047,7 +1057,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_groups(self) -> dict:
+    def list_groups(self) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 groups = []
@@ -1095,7 +1105,7 @@ class SystemsManagerBase(ABC):
 
     def get_system_logs(
         self, unit: str | None = None, lines: int = 100, priority: str | None = None
-    ) -> dict:
+    ) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 cmd = ["journalctl", "--no-pager", "-n", str(lines)]
@@ -1131,7 +1141,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def tail_log_file(self, path: str, lines: int = 50) -> dict:
+    def tail_log_file(self, path: str, lines: int = 50) -> CommandResult:
         try:
             if not os.path.exists(path):
                 return CommandResult(
@@ -1151,7 +1161,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def system_health_check(self) -> dict:
+    def system_health_check(self) -> CommandResult:
         try:
             boot_time = datetime.fromtimestamp(psutil.boot_time())
             uptime = datetime.now() - boot_time
@@ -1211,7 +1221,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def get_uptime(self) -> dict:
+    def get_uptime(self) -> CommandResult:
         try:
             boot_time = datetime.fromtimestamp(psutil.boot_time())
             uptime = datetime.now() - boot_time
@@ -1226,7 +1236,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_cron_jobs(self, user: str | None = None) -> dict:
+    def list_cron_jobs(self, user: str | None = None) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
@@ -1241,7 +1251,8 @@ class SystemsManagerBase(ABC):
                 )
             elif platform.system() == "Windows":
                 result = self.run_command(
-                    ["schtasks", "/query", "/fo", "CSV", "/v"], shell=True  # nosec
+                    ["schtasks", "/query", "/fo", "CSV", "/v"],
+                    shell=True,  # nosec
                 )  # nosec
                 return CommandResult(
                     **{
@@ -1257,7 +1268,7 @@ class SystemsManagerBase(ABC):
 
     def add_cron_job(
         self, schedule: str, command: str, user: str | None = None
-    ) -> dict:
+    ) -> CommandResult:
         try:
             if platform.system() != "Linux":
                 return CommandResult(
@@ -1297,7 +1308,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def remove_cron_job(self, pattern: str, user: str | None = None) -> dict:
+    def remove_cron_job(self, pattern: str, user: str | None = None) -> CommandResult:
         try:
             if platform.system() != "Linux":
                 return CommandResult(
@@ -1361,7 +1372,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def get_firewall_status(self) -> dict:
+    def get_firewall_status(self) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 if shutil.which("ufw"):
@@ -1394,7 +1405,8 @@ class SystemsManagerBase(ABC):
                 )
             elif platform.system() == "Windows":
                 r = self.run_command(
-                    ["netsh", "advfirewall", "show", "allprofiles"], shell=True  # nosec
+                    ["netsh", "advfirewall", "show", "allprofiles"],
+                    shell=True,  # nosec
                 )  # nosec
                 return CommandResult(
                     **{
@@ -1409,7 +1421,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_firewall_rules(self) -> dict:
+    def list_firewall_rules(self) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 if shutil.which("ufw"):
@@ -1478,7 +1490,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def add_firewall_rule(self, rule: str) -> dict:
+    def add_firewall_rule(self, rule: str) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 if shutil.which("ufw"):
@@ -1510,7 +1522,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def remove_firewall_rule(self, rule: str) -> dict:
+    def remove_firewall_rule(self, rule: str) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 if shutil.which("ufw"):
@@ -1547,7 +1559,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_ssh_keys(self) -> dict:
+    def list_ssh_keys(self) -> CommandResult:
         try:
             ssh_dir = os.path.expanduser("~/.ssh")
             if not os.path.exists(ssh_dir):
@@ -1581,7 +1593,7 @@ class SystemsManagerBase(ABC):
         key_type: str = "ed25519",
         comment: str = "",
         passphrase: str = "",  # nosec
-    ) -> dict:
+    ) -> CommandResult:
         try:
             ssh_dir = os.path.expanduser("~/.ssh")
             os.makedirs(ssh_dir, exist_ok=True)
@@ -1614,7 +1626,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def add_authorized_key(self, public_key: str) -> dict:
+    def add_authorized_key(self, public_key: str) -> CommandResult:
         try:
             ssh_dir = os.path.expanduser("~/.ssh")
             os.makedirs(ssh_dir, exist_ok=True)
@@ -1637,7 +1649,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def list_env_vars(self) -> dict:
+    def list_env_vars(self) -> CommandResult:
         return CommandResult(
             **{
                 "success": True,
@@ -1646,7 +1658,7 @@ class SystemsManagerBase(ABC):
             }
         )
 
-    def get_env_var(self, name: str) -> dict:
+    def get_env_var(self, name: str) -> CommandResult:
         value = os.environ.get(name)
         if value is None:
             return CommandResult(
@@ -1657,7 +1669,7 @@ class SystemsManagerBase(ABC):
             )
         return CommandResult(**{"success": True, "name": name, "value": value})
 
-    def clean_temp_files(self) -> dict:
+    def clean_temp_files(self) -> CommandResult:
         try:
             temp_dir = tempfile.gettempdir()
             cleaned, errors = 0, 0
@@ -1682,7 +1694,7 @@ class SystemsManagerBase(ABC):
         except Exception as e:
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def get_disk_space_report(self, path: str = "/", top_n: int = 10) -> dict:
+    def get_disk_space_report(self, path: str = "/", top_n: int = 10) -> CommandResult:
         try:
             if platform.system() == "Linux":
                 result = self.run_command(
@@ -1713,7 +1725,8 @@ class SystemsManagerBase(ABC):
                     f"| Select-Object -First {top_n} | ConvertTo-Json"
                 )
                 result = self.run_command(
-                    ["powershell.exe", "-Command", ps_cmd], shell=True  # nosec
+                    ["powershell.exe", "-Command", ps_cmd],
+                    shell=True,  # nosec
                 )  # nosec
                 if result["success"]:
                     try:
@@ -1743,7 +1756,7 @@ class AptManager(SystemsManagerBase):
         super().__init__(silent, log_file)
         self.not_found_msg = "Unable to locate package"
 
-    def install_applications(self, apps: list[str]) -> dict:
+    def install_applications(self, apps: list[str]) -> CommandResult:
         results = {
             "natively_installed": [],
             "snap_installed": [],
@@ -1760,7 +1773,7 @@ class AptManager(SystemsManagerBase):
                 ["apt", "install", "-y", app], elevated=True
             )
             if install_result["success"]:
-                results["natively_installed"].append(app)
+                results["natively_installed"].append(app)  # type: ignore
             else:
                 if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
@@ -1770,22 +1783,22 @@ class AptManager(SystemsManagerBase):
                     )
                     snap_result = self.install_via_snap(app)
                     if snap_result["success"]:
-                        results["snap_installed"].append(app)
+                        results["snap_installed"].append(app)  # type: ignore
                     else:
-                        results["failed"].append(app)
+                        results["failed"].append(app)  # type: ignore
                         results["success"] = False
                         self.logger.error(
                             f"Snap install failed for {app}: {snap_result.get('error')}"
                         )
                 else:
-                    results["failed"].append(app)
+                    results["failed"].append(app)  # type: ignore
                     results["success"] = False
                     self.logger.error(
                         f"Native install failed for {app}: {install_result.get('error')}"
                     )
-        return results
+        return results  # type: ignore
 
-    def update(self) -> dict:
+    def update(self) -> CommandResult:
         try:
             update_result = self.run_command(["apt", "update"], elevated=True)
             if not update_result["success"]:
@@ -1812,7 +1825,7 @@ class AptManager(SystemsManagerBase):
             self.logger.error(f"Unexpected error in update: {e}")
             return CommandResult(**{"success": False, "error": str(e)})
 
-    def clean(self) -> dict:
+    def clean(self) -> CommandResult:
         install_result = self.run_command(
             ["apt", "install", "-y", "trash-cli"], elevated=True
         )
@@ -1830,7 +1843,7 @@ class AptManager(SystemsManagerBase):
                 }
             )
 
-    def optimize(self) -> dict:
+    def optimize(self) -> CommandResult:
         autoremove_result = self.run_command(["apt", "autoremove", "-y"], elevated=True)
         autoclean_result = self.run_command(["apt", "autoclean"], elevated=True)
         overall_success = autoremove_result["success"] and autoclean_result["success"]
@@ -1847,7 +1860,7 @@ class AptManager(SystemsManagerBase):
             }
         )
 
-    def install_snapd(self) -> dict:
+    def install_snapd(self) -> CommandResult:
         result = self.run_command(["apt", "install", "-y", "snapd"], elevated=True)
         return CommandResult(
             **{
@@ -1861,7 +1874,7 @@ class AptManager(SystemsManagerBase):
             }
         )
 
-    def add_repository(self, repo_url: str, name: str | None = None) -> dict:
+    def add_repository(self, repo_url: str, name: str | None = None) -> CommandResult:
         add_result = self.run_command(
             ["add-apt-repository", "-y", repo_url], elevated=True
         )
@@ -1875,7 +1888,7 @@ class AptManager(SystemsManagerBase):
             )
         return add_result
 
-    def install_local_package(self, file_path: str) -> dict:
+    def install_local_package(self, file_path: str) -> CommandResult:
         if not file_path.endswith(".deb"):
             return CommandResult(**{"success": False, "error": "Not a .deb file"})
         install_result = self.run_command(["dpkg", "-i", file_path], elevated=True)
@@ -1891,7 +1904,7 @@ class AptManager(SystemsManagerBase):
 
     def search_package(self, query: str):
         result = self.run_command(["apt-cache", "search", query])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 parts = line.split(" - ", 1)
@@ -1915,12 +1928,12 @@ class AptManager(SystemsManagerBase):
 
     def list_installed_packages(self):
         result = self.run_command(["dpkg", "--get-selections"])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 parts = line.split()
                 if len(parts) >= 2 and parts[1] == "install":
-                    packages.append(parts[0])
+                    packages.append(parts[0])  # type: ignore
         return CommandResult(
             **{
                 "success": result["success"],
@@ -1932,11 +1945,11 @@ class AptManager(SystemsManagerBase):
     def list_upgradable_packages(self):
         self.run_command(["apt", "update"], elevated=True)
         result = self.run_command(["apt", "list", "--upgradable"])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 if "/" in line and "Listing" not in line:
-                    packages.append(line.split("/")[0])
+                    packages.append(line.split("/")[0])  # type: ignore
         return CommandResult(
             **{
                 "success": result["success"],
@@ -1960,7 +1973,7 @@ class DnfManager(SystemsManagerBase):
         super().__init__(silent, log_file)
         self.not_found_msg = "Unable to find a match"
 
-    def install_applications(self, apps: list[str]) -> dict:
+    def install_applications(self, apps: list[str]) -> CommandResult:
         results = {
             "natively_installed": [],
             "snap_installed": [],
@@ -1975,7 +1988,7 @@ class DnfManager(SystemsManagerBase):
                 ["dnf", "install", "-y", app], elevated=True
             )
             if install_result["success"]:
-                results["natively_installed"].append(app)
+                results["natively_installed"].append(app)  # type: ignore
             else:
                 if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
@@ -1985,16 +1998,16 @@ class DnfManager(SystemsManagerBase):
                     )
                     snap_result = self.install_via_snap(app)
                     if snap_result["success"]:
-                        results["snap_installed"].append(app)
+                        results["snap_installed"].append(app)  # type: ignore
                     else:
-                        results["failed"].append(app)
+                        results["failed"].append(app)  # type: ignore
                         results["success"] = False
                 else:
-                    results["failed"].append(app)
+                    results["failed"].append(app)  # type: ignore
                     results["success"] = False
-        return results
+        return results  # type: ignore
 
-    def update(self) -> dict:
+    def update(self) -> CommandResult:
         result = self.run_command(["dnf", "update", "-y"], elevated=True)
         return CommandResult(
             **{
@@ -2004,7 +2017,7 @@ class DnfManager(SystemsManagerBase):
             }
         )
 
-    def clean(self) -> dict:
+    def clean(self) -> CommandResult:
         result = self.run_command(["dnf", "clean", "all"], elevated=True)
         return CommandResult(
             **{
@@ -2014,7 +2027,7 @@ class DnfManager(SystemsManagerBase):
             }
         )
 
-    def optimize(self) -> dict:
+    def optimize(self) -> CommandResult:
         result = self.run_command(["dnf", "autoremove", "-y"], elevated=True)
         return CommandResult(
             **{
@@ -2026,7 +2039,7 @@ class DnfManager(SystemsManagerBase):
             }
         )
 
-    def install_snapd(self) -> dict:
+    def install_snapd(self) -> CommandResult:
         result = self.run_command(["dnf", "install", "-y", "snapd"], elevated=True)
         return CommandResult(
             **{
@@ -2040,7 +2053,7 @@ class DnfManager(SystemsManagerBase):
             }
         )
 
-    def add_repository(self, repo_url: str, name: str | None = None) -> dict:
+    def add_repository(self, repo_url: str, name: str | None = None) -> CommandResult:
         command = ["dnf", "config-manager", "--add-repo", repo_url]
         add_result = self.run_command(command, elevated=True)
         if add_result["success"]:
@@ -2053,14 +2066,14 @@ class DnfManager(SystemsManagerBase):
             )
         return add_result
 
-    def install_local_package(self, file_path: str) -> dict:
+    def install_local_package(self, file_path: str) -> CommandResult:
         if not file_path.endswith(".rpm"):
             return CommandResult(**{"success": False, "error": "Not a .rpm file"})
         return self.run_command(["dnf", "install", "-y", file_path], elevated=True)
 
     def search_package(self, query: str):
         result = self.run_command(["dnf", "search", query])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 parts = line.split(" : ", 1)
@@ -2087,13 +2100,13 @@ class DnfManager(SystemsManagerBase):
 
     def list_installed_packages(self):
         result = self.run_command(["dnf", "list", "installed"])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 if not line.startswith("Installed") and not line.startswith("Last"):
                     parts = line.split()
                     if parts:
-                        packages.append(parts[0].split(".")[0])
+                        packages.append(parts[0].split(".")[0])  # type: ignore
         return CommandResult(
             **{
                 "success": result["success"],
@@ -2104,7 +2117,7 @@ class DnfManager(SystemsManagerBase):
 
     def list_upgradable_packages(self):
         result = self.run_command(["dnf", "check-update"])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result.get("stdout"):
             for line in result["stdout"].strip().splitlines():
                 parts = line.split()
@@ -2129,7 +2142,7 @@ class ZypperManager(SystemsManagerBase):
         super().__init__(silent, log_file)
         self.not_found_msg = "No provider of"
 
-    def install_applications(self, apps: list[str]) -> dict:
+    def install_applications(self, apps: list[str]) -> CommandResult:
         results = {
             "natively_installed": [],
             "snap_installed": [],
@@ -2141,7 +2154,7 @@ class ZypperManager(SystemsManagerBase):
                 ["zypper", "install", "-y", app], elevated=True
             )
             if install_result["success"]:
-                results["natively_installed"].append(app)
+                results["natively_installed"].append(app)  # type: ignore
             else:
                 if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
@@ -2151,16 +2164,16 @@ class ZypperManager(SystemsManagerBase):
                     )
                     snap_result = self.install_via_snap(app)
                     if snap_result["success"]:
-                        results["snap_installed"].append(app)
+                        results["snap_installed"].append(app)  # type: ignore
                     else:
-                        results["failed"].append(app)
+                        results["failed"].append(app)  # type: ignore
                         results["success"] = False
                 else:
-                    results["failed"].append(app)
+                    results["failed"].append(app)  # type: ignore
                     results["success"] = False
-        return results
+        return results  # type: ignore
 
-    def update(self) -> dict:
+    def update(self) -> CommandResult:
         result = self.run_command(["zypper", "update", "-y"], elevated=True)
         return CommandResult(
             **{
@@ -2170,7 +2183,7 @@ class ZypperManager(SystemsManagerBase):
             }
         )
 
-    def clean(self) -> dict:
+    def clean(self) -> CommandResult:
         result = self.run_command(["zypper", "clean", "--all"], elevated=True)
         return CommandResult(
             **{
@@ -2180,7 +2193,7 @@ class ZypperManager(SystemsManagerBase):
             }
         )
 
-    def optimize(self) -> dict:
+    def optimize(self) -> CommandResult:
         result = self.run_command(["zypper", "rm", "-u"], elevated=True)
         return CommandResult(
             **{
@@ -2192,7 +2205,7 @@ class ZypperManager(SystemsManagerBase):
             }
         )
 
-    def install_snapd(self) -> dict:
+    def install_snapd(self) -> CommandResult:
         result = self.run_command(["zypper", "install", "-y", "snapd"], elevated=True)
         return CommandResult(
             **{
@@ -2206,7 +2219,7 @@ class ZypperManager(SystemsManagerBase):
             }
         )
 
-    def add_repository(self, repo_url: str, name: str | None = None) -> dict:
+    def add_repository(self, repo_url: str, name: str | None = None) -> CommandResult:
         if not name:
             name = "custom"
         add_result = self.run_command(
@@ -2222,14 +2235,14 @@ class ZypperManager(SystemsManagerBase):
             )
         return add_result
 
-    def install_local_package(self, file_path: str) -> dict:
+    def install_local_package(self, file_path: str) -> CommandResult:
         if not file_path.endswith(".rpm"):
             return CommandResult(**{"success": False, "error": "Not a .rpm file"})
         return self.run_command(["zypper", "install", "-y", file_path], elevated=True)
 
     def search_package(self, query: str):
         result = self.run_command(["zypper", "search", query])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 parts = line.split("|")
@@ -2256,12 +2269,12 @@ class ZypperManager(SystemsManagerBase):
 
     def list_installed_packages(self):
         result = self.run_command(["zypper", "search", "--installed-only"])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 parts = line.split("|")
                 if len(parts) >= 2 and parts[0].strip() == "i":
-                    packages.append(parts[1].strip())
+                    packages.append(parts[1].strip())  # type: ignore
         return CommandResult(
             **{
                 "success": result["success"],
@@ -2272,13 +2285,13 @@ class ZypperManager(SystemsManagerBase):
 
     def list_upgradable_packages(self):
         result = self.run_command(["zypper", "list-updates"])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 parts = line.split("|")
                 if len(parts) >= 3 and parts[0].strip() not in ("S", "-", "", "v"):
                     packages.append(
-                        parts[2].strip() if len(parts) > 2 else parts[1].strip()
+                        parts[2].strip() if len(parts) > 2 else parts[1].strip()  # type: ignore
                     )
         return CommandResult(
             **{
@@ -2303,7 +2316,7 @@ class PacmanManager(SystemsManagerBase):
         super().__init__(silent, log_file)
         self.not_found_msg = "target not found"
 
-    def install_applications(self, apps: list[str]) -> dict:
+    def install_applications(self, apps: list[str]) -> CommandResult:
         results = {
             "natively_installed": [],
             "snap_installed": [],
@@ -2315,7 +2328,7 @@ class PacmanManager(SystemsManagerBase):
                 ["pacman", "-S", "--noconfirm", app], elevated=True
             )
             if install_result["success"]:
-                results["natively_installed"].append(app)
+                results["natively_installed"].append(app)  # type: ignore
             else:
                 if self.not_found_msg in install_result.get("stderr", ""):
                     if not self.silent:
@@ -2325,16 +2338,16 @@ class PacmanManager(SystemsManagerBase):
                     )
                     snap_result = self.install_via_snap(app)
                     if snap_result["success"]:
-                        results["snap_installed"].append(app)
+                        results["snap_installed"].append(app)  # type: ignore
                     else:
-                        results["failed"].append(app)
+                        results["failed"].append(app)  # type: ignore
                         results["success"] = False
                 else:
-                    results["failed"].append(app)
+                    results["failed"].append(app)  # type: ignore
                     results["success"] = False
-        return results
+        return results  # type: ignore
 
-    def update(self) -> dict:
+    def update(self) -> CommandResult:
         result = self.run_command(["pacman", "-Syu", "--noconfirm"], elevated=True)
         return CommandResult(
             **{
@@ -2344,7 +2357,7 @@ class PacmanManager(SystemsManagerBase):
             }
         )
 
-    def clean(self) -> dict:
+    def clean(self) -> CommandResult:
         result = self.run_command(["pacman", "-Sc", "--noconfirm"], elevated=True)
         return CommandResult(
             **{
@@ -2354,7 +2367,7 @@ class PacmanManager(SystemsManagerBase):
             }
         )
 
-    def optimize(self) -> dict:
+    def optimize(self) -> CommandResult:
         orphans_cmd = ["pacman", "-Rns", "$(pacman -Qdtq)", "--noconfirm"]
         result = self.run_command(orphans_cmd, elevated=True, shell=True)  # nosec
         return CommandResult(
@@ -2367,7 +2380,7 @@ class PacmanManager(SystemsManagerBase):
             }
         )
 
-    def install_snapd(self) -> dict:
+    def install_snapd(self) -> CommandResult:
         result = self.run_command(
             ["pacman", "-S", "--noconfirm", "snapd"], elevated=True
         )
@@ -2383,7 +2396,7 @@ class PacmanManager(SystemsManagerBase):
             }
         )
 
-    def add_repository(self, repo_url: str, name: str | None = None) -> dict:
+    def add_repository(self, repo_url: str, name: str | None = None) -> CommandResult:
         if not name:
             name = "custom"
         conf = "/etc/pacman.conf"
@@ -2402,14 +2415,14 @@ class PacmanManager(SystemsManagerBase):
             )
         return add_result
 
-    def install_local_package(self, file_path: str) -> dict:
+    def install_local_package(self, file_path: str) -> CommandResult:
         return self.run_command(
             ["pacman", "-U", "--noconfirm", file_path], elevated=True
         )
 
     def search_package(self, query: str):
         result = self.run_command(["pacman", "-Ss", query])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             lines = (result.get("stdout") or "").strip().splitlines()
             for i in range(0, len(lines), 2):
@@ -2437,10 +2450,10 @@ class PacmanManager(SystemsManagerBase):
 
     def list_installed_packages(self):
         result = self.run_command(["pacman", "-Qq"])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             packages = [
-                p.strip()
+                p.strip()  # type: ignore
                 for p in (result.get("stdout") or "").strip().splitlines()
                 if p.strip()
             ]
@@ -2454,12 +2467,12 @@ class PacmanManager(SystemsManagerBase):
 
     def list_upgradable_packages(self):
         result = self.run_command(["pacman", "-Qu"])
-        packages = []
+        packages: list[dict[str, Any]] = []
         if result["success"]:
             for line in (result.get("stdout") or "").strip().splitlines():
                 parts = line.split()
                 if parts:
-                    packages.append(parts[0])
+                    packages.append(parts[0])  # type: ignore
         return CommandResult(
             **{
                 "success": result["success"],
@@ -2498,7 +2511,7 @@ class WindowsManager(SystemsManagerBase):
             if not register_result["success"]:
                 self.logger.error("Failed to register Winget")
 
-    def install_applications(self, apps: list[str]) -> dict:
+    def install_applications(self, apps: list[str]) -> CommandResult:
         results = {"installed": [], "failed": [], "success": True}
         for app in apps:
             install_cmd = [
@@ -2512,16 +2525,16 @@ class WindowsManager(SystemsManagerBase):
             ]
             install_result = self.run_command(install_cmd)
             if install_result["success"]:
-                results["installed"].append(app)
+                results["installed"].append(app)  # type: ignore
             else:
-                results["failed"].append(app)
+                results["failed"].append(app)  # type: ignore
                 results["success"] = False
                 self.logger.error(
                     f"Failed to install {app}: {install_result.get('error')}"
                 )
-        return results
+        return results  # type: ignore
 
-    def update(self) -> dict:
+    def update(self) -> CommandResult:
         winget_result = self.run_command(
             [
                 "winget",
@@ -2549,7 +2562,7 @@ class WindowsManager(SystemsManagerBase):
             }
         )
 
-    def clean(self) -> dict:
+    def clean(self) -> CommandResult:
         result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)  # nosec
         return CommandResult(
             **{
@@ -2561,7 +2574,7 @@ class WindowsManager(SystemsManagerBase):
             }
         )
 
-    def optimize(self) -> dict:
+    def optimize(self) -> CommandResult:
         clean_result = self.run_command(["cleanmgr", "/lowdisk"], shell=True)  # nosec
         defrag_result = self.run_command(
             ["powershell.exe", "Optimize-Volume", "-DriveLetter", "C", "-Verbose"],
@@ -2599,7 +2612,7 @@ class WindowsManager(SystemsManagerBase):
             self.logger.error("Failed to list features")
             return []
 
-    def enable_windows_features(self, features: list[str]) -> dict:
+    def enable_windows_features(self, features: list[str]) -> CommandResult:
         results = {"enabled": [], "failed": [], "success": True}
         for feature in features:
             cmd = [
@@ -2612,16 +2625,16 @@ class WindowsManager(SystemsManagerBase):
             ]
             enable_result = self.run_command(cmd, elevated=True)
             if enable_result["success"]:
-                results["enabled"].append(feature)
+                results["enabled"].append(feature)  # type: ignore
             else:
-                results["failed"].append(feature)
+                results["failed"].append(feature)  # type: ignore
                 results["success"] = False
                 self.logger.error(
                     f"Failed to enable {feature}: {enable_result.get('error')}"
                 )
-        return results
+        return results  # type: ignore
 
-    def disable_windows_features(self, features: list[str]) -> dict:
+    def disable_windows_features(self, features: list[str]) -> CommandResult:
         results = {"disabled": [], "failed": [], "success": True}
         for feature in features:
             cmd = [
@@ -2634,21 +2647,21 @@ class WindowsManager(SystemsManagerBase):
             ]
             disable_result = self.run_command(cmd, elevated=True)
             if disable_result["success"]:
-                results["disabled"].append(feature)
+                results["disabled"].append(feature)  # type: ignore
             else:
-                results["failed"].append(feature)
+                results["failed"].append(feature)  # type: ignore
                 results["success"] = False
                 self.logger.error(
                     f"Failed to disable {feature}: {disable_result.get('error')}"
                 )
-        return results
+        return results  # type: ignore
 
-    def install_snapd(self) -> dict:
+    def install_snapd(self) -> CommandResult:
         return CommandResult(
             **{"success": False, "error": "Snap not supported on Windows"}
         )
 
-    def add_repository(self, repo_url: str, name: str | None = None) -> dict:
+    def add_repository(self, repo_url: str, name: str | None = None) -> CommandResult:
         return CommandResult(
             **{
                 "success": False,
@@ -2656,7 +2669,7 @@ class WindowsManager(SystemsManagerBase):
             }
         )
 
-    def install_local_package(self, file_path: str) -> dict:
+    def install_local_package(self, file_path: str) -> CommandResult:
         return CommandResult(
             **{
                 "success": False,
@@ -2728,11 +2741,11 @@ def detect_and_create_manager(
         if dist_id in ["ubuntu", "debian"]:
             return AptManager(silent_bool, log_file)
         elif dist_id in ["rhel", "ol", "centos"]:
-            return DnfManager(silent, log_file)
+            return DnfManager(silent_bool, log_file)
         elif dist_id == "sles":
-            return ZypperManager(silent, log_file)
+            return ZypperManager(silent_bool, log_file)
         elif dist_id == "arch":
-            return PacmanManager(silent, log_file)
+            return PacmanManager(silent_bool, log_file)
         else:
             raise NotImplementedError(f"Unsupported Linux distro: {dist_id}")
     else:

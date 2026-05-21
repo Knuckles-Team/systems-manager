@@ -1,4 +1,4 @@
-from agent_utilities.mcp_utilities import ctx_log
+from agent_utilities.mcp_utilities import ctx_confirm_destructive, ctx_log
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field
@@ -30,7 +30,7 @@ def register_os_provider_tools(mcp: FastMCP):
             default=None,
             description="Optional PID to get details for. If empty, lists all processes.",
         ),
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """
         Retrieves deep cross-platform process details (threads, modules, memory).
@@ -57,7 +57,7 @@ def register_os_provider_tools(mcp: FastMCP):
         tags={"system", "observability", "network"},
     )
     async def get_network_connections(
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """
         Maps active TCP/UDP endpoints directly to owning processes.
@@ -86,7 +86,7 @@ def register_os_provider_tools(mcp: FastMCP):
         tags={"system", "observability"},
     )
     async def capture_system_snapshot(
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """
         Takes a point-in-time snapshot of the system state (CPU, RAM, Processes).
@@ -113,7 +113,7 @@ def register_os_provider_tools(mcp: FastMCP):
         tags={"system", "services"},
     )
     async def list_services(
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """
         Cross-platform service enumeration (systemctl or Get-Service).
@@ -144,7 +144,7 @@ def register_os_provider_tools(mcp: FastMCP):
         action: str = Field(
             description="Action to perform: start, stop, restart, enable, disable"
         ),
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """
         Start/Stop/Restart/Enable/Disable services cross-platform.
@@ -153,11 +153,10 @@ def register_os_provider_tools(mcp: FastMCP):
         """
         ctx_log(ctx, logger, "debug", f"Managing service: {service_name} ({action})")
 
-        if ctx:
-            message = f"Are you sure you want to {action.upper()} the service: {service_name}?"
-            result = await ctx.elicit(message, response_type=bool)
-            if result.action != "accept" or not result.data:
-                return {"success": False, "error": "Operation cancelled by user."}
+        if not await ctx_confirm_destructive(
+            ctx, f"{action.upper()} the service: {service_name}"
+        ):
+            return {"success": False, "error": "Operation cancelled by user."}
 
         try:
             provider = get_os_provider()
@@ -178,7 +177,7 @@ def register_os_provider_tools(mcp: FastMCP):
         tags={"system", "drivers"},
     )
     async def list_kernel_modules(
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """
         List loaded drivers/modules (lsmod or driverquery).
@@ -206,7 +205,7 @@ def register_os_provider_tools(mcp: FastMCP):
     )
     async def query_system_logs(
         limit: int = Field(default=50, description="Max number of events to fetch"),
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """
         Cross-platform log querying (journalctl or Get-WinEvent).
@@ -234,16 +233,15 @@ def register_os_provider_tools(mcp: FastMCP):
     )
     async def start_system_trace(
         session_name: str = Field(description="Name of the trace session"),
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """Start a kernel-level event trace (ETW on Windows, or strace on Linux)."""
         ctx_log(ctx, logger, "debug", f"Starting system trace: {session_name}")
 
-        if ctx:
-            message = f"Are you sure you want to START tracing session: {session_name}?"
-            result = await ctx.elicit(message, response_type=bool)
-            if result.action != "accept" or not result.data:
-                return {"success": False, "error": "Operation cancelled by user."}
+        if not await ctx_confirm_destructive(
+            ctx, f"START tracing session: {session_name}"
+        ):
+            return {"success": False, "error": "Operation cancelled by user."}
 
         try:
             provider = get_os_provider()
@@ -265,7 +263,7 @@ def register_os_provider_tools(mcp: FastMCP):
     )
     async def stop_system_trace(
         session_name: str = Field(description="Name of the trace session"),
-        ctx: Context = Field(description="MCP context", default=None),
+        ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """Stop a kernel-level event trace."""
         ctx_log(ctx, logger, "debug", f"Stopping system trace: {session_name}")

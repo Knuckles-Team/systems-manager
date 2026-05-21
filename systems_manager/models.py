@@ -13,7 +13,7 @@ class BaseDictModel(BaseModel):
 
     def __contains__(self, item):
         return hasattr(self, item) or (
-            bool(self.model_extra) and item in self.model_extra
+            self.model_extra is not None and item in self.model_extra
         )
 
     def get(self, item, default=None):

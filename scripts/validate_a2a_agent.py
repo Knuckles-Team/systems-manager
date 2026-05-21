@@ -16,7 +16,6 @@ async def main():
     ]
 
     async with httpx.AsyncClient(timeout=10000.0) as client:
-
         for q in questions:
             print(f"\n\n\nUser: {q}")
             print("--- Sending Request ---")

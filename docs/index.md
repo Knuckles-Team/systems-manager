@@ -428,12 +428,9 @@ uv pip install --upgrade systems-manager
         "systems-manager-mcp"
       ],
       "env": {
-        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
         "AGENT_OSTOOL": "True",
         "AGENT_POLICIES_PATH": "<YOUR_AGENT_POLICIES_PATH>",
-        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
         "CRONTOOL": "True",
-        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
         "DISKTOOL": "True",
         "FILESYSTEMTOOL": "True",
         "FIREWALL_MANAGEMENTTOOL": "True",
@@ -483,12 +480,9 @@ uv pip install --upgrade systems-manager
         "8000"
       ],
       "env": {
-        "AGENT_DESCRIPTION": "<YOUR_AGENT_DESCRIPTION>",
         "AGENT_OSTOOL": "True",
         "AGENT_POLICIES_PATH": "<YOUR_AGENT_POLICIES_PATH>",
-        "AGENT_SYSTEM_PROMPT": "<YOUR_AGENT_SYSTEM_PROMPT>",
         "CRONTOOL": "True",
-        "DEFAULT_AGENT_NAME": "<YOUR_DEFAULT_AGENT_NAME>",
         "DISKTOOL": "True",
         "FILESYSTEMTOOL": "True",
         "FIREWALL_MANAGEMENTTOOL": "True",

@@ -18,7 +18,7 @@ class OSProvider(abc.ABC):
     CONCEPT:SYS-1.2: Deep Introspection Telemetry
     """
 
-    def get_process_details(self, pid: int = None) -> list[dict[str, Any]]:
+    def get_process_details(self, pid: int | None = None) -> list[dict[str, Any]]:
         """Cross-platform process details using psutil."""
         processes = []
         attrs = [
