@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  systems-manager-mcp:
+    image: knucklessg1/systems-manager:latest
+    container_name: systems-manager-mcp
+    hostname: systems-manager-mcp
+    restart: always
+    env_file:
+      - ../.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=8000
+      - TRANSPORT=streamable-http
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  systems-manager-agent:
+    image: knucklessg1/systems-manager:latest
+    container_name: systems-manager-agent
+    hostname: systems-manager-agent
+    restart: always
+    depends_on:
+      - systems-manager-mcp
+    env_file:
+      - ../.env
+    command: [ "systems-manager-agent" ]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=9009
+      - MCP_URL=http://systems-manager-mcp:8000/mcp
+      - PROVIDER=${PROVIDER:-openai}
+      - MODEL_ID=${MODEL_ID:-gpt-4o}
+      - ENABLE_WEB_UI=True
+      - ENABLE_OTEL=True
+    ports:
+      - "9009:9009"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9009/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
