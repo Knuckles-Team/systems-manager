@@ -39,6 +39,12 @@ This repository is actively maintained - Contributions are welcome!
 - **System and Hardware Stats**: Retrieve detailed OS and hardware information using `psutil`.
 - **Logging**: Optional logging to a specified file or default `systems_manager.log` in the script directory.
 - **FastMCP Server**: Expose all functionality via a Model Context Protocol (MCP) server over stdio or HTTP for integration with AI or automation systems.
+- **Zero-Script Multi-Host Routing**: Seamless routing of all system tool methods to remote target hosts defined in standard `inventory.yaml` paths using secure SSH wrapping and dynamic `remote_eval`.
+
+## Multi-Host Configuration
+
+Systems-Manager allows routing tool calls directly to remote targets without installing any daemons on those hosts.
+See the detailed [Multi-Host Architecture and Configuration Guide](multi_host.md) for setup and use instructions.
 
 ## MCP
 

@@ -1,0 +1,1975 @@
+{
+  "project": "systems-manager",
+  "path": "/home/apps/workspace/agent-packages/agents/systems-manager",
+  "domain_results": [
+    {
+      "domain": "Project Analysis",
+      "score": 74,
+      "grade": "C",
+      "findings": [
+        "Detected ecosystem marker: agent-utilities \u2192 Agent-Utilities Ecosystem",
+        "Protocol support: MCP"
+      ],
+      "justifications": [
+        {
+          "criterion": "has_pyproject",
+          "points": 10,
+          "evidence": "pyproject.toml and requirements.txt",
+          "reasoning": "Both pyproject.toml and requirements.txt exist, fulfilling mandatory Python project requirements"
+        },
+        {
+          "criterion": "project_type_detected",
+          "points": 10,
+          "evidence": "Agent-Utilities Ecosystem",
+          "reasoning": "Identified 1 ecosystem marker(s) in dependencies"
+        },
+        {
+          "criterion": "externalized_prompts",
+          "points": 0,
+          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager",
+          "reasoning": "No prompts/ directory found. Prompts may be hardcoded in source."
+        },
+        {
+          "criterion": "observability",
+          "points": 0,
+          "evidence": "dependency list",
+          "reasoning": "No observability tools (logfire, sentry, opentelemetry) found"
+        },
+        {
+          "criterion": "testing_suite",
+          "points": 10,
+          "evidence": "tests dir: True, pytest dep: True",
+          "reasoning": "Tests directory exists, pytest in dependencies"
+        },
+        {
+          "criterion": "agents_md",
+          "points": 10,
+          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/AGENTS.md (5582 bytes)",
+          "reasoning": "AGENTS.md exists with comprehensive content"
+        },
+        {
+          "criterion": "pre_commit_hooks",
+          "points": 10,
+          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/.pre-commit-config.yaml",
+          "reasoning": "Pre-commit configuration found for automated code quality checks"
+        },
+        {
+          "criterion": "gitignore",
+          "points": 10,
+          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/.gitignore",
+          "reasoning": ".gitignore exists to prevent committing build artifacts and secrets"
+        },
+        {
+          "criterion": "env_template",
+          "points": 10,
+          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/.env.example",
+          "reasoning": "Environment template exists for onboarding and secret management"
+        },
+        {
+          "criterion": "protocol_support",
+          "points": 4,
+          "evidence": "MCP",
+          "reasoning": "1 communication protocol(s) detected"
+        }
+      ],
+      "details": {
+        "has_pyproject": true,
+        "has_requirements": true,
+        "dep_count": 7,
+        "project_types": [
+          "Agent-Utilities Ecosystem"
+        ],
+        "has_agent_skills": false
+      }
+    },
+    {
+      "domain": "Dependency Audit",
+      "score": 91,
+      "grade": "A",
+      "findings": [
+        "Minor update: pytest-xdist 3.6.0 (constraint \u2014 not installed) -> 3.8.0",
+        "Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0",
+        "Minor update: psutil 7.1.0 (installed) -> 7.2.2"
+      ],
+      "justifications": [
+        {
+          "criterion": "dependency_freshness",
+          "points": 91,
+          "evidence": "source=/home/apps/workspace/agent-packages/agents/systems-manager/pyproject.toml total=7 major=0 minor=3 patch=0 not_installed=2",
+          "reasoning": "Audited 7 deps (5 installed, 2 constraint-only). 0 major, 3 minor, 0 patch updates."
+        }
+      ],
+      "packages": {
+        "pytest-xdist": {
+          "current": "3.6.0",
+          "constraint": "3.6.0",
+          "installed": null,
+          "latest": "3.8.0",
+          "status": "minor",
+          "version_source": "constraint",
+          "summary": "pytest xdist plugin for distributed testing, most importantly across multiple CPUs"
+        },
+        "pytest-cov": {
+          "current": "7.1.0",
+          "constraint": "Any",
+          "installed": "7.1.0",
+          "latest": "7.1.0",
+          "status": "up-to-date",
+          "version_source": "installed",
+          "summary": "Pytest plugin for measuring coverage."
+        },
+        "pytest": {
+          "current": "9.0.3",
+          "constraint": "Any",
+          "installed": "9.0.3",
+          "latest": "9.0.3",
+          "status": "up-to-date",
+          "version_source": "installed",
+          "summary": "pytest: simple powerful testing with Python"
+        },
+        "distro": {
+          "current": "1.9.0",
+          "constraint": "1.9.0",
+          "installed": "1.9.0",
+          "latest": "1.9.0",
+          "status": "up-to-date",
+          "version_source": "installed",
+          "summary": "Distro - an OS platform information API"
+        },
+        "pytest-asyncio": {
+          "current": "Any",
+          "constraint": "Any",
+          "installed": null,
+          "latest": "1.3.0",
+          "status": "unknown",
+          "version_source": "constraint",
+          "summary": "Pytest support for asyncio"
+        },
+        "agent-utilities": {
+          "current": "0.2.40",
+          "constraint": "0.16.0",
+          "installed": "0.2.40",
+          "latest": "0.16.0",
+          "status": "minor",
+          "version_source": "installed",
+          "summary": "Agent Utilities for Pydantic AI Agents"
+        },
+        "psutil": {
+          "current": "7.1.0",
+          "constraint": "7.0.0",
+          "installed": "7.1.0",
+          "latest": "7.2.2",
+          "status": "minor",
+          "version_source": "installed",
+          "summary": "Cross-platform lib for process and system monitoring."
+        }
+      }
+    },
+    {
+      "domain": "Codebase Optimization",
+      "score": 67,
+      "grade": "D",
+      "findings": [
+        "2 functions exceed 200 lines (actionable refactoring targets): get_mcp_instance (398L), register_os_provider_tools (266L)",
+        "Monolithic: systems_manager.py (2898L) \u2014 9 functions with high complexity (worst: systems_manager at 140L, CC=21); Low cohesion: 16 distinct concepts in one file",
+        "Needs attention: agent_os_tools.py (735L) \u2014 Low cohesion: 14 distinct concepts in one file",
+        "19 functions with nesting depth >4"
+      ],
+      "justifications": [
+        {
+          "criterion": "code_quality",
+          "points": 67,
+          "evidence": "{\"file_count\": 24, \"total_lines\": 7984, \"function_count\": 348, \"avg_complexity\": 4.36, \"max_complexity\": 114, \"avg_function_length\": 21.6, \"max_function_length\": 398, \"max_nesting_depth\": 23, \"duplication_ratio\": 0.004, \"long_functions\": 30, \"complex_functions\": 24, \"deep_nesting_functions\": 19, \"parse_errors\": 0, \"structural_issues\": 2, \"truly_monolithic\": 1}",
+          "reasoning": "Analyzed 24 files, 348 functions. Avg CC=4.4, max length=398, duplication=0.4%, 2 structural issues (1 monolithic)."
+        }
+      ],
+      "metrics": {
+        "file_count": 24,
+        "total_lines": 7984,
+        "function_count": 348,
+        "avg_complexity": 4.36,
+        "max_complexity": 114,
+        "avg_function_length": 21.6,
+        "max_function_length": 398,
+        "max_nesting_depth": 23,
+        "duplication_ratio": 0.004,
+        "long_functions": 30,
+        "complex_functions": 24,
+        "deep_nesting_functions": 19,
+        "parse_errors": 0,
+        "structural_issues": 2,
+        "truly_monolithic": 1
+      },
+      "top_complex": [
+        {
+          "name": "get_mcp_instance",
+          "line": 51,
+          "length": 398,
+          "complexity": 114,
+          "nesting_depth": 23,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
+        },
+        {
+          "name": "sm_system_operations",
+          "line": 90,
+          "length": 100,
+          "complexity": 31,
+          "nesting_depth": 23,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
+        },
+        {
+          "name": "main",
+          "line": 11,
+          "length": 125,
+          "complexity": 23,
+          "nesting_depth": 15,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/scripts/validate_a2a_agent.py"
+        },
+        {
+          "name": "systems_manager",
+          "line": 2755,
+          "length": 140,
+          "complexity": 21,
+          "nesting_depth": 2,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
+        },
+        {
+          "name": "font",
+          "line": 489,
+          "length": 102,
+          "complexity": 21,
+          "nesting_depth": 3,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
+        }
+      ],
+      "top_long": [
+        {
+          "name": "get_mcp_instance",
+          "line": 51,
+          "length": 398,
+          "complexity": 114,
+          "nesting_depth": 23,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
+        },
+        {
+          "name": "register_os_provider_tools",
+          "line": 11,
+          "length": 266,
+          "complexity": 12,
+          "nesting_depth": 2,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py"
+        },
+        {
+          "name": "systems_manager",
+          "line": 2755,
+          "length": 140,
+          "complexity": 21,
+          "nesting_depth": 2,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
+        },
+        {
+          "name": "main",
+          "line": 11,
+          "length": 125,
+          "complexity": 23,
+          "nesting_depth": 15,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/scripts/validate_a2a_agent.py"
+        },
+        {
+          "name": "register_maintenance_tools",
+          "line": 628,
+          "length": 108,
+          "complexity": 5,
+          "nesting_depth": 1,
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py"
+        }
+      ],
+      "structural_issues": [
+        {
+          "file": "systems_manager.py",
+          "path": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "lines": 2898,
+          "issues": [
+            "9 functions with high complexity (worst: systems_manager at 140L, CC=21)",
+            "Low cohesion: 16 distinct concepts in one file",
+            "God class: SystemsManagerBase (56 methods) \u2014 consider mixins/composition"
+          ],
+          "func_issues": [
+            {
+              "name": "detect_and_create_manager",
+              "lines": 24,
+              "complexity": 7,
+              "nesting": 6
+            },
+            {
+              "name": "systems_manager",
+              "lines": 140,
+              "complexity": 21,
+              "nesting": 2
+            },
+            {
+              "name": "FileSystemManager.manage_file",
+              "lines": 34,
+              "complexity": 9,
+              "nesting": 6
+            },
+            {
+              "name": "SystemsManagerBase.font",
+              "lines": 102,
+              "complexity": 21,
+              "nesting": 3
+            },
+            {
+              "name": "SystemsManagerBase.get_service_status",
+              "lines": 43,
+              "complexity": 6,
+              "nesting": 6
+            }
+          ],
+          "classification": "monolithic"
+        },
+        {
+          "file": "agent_os_tools.py",
+          "path": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py",
+          "lines": 735,
+          "issues": [
+            "Low cohesion: 14 distinct concepts in one file"
+          ],
+          "func_issues": [],
+          "classification": "needs_attention"
+        }
+      ],
+      "flat_directories": []
+    },
+    {
+      "domain": "Security Analysis",
+      "score": 95,
+      "grade": "A",
+      "findings": [],
+      "justifications": [
+        {
+          "criterion": "security_posture",
+          "points": 95,
+          "evidence": "high=0 med=0 low=0 attack_surface={\"subprocess_calls\": 50, \"file_io_calls\": 17, \"network_endpoints\": 0, \"eval_exec_usage\": 0, \"sql_usage\": 0}",
+          "reasoning": "Scanned 24 files. Found 0 security findings. High: -0pts, Med: -0pts, Low: -0pts."
+        }
+      ],
+      "vulnerabilities": [],
+      "attack_surface": {
+        "subprocess_calls": 50,
+        "file_io_calls": 17,
+        "network_endpoints": 0,
+        "eval_exec_usage": 0,
+        "sql_usage": 0
+      }
+    },
+    {
+      "domain": "Test Coverage",
+      "score": 75,
+      "grade": "C",
+      "findings": [
+        "Test suite lacks intent diversity (only one type)",
+        "12 potential doc-test drift items"
+      ],
+      "justifications": [
+        {
+          "criterion": "test_coverage_quality",
+          "points": 75,
+          "evidence": "{\"test_file_count\": 9, \"test_count\": 85, \"source_file_count\": 24, \"test_to_source_ratio\": 3.54, \"intent_distribution\": {\"unit\": 85}, \"tests_without_assertions\": 1, \"concept_traced_tests\": 0, \"drift_items\": 12}",
+          "reasoning": "85 tests across 9 files. Ratio: 3.54. Intent: {'unit': 85}. 1 without assertions, 12 drift items."
+        }
+      ],
+      "metrics": {
+        "test_file_count": 9,
+        "test_count": 85,
+        "source_file_count": 24,
+        "test_to_source_ratio": 3.54,
+        "intent_distribution": {
+          "unit": 85
+        },
+        "tests_without_assertions": 1,
+        "concept_traced_tests": 0,
+        "drift_items": 12
+      },
+      "tests": [
+        {
+          "name": "test_server_startup",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_startup.py",
+          "line": 1,
+          "length": 12,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": false
+        },
+        {
+          "name": "test_concept_parity",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_concept_parity.py",
+          "line": 58,
+          "length": 30,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_file_system_manager_list_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 9,
+          "length": 54,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_file_system_manager_search_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 65,
+          "length": 23,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_file_system_manager_grep_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 90,
+          "length": 34,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_file_system_manager_manage_file",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 126,
+          "length": 48,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_shell_profile_manager",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 176,
+          "length": 31,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_shell_profile_manager_windows",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 209,
+          "length": 14,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_tools_registered",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "line": 7,
+          "length": 10,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_get_mcp_instance",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "line": 20,
+          "length": 9,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_version_defined",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "line": 32,
+          "length": 5,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_get_process_details",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 20,
+          "length": 11,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_get_process_details_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 34,
+          "length": 10,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_get_network_connections",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 47,
+          "length": 11,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_get_network_connections_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 61,
+          "length": 9,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_capture_system_snapshot",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 73,
+          "length": 10,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_capture_system_snapshot_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 86,
+          "length": 9,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_list_services",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 98,
+          "length": 10,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_list_services_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 111,
+          "length": 9,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_manage_service",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 123,
+          "length": 19,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_manage_service_cancelled",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 145,
+          "length": 10,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_manage_service_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 158,
+          "length": 17,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_list_kernel_modules",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 178,
+          "length": 10,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_list_kernel_modules_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 191,
+          "length": 9,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_query_system_logs",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 203,
+          "length": 11,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_query_system_logs_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 217,
+          "length": 9,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_system_trace",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 229,
+          "length": 30,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_start_system_trace_cancelled",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 262,
+          "length": 10,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_system_trace_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 275,
+          "length": 24,
+          "intent": "unit",
+          "markers": [
+            "asyncio"
+          ],
+          "concept_id": "",
+          "has_assertions": true
+        },
+        {
+          "name": "test_get_process_details_all",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider.py",
+          "line": 15,
+          "length": 12,
+          "intent": "unit",
+          "markers": [],
+          "concept_id": "",
+          "has_assertions": true
+        }
+      ],
+      "drift": [
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "overview",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "cli or api",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "mcp",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "mcp configuration examples",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "stdio transport (recommended for local ides e.g., cursor, claude desktop)",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "streamable-http transport (recommended for production deployments)",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "docker compose orchestration",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "security & governance",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "runtime security grid",
+          "detail": "Feature heading in README has no corresponding test"
+        },
+        {
+          "type": "untested_feature",
+          "source": "README.md",
+          "feature": "installation",
+          "detail": "Feature heading in README has no corresponding test"
+        }
+      ]
+    },
+    {
+      "domain": "Documentation & Governance",
+      "score": 92,
+      "grade": "A",
+      "findings": [
+        "README.md missing sections: usage|quick start",
+        "2 broken internal links in README.md",
+        "README missing: Has a Table of Contents",
+        "README missing: Has usage examples with code blocks"
+      ],
+      "justifications": [
+        {
+          "criterion": "documentation_quality",
+          "points": 92,
+          "evidence": "{\"README.md\": {\"exists\": true, \"missing\": [\"usage|quick start\"]}, \"AGENTS.md\": {\"exists\": true, \"missing\": []}, \"STANDARDS.md\": {\"exists\": false, \"missing\": []}, \"CONTRIBUTING.md\": {\"exists\": false, \"missing\": []}, \"CHANGELOG.md\": {\"exists\": false, \"missing\": []}, \"LICENSE\": {\"exists\": true, \"missing\": []}, \"docs/\": {\"exists\": true, \"missing\": []}}",
+          "reasoning": "Audited 6 standard docs + docs/ directory. 0 broken references, 4 docs present. README industry grade: B (81.2%)."
+        }
+      ],
+      "doc_results": {
+        "README.md": {
+          "exists": true,
+          "size": 9153,
+          "headings": [
+            "Systems Manager",
+            "CLI or API | MCP | Agent",
+            "Overview",
+            "Key Features",
+            "CLI or API",
+            "MCP",
+            "Available MCP Tools",
+            "MCP Configuration Examples",
+            "stdio Transport (Recommended for local IDEs e.g., Cursor, Claude Desktop)",
+            "Streamable-HTTP Transport (Recommended for production deployments)",
+            "Agent",
+            "Running the Agent CLI",
+            "Set credentials",
+            "Run the agent server",
+            "Docker Compose Orchestration",
+            "Security & Governance",
+            "Access Control & Policy Enforcement",
+            "Runtime Security Grid",
+            "Installation",
+            "Using uv (highly recommended)"
+          ],
+          "missing_sections": [
+            "usage|quick start"
+          ],
+          "heading_count": 23,
+          "stale": false,
+          "last_modified": "2026-05-22 08:19:52 -0500",
+          "category": "project_overview"
+        },
+        "AGENTS.md": {
+          "exists": true,
+          "size": 5260,
+          "headings": [
+            "AGENTS.md",
+            "Tech Stack & Architecture",
+            "Architecture Diagram",
+            "Workflow Diagram",
+            "Commands (run these exactly)",
+            "Installation",
+            "Quality & Linting (run from project root)",
+            "Execution Commands",
+            "systems-manager\\nsystems_manager.systems_manager:systems_manager\\n# systems-manager-mcp\\nsystems_manager.mcp:mcp_server\\n# systems-manager-agent\\nsystems_manager.agent:agent_server",
+            "Project Structure Quick Reference",
+            "File Tree",
+            "Code Style & Conventions",
+            "Dos and Don'ts",
+            "Safety & Boundaries",
+            "When Stuck",
+            "Graph Architecture",
+            "Testing with Timeout"
+          ],
+          "missing_sections": [],
+          "heading_count": 17,
+          "stale": false,
+          "last_modified": "2026-05-05 09:28:21 -0500",
+          "category": "agentic_metadata"
+        },
+        "STANDARDS.md": {
+          "exists": false,
+          "missing_sections": [],
+          "size": 0,
+          "headings": [],
+          "stale": true,
+          "last_modified": "unknown",
+          "category": "standards"
+        },
+        "CONTRIBUTING.md": {
+          "exists": false,
+          "missing_sections": [],
+          "size": 0,
+          "headings": [],
+          "stale": true,
+          "last_modified": "unknown",
+          "category": "contributing"
+        },
+        "CHANGELOG.md": {
+          "exists": false,
+          "missing_sections": [],
+          "size": 0,
+          "headings": [],
+          "stale": true,
+          "last_modified": "unknown",
+          "category": "changelog"
+        },
+        "LICENSE": {
+          "exists": true,
+          "size": 1060,
+          "headings": [],
+          "missing_sections": [],
+          "heading_count": 0,
+          "stale": false,
+          "last_modified": "2024-05-09 03:45:40 -0500",
+          "category": "license"
+        },
+        "docs/": {
+          "exists": true,
+          "file_count": 7,
+          "files": [
+            "docs/code_coverage.md",
+            "docs/legacy_readme.md",
+            "docs/agent_utilities_synergy.md",
+            "docs/overview.md",
+            "docs/deployment.md",
+            "docs/index.md",
+            "docs/pillars/1_agent_os_layer.md"
+          ]
+        }
+      },
+      "drift": [
+        {
+          "type": "info",
+          "doc": "README.md",
+          "reference": "systems-manager[all], systems-manager[all]",
+          "detail": "README references 2 install commands"
+        }
+      ],
+      "readme_grade": {
+        "score": 26,
+        "max_score": 32,
+        "percentage": 81.2,
+        "grade": "B",
+        "criteria": {
+          "has_title": true,
+          "has_badges": true,
+          "has_description": true,
+          "has_toc": false,
+          "has_installation": true,
+          "has_usage": false,
+          "has_api_docs": true,
+          "has_architecture": true,
+          "has_contributing": true,
+          "has_license": false,
+          "has_code_blocks": true,
+          "has_docs_refs": true,
+          "no_broken_links": false,
+          "reasonable_length": true,
+          "has_cli_api_details": true,
+          "has_mcp_configs": true,
+          "has_agent_configs": true,
+          "has_env_var_docs": true,
+          "has_mcp_tool_table": true,
+          "has_deployment_docs": true
+        },
+        "findings": [
+          "2 broken internal links in README.md",
+          "README missing: Has a Table of Contents",
+          "README missing: Has usage examples with code blocks"
+        ]
+      }
+    },
+    {
+      "domain": "Architecture & Design Patterns",
+      "score": 70,
+      "grade": "C",
+      "findings": [
+        "SRP: 4 modules exceed 500 lines (god modules)",
+        "SRP: 2 classes have >15 methods",
+        "No discernible layer architecture (no domain/service/adapter separation)"
+      ],
+      "justifications": [
+        {
+          "criterion": "architecture_quality",
+          "points": 70,
+          "evidence": "{\"layers\": 0, \"di_ratio\": 0.25, \"solid_violations\": 2}",
+          "reasoning": "Analyzed 24 files. 0/5 architecture layers present, DI ratio: 25%, 2 SOLID violations."
+        }
+      ],
+      "analysis": {
+        "solid_findings": [
+          {
+            "principle": "SRP",
+            "status": "violation",
+            "detail": "4 modules exceed 500 lines (god modules)",
+            "items": [
+              {
+                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+                "lines": 2898
+              },
+              {
+                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py",
+                "lines": 735
+              },
+              {
+                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_platform_managers.py",
+                "lines": 560
+              },
+              {
+                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_routing.py",
+                "lines": 629
+              }
+            ]
+          },
+          {
+            "principle": "SRP",
+            "status": "violation",
+            "detail": "2 classes have >15 methods",
+            "items": [
+              {
+                "class": "SystemsManagerBase",
+                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+                "method_count": 56
+              },
+              {
+                "class": "WindowsManager",
+                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+                "method_count": 16
+              }
+            ]
+          }
+        ],
+        "layer_architecture": {
+          "has_domain_layer": false,
+          "has_adapter_layer": false,
+          "has_port_interfaces": false,
+          "has_service_layer": false,
+          "has_model_layer": false
+        },
+        "dependency_injection": {
+          "total_classes": 24,
+          "di_classes": 6,
+          "di_ratio": 0.25
+        },
+        "event_driven": {
+          "event_classes": 0,
+          "callback_patterns": 0,
+          "observer_patterns": 0,
+          "signal_patterns": 4
+        },
+        "file_count": 24
+      }
+    },
+    {
+      "domain": "Concept Traceability",
+      "score": 25,
+      "grade": "F",
+      "findings": [
+        "Low traceability ratio: 0% concepts fully traced",
+        "8 orphaned concepts (only in one source)",
+        "85 test functions missing concept markers",
+        "146 significant functions (>10 lines) missing concept markers in docstrings"
+      ],
+      "justifications": [
+        {
+          "criterion": "concept_traceability",
+          "points": 25,
+          "evidence": "{\"total_concepts\": 8, \"well_traced\": 0, \"orphans\": 8, \"drift\": 0, \"code_concepts\": 14, \"doc_concepts\": 7, \"test_concepts\": 0, \"decorator_concepts\": 0, \"tests_missing_markers\": 85, \"functions_missing_docstrings\": 146, \"registry_concepts\": 0, \"unimplemented_concepts\": 0}",
+          "reasoning": "8 unique concepts found. 0 fully traced (code+docs+tests), 8 orphans, 0 drifted. 85 tests without concept markers. 146 functions without concept docstrings."
+        }
+      ],
+      "metrics": {
+        "total_concepts": 8,
+        "well_traced": 0,
+        "orphans": 8,
+        "drift": 0,
+        "code_concepts": 14,
+        "doc_concepts": 7,
+        "test_concepts": 0,
+        "decorator_concepts": 0,
+        "tests_missing_markers": 85,
+        "functions_missing_docstrings": 146,
+        "registry_concepts": 0,
+        "unimplemented_concepts": 0
+      },
+      "concept_map": {
+        "SYS-1.0": {
+          "code": 4,
+          "docs": 0,
+          "test": 0,
+          "test_decorator": 0,
+          "test_docstring": 0
+        },
+        "SYS-1.2": {
+          "code": 8,
+          "docs": 0,
+          "test": 0,
+          "test_decorator": 0,
+          "test_docstring": 0
+        },
+        "SYS-1.3": {
+          "code": 2,
+          "docs": 0,
+          "test": 0,
+          "test_decorator": 0,
+          "test_docstring": 0
+        },
+        "OS-5.4": {
+          "code": 0,
+          "docs": 2,
+          "test": 0,
+          "test_decorator": 0,
+          "test_docstring": 0
+        },
+        "OS-5.1": {
+          "code": 0,
+          "docs": 1,
+          "test": 0,
+          "test_decorator": 0,
+          "test_docstring": 0
+        },
+        "OS-5.3": {
+          "code": 0,
+          "docs": 2,
+          "test": 0,
+          "test_decorator": 0,
+          "test_docstring": 0
+        },
+        "ORCH-1.4": {
+          "code": 0,
+          "docs": 1,
+          "test": 0,
+          "test_decorator": 0,
+          "test_docstring": 0
+        },
+        "OS-5.2": {
+          "code": 0,
+          "docs": 1,
+          "test": 0,
+          "test_decorator": 0,
+          "test_docstring": 0
+        }
+      },
+      "orphans": [
+        {
+          "concept_id": "SYS-1.0",
+          "present_in": [
+            "code"
+          ],
+          "missing_from": [
+            "docs",
+            "test"
+          ]
+        },
+        {
+          "concept_id": "SYS-1.2",
+          "present_in": [
+            "code"
+          ],
+          "missing_from": [
+            "docs",
+            "test"
+          ]
+        },
+        {
+          "concept_id": "SYS-1.3",
+          "present_in": [
+            "code"
+          ],
+          "missing_from": [
+            "docs",
+            "test"
+          ]
+        },
+        {
+          "concept_id": "OS-5.4",
+          "present_in": [
+            "docs"
+          ],
+          "missing_from": [
+            "code",
+            "test"
+          ]
+        },
+        {
+          "concept_id": "OS-5.1",
+          "present_in": [
+            "docs"
+          ],
+          "missing_from": [
+            "code",
+            "test"
+          ]
+        },
+        {
+          "concept_id": "OS-5.3",
+          "present_in": [
+            "docs"
+          ],
+          "missing_from": [
+            "code",
+            "test"
+          ]
+        },
+        {
+          "concept_id": "ORCH-1.4",
+          "present_in": [
+            "docs"
+          ],
+          "missing_from": [
+            "code",
+            "test"
+          ]
+        },
+        {
+          "concept_id": "OS-5.2",
+          "present_in": [
+            "docs"
+          ],
+          "missing_from": [
+            "code",
+            "test"
+          ]
+        }
+      ],
+      "drift": [],
+      "tests_missing_markers": [
+        {
+          "test_name": "test_server_startup",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_startup.py",
+          "line": 1
+        },
+        {
+          "test_name": "test_concept_parity",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_concept_parity.py",
+          "line": 58
+        },
+        {
+          "test_name": "test_file_system_manager_list_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 9
+        },
+        {
+          "test_name": "test_file_system_manager_search_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 65
+        },
+        {
+          "test_name": "test_file_system_manager_grep_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 90
+        },
+        {
+          "test_name": "test_file_system_manager_manage_file",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 126
+        },
+        {
+          "test_name": "test_shell_profile_manager",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 176
+        },
+        {
+          "test_name": "test_shell_profile_manager_windows",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "line": 209
+        },
+        {
+          "test_name": "test_tools_registered",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "line": 7
+        },
+        {
+          "test_name": "test_get_mcp_instance",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "line": 20
+        },
+        {
+          "test_name": "test_version_defined",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "line": 32
+        },
+        {
+          "test_name": "test_get_process_details",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 20
+        },
+        {
+          "test_name": "test_get_process_details_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 34
+        },
+        {
+          "test_name": "test_get_network_connections",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 47
+        },
+        {
+          "test_name": "test_get_network_connections_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 61
+        },
+        {
+          "test_name": "test_capture_system_snapshot",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 73
+        },
+        {
+          "test_name": "test_capture_system_snapshot_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 86
+        },
+        {
+          "test_name": "test_list_services",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 98
+        },
+        {
+          "test_name": "test_list_services_exception",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 111
+        },
+        {
+          "test_name": "test_manage_service",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "line": 123
+        }
+      ],
+      "functions_missing_docstrings": [
+        {
+          "function": "get_mcp_instance",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 51,
+          "length": 398
+        },
+        {
+          "function": "mcp_server",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 451,
+          "length": 16
+        },
+        {
+          "function": "sm_system_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 90,
+          "length": 100
+        },
+        {
+          "function": "sm_service_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 192,
+          "length": 32
+        },
+        {
+          "function": "sm_process_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 226,
+          "length": 28
+        },
+        {
+          "function": "sm_network_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 256,
+          "length": 21
+        },
+        {
+          "function": "sm_disk_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 279,
+          "length": 18
+        },
+        {
+          "function": "sm_user_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 299,
+          "length": 15
+        },
+        {
+          "function": "sm_file_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 316,
+          "length": 45
+        },
+        {
+          "function": "sm_cron_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 363,
+          "length": 20
+        },
+        {
+          "function": "sm_firewall_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 385,
+          "length": 20
+        },
+        {
+          "function": "sm_advanced_operations",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "line": 407,
+          "length": 40
+        },
+        {
+          "function": "start_system_trace",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py",
+          "line": 234,
+          "length": 19
+        },
+        {
+          "function": "stop_system_trace",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py",
+          "line": 264,
+          "length": 13
+        },
+        {
+          "function": "setup_logging",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "line": 30,
+          "length": 14
+        },
+        {
+          "function": "detect_and_create_manager",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "line": 2729,
+          "length": 24
+        },
+        {
+          "function": "systems_manager",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "line": 2755,
+          "length": 140
+        },
+        {
+          "function": "list_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "line": 51,
+          "length": 51
+        },
+        {
+          "function": "search_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "line": 103,
+          "length": 13
+        },
+        {
+          "function": "grep_files",
+          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "line": 117,
+          "length": 15
+        }
+      ],
+      "unimplemented_concepts": []
+    },
+    {
+      "domain": "Directory Organization",
+      "score": 97,
+      "grade": "A",
+      "findings": [
+        "1 rogue/throwaway scripts detected (fix_*, validate_*, patch_*, etc.): scripts/validate_a2a_agent.py"
+      ],
+      "justifications": [
+        {
+          "criterion": "directory_organization",
+          "points": 97,
+          "evidence": "{\"total_source_files\": 53, \"total_directories\": 9, \"max_depth\": 3, \"avg_depth\": 1.1, \"crowded_dirs_20plus\": 0, \"severely_crowded_40plus\": 0, \"monolithic_dirs\": 0, \"empty_dirs\": 1, \"avg_files_per_dir\": 5.9, \"rogue_scripts\": 1}",
+          "reasoning": "53 files across 9 directories. Max depth: 3, avg files/dir: 5.9. 0 crowded, 0 severely crowded, 0 monolithic, 1 rogue scripts."
+        }
+      ],
+      "metrics": {
+        "total_source_files": 53,
+        "total_directories": 9,
+        "max_depth": 3,
+        "avg_depth": 1.1,
+        "crowded_dirs_20plus": 0,
+        "severely_crowded_40plus": 0,
+        "monolithic_dirs": 0,
+        "empty_dirs": 1,
+        "avg_files_per_dir": 5.9,
+        "rogue_scripts": 1
+      },
+      "crowded_dirs": [],
+      "monolithic_dirs": [],
+      "suggestions": [],
+      "rogue_scripts": [
+        {
+          "file": "scripts/validate_a2a_agent.py",
+          "prefix": "validate",
+          "recommendation": "Remove or integrate into project modules"
+        }
+      ]
+    },
+    {
+      "domain": "Version Sync Analysis",
+      "score": 100,
+      "grade": "A",
+      "findings": [
+        "All version '1.15.0' declarations appear to be tracked correctly."
+      ],
+      "justifications": [
+        {
+          "criterion": "bumpversion_exists",
+          "points": 20,
+          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/.bumpversion.cfg",
+          "reasoning": ".bumpversion.cfg found"
+        },
+        {
+          "criterion": "current_version_defined",
+          "points": 20,
+          "evidence": "1.15.0",
+          "reasoning": "Current version tracked is 1.15.0"
+        },
+        {
+          "criterion": "files_tracked",
+          "points": 20,
+          "evidence": "6 files tracked",
+          "reasoning": "Found 6 files tracked in .bumpversion.cfg"
+        },
+        {
+          "criterion": "version_drift_check",
+          "points": 40,
+          "evidence": "0 drifted files",
+          "reasoning": "No version drift detected in codebase files"
+        }
+      ],
+      "details": {
+        "tracked_files": [
+          "pyproject.toml",
+          "README.md",
+          "docker/Dockerfile",
+          "systems_manager/agent_server.py",
+          "systems_manager/mcp_server.py",
+          "systems_manager/systems_manager.py"
+        ],
+        "drifted_files": []
+      }
+    },
+    {
+      "domain": "Changelog Audit",
+      "score": 75,
+      "grade": "C",
+      "findings": [
+        "CHANGELOG.md is missing \u2014 create one following Keep a Changelog format",
+        "CHANGELOG.md is missing"
+      ],
+      "justifications": [
+        {
+          "criterion": "changelog_quality",
+          "points": 75,
+          "evidence": "{\"exists\": false, \"parseable\": false, \"version_count\": 0, \"has_drift\": false, \"dep_deltas_found\": 0}",
+          "reasoning": "CHANGELOG.md missing. 0 versions tracked. 0 dependency changelogs analyzed."
+        }
+      ],
+      "format_validation": {
+        "exists": false,
+        "parseable": false,
+        "has_unreleased": false,
+        "version_count": 0,
+        "uses_semver": true,
+        "valid_categories": true,
+        "has_dates": true,
+        "has_header": false,
+        "issues": [
+          "CHANGELOG.md is missing"
+        ]
+      },
+      "version_drift": {
+        "has_drift": false,
+        "changelog_version": null,
+        "pyproject_version": "1.15.0"
+      },
+      "dependency_deltas": {}
+    },
+    {
+      "domain": "Pytest Quality",
+      "score": 68,
+      "grade": "D",
+      "findings": [
+        "2 test files exceed 500 lines \u2014 split into focused modules",
+        "Test directory lacks subdirectory organization (consider unit/, integration/, e2e/)",
+        "Low fixture usage: only 16% of tests use fixtures",
+        "1 tests have no assertions",
+        "24 tests use weak assertions (assert result is not None, assert True, etc.)",
+        "34 tests have >5 assertions \u2014 consider splitting (single responsibility)",
+        "5 tests have excessive mocking (>5 mocks) \u2014 test behavior, not implementation"
+      ],
+      "justifications": [
+        {
+          "criterion": "pytest_quality",
+          "points": 68,
+          "evidence": "{\"test_files\": 9, \"total_tests\": 85, \"descriptive_name_ratio\": 1.0, \"generic_names\": 0, \"fixture_usage_ratio\": 0.16, \"parametrize_users\": 8, \"conftest_fixtures\": 8, \"no_assertion_tests\": 1, \"weak_assertion_tests\": 24, \"duplicate_groups\": 0, \"large_files\": 2, \"over_mocked_tests\": 5, \"very_long_tests\": 0, \"subscores\": {\"naming\": 20, \"structure\": 11, \"fixtures\": 12, \"assertions\": 10, \"ai_slop\": 15}}",
+          "reasoning": "85 tests across 9 files. Naming: 20/20, Structure: 11/20, Fixtures: 12/20, Assertions: 10/20, AI Slop: 15/20."
+        }
+      ],
+      "metrics": {
+        "test_files": 9,
+        "total_tests": 85,
+        "descriptive_name_ratio": 1.0,
+        "generic_names": 0,
+        "fixture_usage_ratio": 0.16,
+        "parametrize_users": 8,
+        "conftest_fixtures": 8,
+        "no_assertion_tests": 1,
+        "weak_assertion_tests": 24,
+        "duplicate_groups": 0,
+        "large_files": 2,
+        "over_mocked_tests": 5,
+        "very_long_tests": 0,
+        "subscores": {
+          "naming": 20,
+          "structure": 11,
+          "fixtures": 12,
+          "assertions": 10,
+          "ai_slop": 15
+        }
+      },
+      "conftest": {
+        "conftest_count": 1,
+        "total_shared_fixtures": 8,
+        "has_root_conftest": true
+      },
+      "duplicates": [],
+      "large_files": [
+        {
+          "file": "test_mcp_routing.py",
+          "lines": 629
+        },
+        {
+          "file": "test_platform_managers.py",
+          "lines": 560
+        }
+      ]
+    },
+    {
+      "domain": "Environment Variables",
+      "score": 60,
+      "grade": "D",
+      "findings": [
+        "Only 29% of env vars documented in README.md",
+        "Undocumented env vars: AGENT_POLICIES_PATH, AUTH_TYPE, EUNOMIA_POLICY_FILE, EUNOMIA_TYPE, MAINTENANCE_PRIORITY, MAINTENANCE_TOKEN_BUDGET, MAX_CONCURRENT_AGENTS, MCP_CONFIG_PATH, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_PROTOCOL",
+        "8 Python env vars not in .env.example: AGENT_POLICIES_PATH, MAINTENANCE_PRIORITY, MAINTENANCE_TOKEN_BUDGET, MAX_CONCURRENT_AGENTS, MCP_CONFIG_PATH"
+      ],
+      "justifications": [
+        {
+          "criterion": "env_var_documentation",
+          "points": 60,
+          "evidence": "{\"total_vars\": 21, \"python_vars\": 9, \"dockerfile_vars\": 4, \"compose_vars\": 0, \"dotenv_vars\": 12, \"readme_documented\": 6, \"readme_undocumented\": 15, \"documentation_coverage\": 0.29}",
+          "reasoning": "Found 21 unique env vars across 38 occurrences. README documents 6/21. Has .env.example."
+        }
+      ],
+      "metrics": {
+        "total_vars": 21,
+        "python_vars": 9,
+        "dockerfile_vars": 4,
+        "compose_vars": 0,
+        "dotenv_vars": 12,
+        "readme_documented": 6,
+        "readme_undocumented": 15,
+        "documentation_coverage": 0.29
+      },
+      "variables": {
+        "MISCTOOL": {
+          "name": "MISCTOOL",
+          "sources": [
+            "systems_manager/mcp_server.py:60",
+            ".env:26",
+            ".env.example:26"
+          ],
+          "defaults": [
+            "True"
+          ],
+          "source_types": [
+            "dotenv",
+            "python"
+          ]
+        },
+        "MAX_CONCURRENT_AGENTS": {
+          "name": "MAX_CONCURRENT_AGENTS",
+          "sources": [
+            "systems_manager/agent_os_tools.py:77"
+          ],
+          "defaults": [
+            "5"
+          ],
+          "source_types": [
+            "python"
+          ]
+        },
+        "PERMISSIONS_SIGNING_KEY": {
+          "name": "PERMISSIONS_SIGNING_KEY",
+          "sources": [
+            "systems_manager/agent_os_tools.py:85"
+          ],
+          "defaults": [],
+          "source_types": [
+            "python"
+          ]
+        },
+        "AGENT_POLICIES_PATH": {
+          "name": "AGENT_POLICIES_PATH",
+          "sources": [
+            "systems_manager/agent_os_tools.py:86"
+          ],
+          "defaults": [],
+          "source_types": [
+            "python"
+          ]
+        },
+        "SPECIALIST_REGISTRY_PATH": {
+          "name": "SPECIALIST_REGISTRY_PATH",
+          "sources": [
+            "systems_manager/agent_os_tools.py:97"
+          ],
+          "defaults": [],
+          "source_types": [
+            "python"
+          ]
+        },
+        "MCP_CONFIG_PATH": {
+          "name": "MCP_CONFIG_PATH",
+          "sources": [
+            "systems_manager/agent_os_tools.py:98"
+          ],
+          "defaults": [],
+          "source_types": [
+            "python"
+          ]
+        },
+        "PROJECT_ROOT": {
+          "name": "PROJECT_ROOT",
+          "sources": [
+            "systems_manager/agent_os_tools.py:109"
+          ],
+          "defaults": [
+            "os.getcwd("
+          ],
+          "source_types": [
+            "python"
+          ]
+        },
+        "MAINTENANCE_TOKEN_BUDGET": {
+          "name": "MAINTENANCE_TOKEN_BUDGET",
+          "sources": [
+            "systems_manager/agent_os_tools.py:117"
+          ],
+          "defaults": [
+            "0"
+          ],
+          "source_types": [
+            "python"
+          ]
+        },
+        "MAINTENANCE_PRIORITY": {
+          "name": "MAINTENANCE_PRIORITY",
+          "sources": [
+            "systems_manager/agent_os_tools.py:118"
+          ],
+          "defaults": [
+            "LOW"
+          ],
+          "source_types": [
+            "python"
+          ]
+        },
+        "HOST": {
+          "name": "HOST",
+          "sources": [
+            "docker/Dockerfile:8",
+            "docker/Dockerfile:3",
+            "docker/debug.Dockerfile:8",
+            "docker/debug.Dockerfile:3",
+            ".env:6"
+          ],
+          "defaults": [
+            "0.0.0.0"
+          ],
+          "source_types": [
+            "dockerfile",
+            "dotenv"
+          ]
+        },
+        "PORT": {
+          "name": "PORT",
+          "sources": [
+            "docker/Dockerfile:4",
+            "docker/debug.Dockerfile:4",
+            ".env:7",
+            ".env.example:7"
+          ],
+          "defaults": [
+            "8000"
+          ],
+          "source_types": [
+            "dockerfile",
+            "dotenv"
+          ]
+        },
+        "TRANSPORT": {
+          "name": "TRANSPORT",
+          "sources": [
+            "docker/Dockerfile:5",
+            "docker/debug.Dockerfile:5",
+            ".env:8",
+            ".env.example:8"
+          ],
+          "defaults": [
+            "stdio",
+            "stdio # options: stdio, streamable-http, sse"
+          ],
+          "source_types": [
+            "dockerfile",
+            "dotenv"
+          ]
+        },
+        "AUTH_TYPE": {
+          "name": "AUTH_TYPE",
+          "sources": [
+            "docker/Dockerfile:6",
+            "docker/debug.Dockerfile:6"
+          ],
+          "defaults": [],
+          "source_types": [
+            "dockerfile"
+          ]
+        },
+        "ENABLE_OTEL": {
+          "name": "ENABLE_OTEL",
+          "sources": [
+            ".env:11",
+            ".env.example:11"
+          ],
+          "defaults": [
+            "True"
+          ],
+          "source_types": [
+            "dotenv"
+          ]
+        },
+        "OTEL_EXPORTER_OTLP_ENDPOINT": {
+          "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+          "sources": [
+            ".env:12"
+          ],
+          "defaults": [
+            "http://langfuse.arpa/api/public/otel"
+          ],
+          "source_types": [
+            "dotenv"
+          ]
+        },
+        "OTEL_EXPORTER_OTLP_PUBLIC_KEY": {
+          "name": "OTEL_EXPORTER_OTLP_PUBLIC_KEY",
+          "sources": [
+            ".env:13"
+          ],
+          "defaults": [
+            "pk-lf-fa2ee252-4711-4298-9d9c-c73b21f23ac6"
+          ],
+          "source_types": [
+            "dotenv"
+          ]
+        },
+        "OTEL_EXPORTER_OTLP_SECRET_KEY": {
+          "name": "OTEL_EXPORTER_OTLP_SECRET_KEY",
+          "sources": [
+            ".env:14"
+          ],
+          "defaults": [
+            "sk-lf-703eb104-6916-4740-997f-7e445ba7c4b5"
+          ],
+          "source_types": [
+            "dotenv"
+          ]
+        },
+        "OTEL_EXPORTER_OTLP_PROTOCOL": {
+          "name": "OTEL_EXPORTER_OTLP_PROTOCOL",
+          "sources": [
+            ".env:15"
+          ],
+          "defaults": [
+            "http/protobuf"
+          ],
+          "source_types": [
+            "dotenv"
+          ]
+        },
+        "EUNOMIA_TYPE": {
+          "name": "EUNOMIA_TYPE",
+          "sources": [
+            ".env:18",
+            ".env.example:18"
+          ],
+          "defaults": [
+            "none",
+            "none # options: none, embedded, remote"
+          ],
+          "source_types": [
+            "dotenv"
+          ]
+        },
+        "EUNOMIA_POLICY_FILE": {
+          "name": "EUNOMIA_POLICY_FILE",
+          "sources": [
+            ".env:19",
+            ".env.example:19"
+          ],
+          "defaults": [
+            "mcp_policies.json"
+          ],
+          "source_types": [
+            "dotenv"
+          ]
+        },
+        "SYSTEMS_API_KEY": {
+          "name": "SYSTEMS_API_KEY",
+          "sources": [
+            ".env:23"
+          ],
+          "defaults": [
+            "your_systems_api_key_here"
+          ],
+          "source_types": [
+            "dotenv"
+          ]
+        }
+      },
+      "readme_coverage": {
+        "documented": [
+          "ENABLE_OTEL",
+          "HOST",
+          "MISCTOOL",
+          "PORT",
+          "SYSTEMS_API_KEY",
+          "TRANSPORT"
+        ],
+        "undocumented": [
+          "AGENT_POLICIES_PATH",
+          "AUTH_TYPE",
+          "EUNOMIA_POLICY_FILE",
+          "EUNOMIA_TYPE",
+          "MAINTENANCE_PRIORITY",
+          "MAINTENANCE_TOKEN_BUDGET",
+          "MAX_CONCURRENT_AGENTS",
+          "MCP_CONFIG_PATH",
+          "OTEL_EXPORTER_OTLP_ENDPOINT",
+          "OTEL_EXPORTER_OTLP_PROTOCOL",
+          "OTEL_EXPORTER_OTLP_PUBLIC_KEY",
+          "OTEL_EXPORTER_OTLP_SECRET_KEY",
+          "PERMISSIONS_SIGNING_KEY",
+          "PROJECT_ROOT",
+          "SPECIALIST_REGISTRY_PATH"
+        ],
+        "coverage": 0.2857142857142857
+      }
+    },
+    {
+      "domain": "analyze_xdg_kg",
+      "score": 0,
+      "grade": "F",
+      "findings": [
+        "Analysis error: No module named 'agent_utilities.knowledge_graph'"
+      ],
+      "justifications": []
+    }
+  ],
+  "timing": {
+    "analyze_project": 0.27,
+    "audit_dependencies": 0.77,
+    "analyze_codebase": 1.17,
+    "analyze_security": 0.58,
+    "analyze_tests": 0.36,
+    "audit_documentation": 0.67,
+    "analyze_architecture": 0.27,
+    "trace_concepts": 1.54,
+    "analyze_directory_density": 1.44,
+    "analyze_ui": 1.44,
+    "analyze_version_sync": 0.75,
+    "audit_changelog": 0.0,
+    "grade_pytest": 0.18,
+    "scan_env_vars": 0.99
+  }
+}

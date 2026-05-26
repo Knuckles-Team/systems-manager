@@ -54,7 +54,7 @@ flowchart TD
         Node3[Host N: systems-mcp --daemon]
     end
 
-    Agent -->|1 Tool Call: list_services()| MCP
+    Agent -->|"1 Tool Call: list_services()"| MCP
     MCP -->|Publish Event| NATS
     NATS -.->|Fan-out| Node1
     NATS -.->|Fan-out| Node2

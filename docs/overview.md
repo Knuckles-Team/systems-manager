@@ -67,6 +67,27 @@ flowchart TD
     OSProvider --> Windows
 ```
 
+### Dynamic OS Provider Subclass Selection
+
+The `systems-manager` dynamically detects the running operating system at runtime and instantiates the corresponding specialized subclass. While standard operations are composed and routed through common sub-manager components (like file systems, python packages, or node switchers), OS-specific mutations like application updates, service management, and platform packages are isolated in clean platform subclasses:
+
+```mermaid
+graph TD
+    A[detect_and_create_manager] -->|platform.system & distro.id| B{OS Subclass Selection}
+    B -->|Ubuntu / Debian| C[AptManager]
+    B -->|RHEL / CentOS| D[YumManager]
+    B -->|Arch Linux| E[PacmanManager]
+    B -->|macOS / Darwin| F[BrewManager]
+    B -->|Windows / NT| G[WindowsManager]
+
+    C & D & E & F & G -->|Inherit| H[SystemsManagerBase]
+
+    H -->|Composition| I[FileSystemManager]
+    H -->|Composition| J[ShellProfileManager]
+    H -->|Composition| K[PythonManager]
+    H -->|Composition| L[NodeManager]
+```
+
 This project follows the standardized agent-package pattern:
 
 ```text

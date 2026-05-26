@@ -282,7 +282,8 @@ class NodeManager:
 
 
 class SystemsManagerBase(ABC):
-    def __init__(self, silent: bool = False, log_file: str | None = None):
+    def __init__(self, host: str | None = None, silent: bool = False, log_file: str | None = None):
+        self.host = host
         self.silent = silent
         self.logger = setup_logging(log_file)  # type: ignore
         self.fs_manager = FileSystemManager(self)
@@ -308,17 +309,80 @@ class SystemsManagerBase(ABC):
         if error:
             self.logger.error(f"Error: {str(error)}")
 
+    def remote_eval(self, py_code: str) -> Any:
+        if not self.host:
+            raise ValueError("remote_eval called but no remote host is configured")
+            
+        from tunnel_manager.tunnel_manager import HostManager
+        hm = HostManager()
+        if self.host not in hm.hosts:
+            raise ValueError(f"Host '{self.host}' not configured in inventory ({hm.config_file})")
+        hinfo = hm.hosts[self.host]
+        
+        hostname = hinfo.get("hostname")
+        user = hinfo.get("user", "genius")
+        port = hinfo.get("port", 22)
+        identity_file = hinfo.get("key_path") or hinfo.get("identity_file")
+        
+        import base64
+        encoded_py = base64.b64encode(py_code.encode("utf-8")).decode("utf-8")
+        remote_py_cmd = f"python3 -c \"import base64; exec(base64.b64decode('{encoded_py}').decode('utf-8'))\""
+        
+        ssh_cmd = ["ssh", "-o", "StrictHostKeyChecking=no"]
+        if identity_file:
+            ssh_cmd.extend(["-i", os.path.expanduser(identity_file)])
+        ssh_cmd.extend(["-p", str(port), f"{user}@{hostname}", remote_py_cmd])
+        
+        try:
+            res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=15)
+            if res.returncode != 0:
+                raise RuntimeError(f"Remote evaluation failed: {res.stderr}")
+            return json.loads(res.stdout)
+        except Exception as e:
+            self.logger.error(f"Failed to execute remote_eval: {str(e)}")
+            raise
+
     def run_command(
         self,
         command: list[str] | str,
         elevated: bool = False,
         shell: bool = False,
     ) -> CommandResult:
+        if self.host:
+            from tunnel_manager.tunnel_manager import HostManager
+            hm = HostManager()
+            if self.host not in hm.hosts:
+                raise ValueError(f"Host '{self.host}' not configured in inventory ({hm.config_file})")
+            hinfo = hm.hosts[self.host]
+            
+            if isinstance(command, str):
+                remote_cmd = command
+            else:
+                remote_cmd = " ".join(f'"{c}"' if " " in c or "*" in c or "$" in c or "?" in c or ";" in c else c for c in command)
+            
+            if elevated:
+                remote_cmd = f"sudo {remote_cmd}"
+                
+            ssh_args = ["ssh", "-o", "StrictHostKeyChecking=no"]
+            identity_file = hinfo.get("key_path") or hinfo.get("identity_file")
+            if identity_file:
+                ssh_args.extend(["-i", os.path.expanduser(identity_file)])
+            port = hinfo.get("port", 22)
+            ssh_args.extend(["-p", str(port)])
+            
+            user = hinfo.get("user", "genius")
+            hostname = hinfo.get("hostname")
+            ssh_args.append(f"{user}@{hostname}")
+            ssh_args.append(remote_cmd)
+            
+            command = ssh_args
+            shell = False
+
         if isinstance(command, str):
             command = command.split()
-        if elevated and platform.system() == "Linux":
+        if not self.host and elevated and platform.system() == "Linux":
             command = ["sudo"] + command
-        elif elevated and platform.system() == "Windows":
+        elif not self.host and elevated and platform.system() == "Windows":
             arg_list = " ".join(f'"{c}"' if " " in c else c for c in command)
             command = [
                 "powershell.exe",
@@ -590,6 +654,25 @@ class SystemsManagerBase(ABC):
         )
 
     def get_os_statistics(self) -> SystemStats:
+        if self.host:
+            py_code = """
+import json, platform, os
+try:
+    load_avg = os.getloadavg()
+except Exception:
+    load_avg = "N/A"
+stats = {
+    "system": platform.system(),
+    "release": platform.release(),
+    "version": platform.version(),
+    "machine": platform.machine(),
+    "processor": platform.processor(),
+    "load_avg": load_avg
+}
+print(json.dumps(stats))
+"""
+            return SystemStats(**self.remote_eval(py_code))
+
         return SystemStats(
             **{  # type: ignore
                 "system": platform.system(),
@@ -604,6 +687,20 @@ class SystemsManagerBase(ABC):
         )
 
     def get_hardware_statistics(self) -> SystemStats:
+        if self.host:
+            py_code = """
+import json, psutil
+stats = {
+    "cpu_percent": psutil.cpu_percent(interval=0.5),
+    "cpu_count": psutil.cpu_count(),
+    "memory": psutil.virtual_memory()._asdict(),
+    "disk_usage": psutil.disk_usage("/")._asdict(),
+    "network": psutil.net_io_counters()._asdict(),
+}
+print(json.dumps(stats))
+"""
+            return SystemStats(**self.remote_eval(py_code))
+
         return SystemStats(
             **{
                 "cpu_percent": psutil.cpu_percent(interval=1),
@@ -802,6 +899,28 @@ class SystemsManagerBase(ABC):
         )
 
     def list_processes(self) -> CommandResult:
+        if self.host:
+            py_code = """
+import json, psutil
+processes = []
+for proc in psutil.process_iter(["pid", "name", "username", "cpu_percent", "memory_percent", "status"]):
+    try:
+        info = proc.info
+        processes.append({
+            "pid": info["pid"],
+            "name": info["name"],
+            "username": info["username"],
+            "cpu_percent": info["cpu_percent"],
+            "memory_percent": round(info["memory_percent"], 2) if info["memory_percent"] else 0,
+            "status": info["status"],
+        })
+    except (psutil.NoSuchProcess, psutil.AccessDenied):
+        continue
+print(json.dumps(processes))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**{"success": True, "processes": res, "total": len(res)})
+
         try:
             processes = []
             for proc in psutil.process_iter(
@@ -832,6 +951,35 @@ class SystemsManagerBase(ABC):
             return CommandResult(**{"success": False, "error": str(e)})
 
     def get_process_info(self, pid: int) -> CommandResult:
+        if self.host:
+            py_code = f"""
+import json, psutil, datetime
+try:
+    proc = psutil.Process({pid})
+    with proc.oneshot():
+        info = {{
+            "pid": proc.pid,
+            "name": proc.name(),
+            "status": proc.status(),
+            "username": proc.username(),
+            "cpu_percent": proc.cpu_percent(interval=0.1),
+            "memory_percent": round(proc.memory_percent(), 2),
+            "memory_info": proc.memory_info()._asdict(),
+            "create_time": datetime.datetime.fromtimestamp(proc.create_time()).isoformat(),
+            "cmdline": proc.cmdline(),
+            "num_threads": proc.num_threads(),
+        }}
+    print(json.dumps({{"success": True, "process": info}}))
+except psutil.NoSuchProcess:
+    print(json.dumps({{"success": False, "error": "No process found with PID {pid}"}}))
+except psutil.AccessDenied:
+    print(json.dumps({{"success": False, "error": "Access denied to process {pid}"}}))
+except Exception as e:
+    print(json.dumps({{"success": False, "error": str(e)}}))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**res)
+
         try:
             proc = psutil.Process(pid)
             with proc.oneshot():
@@ -884,6 +1032,33 @@ class SystemsManagerBase(ABC):
             return CommandResult(**{"success": False, "error": str(e)})
 
     def list_network_interfaces(self) -> CommandResult:
+        if self.host:
+            py_code = """
+import json, psutil
+interfaces = {}
+addrs = psutil.net_if_addrs()
+stats = psutil.net_if_stats()
+for iface, addr_list in addrs.items():
+    iface_info = {"addresses": [], "is_up": False, "speed": 0}
+    if iface in stats:
+        iface_info.update({
+            "is_up": stats[iface].isup,
+            "speed": stats[iface].speed,
+            "mtu": stats[iface].mtu,
+        })
+    for addr in addr_list:
+        iface_info["addresses"].append({
+            "family": str(addr.family),
+            "address": addr.address,
+            "netmask": addr.netmask,
+            "broadcast": addr.broadcast,
+        })
+    interfaces[iface] = iface_info
+print(json.dumps(interfaces))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**{"success": True, "interfaces": res})
+
         try:
             interfaces = {}
             addrs = psutil.net_if_addrs()
@@ -913,6 +1088,30 @@ class SystemsManagerBase(ABC):
             return CommandResult(**{"success": False, "error": str(e)})
 
     def list_open_ports(self) -> CommandResult:
+        if self.host:
+            py_code = """
+import json, psutil, subprocess
+try:
+    connections = []
+    for conn in psutil.net_connections(kind="inet"):
+        if conn.status == "LISTEN":
+            connections.append({
+                "local_address": conn.laddr.ip if conn.laddr else None,
+                "local_port": conn.laddr.port if conn.laddr else None,
+                "pid": conn.pid,
+                "status": conn.status,
+            })
+    print(json.dumps({"success": True, "ports": connections, "total": len(connections)}))
+except Exception as e:
+    try:
+        res = subprocess.run(["ss", "-tlnp"], capture_output=True, text=True)
+        print(json.dumps({"success": True, "output": res.stdout}))
+    except Exception as ex:
+        print(json.dumps({"success": False, "error": str(e)}))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**res)
+
         try:
             connections = []
             for conn in psutil.net_connections(kind="inet"):
@@ -951,6 +1150,19 @@ class SystemsManagerBase(ABC):
         )
 
     def dns_lookup(self, hostname: str) -> CommandResult:
+        if self.host:
+            py_code = f"""
+import json, socket
+try:
+    results = socket.getaddrinfo({repr(hostname)}, None)
+    addresses = list(set(addr[4][0] for addr in results))
+    print(json.dumps({{"success": True, "hostname": {repr(hostname)}, "addresses": addresses}}))
+except Exception as e:
+    print(json.dumps({{"success": False, "error": str(e)}}))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**res)
+
         try:
             results = socket.getaddrinfo(hostname, None)
             addresses = list(set(addr[4][0] for addr in results))
@@ -965,6 +1177,33 @@ class SystemsManagerBase(ABC):
             return CommandResult(**{"success": False, "error": str(e)})
 
     def list_disks(self) -> CommandResult:
+        if self.host:
+            py_code = """
+import json, psutil
+partitions = []
+for part in psutil.disk_partitions(all=False):
+    entry = {
+        "device": part.device,
+        "mountpoint": part.mountpoint,
+        "fstype": part.fstype,
+        "opts": part.opts,
+    }
+    try:
+        usage = psutil.disk_usage(part.mountpoint)
+        entry.update({
+            "total": usage.total,
+            "used": usage.used,
+            "free": usage.free,
+            "percent": usage.percent,
+        })
+    except Exception:
+        pass
+    partitions.append(entry)
+print(json.dumps(partitions))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**{"success": True, "disks": res, "total": len(res)})
+
         try:
             partitions = []
             for part in psutil.disk_partitions(all=False):
@@ -994,6 +1233,25 @@ class SystemsManagerBase(ABC):
             return CommandResult(**{"success": False, "error": str(e)})
 
     def get_disk_usage(self, path: str = "/") -> CommandResult:
+        if self.host:
+            py_code = f"""
+import json, psutil
+try:
+    usage = psutil.disk_usage({repr(path)})
+    print(json.dumps({{
+        "success": True,
+        "path": {repr(path)},
+        "total": usage.total,
+        "used": usage.used,
+        "free": usage.free,
+        "percent": usage.percent,
+    }}))
+except Exception as e:
+    print(json.dumps({{"success": False, "error": str(e)}}))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**res)
+
         try:
             usage = psutil.disk_usage(path)
             return CommandResult(
@@ -1010,6 +1268,29 @@ class SystemsManagerBase(ABC):
             return CommandResult(**{"success": False, "error": str(e)})
 
     def list_users(self) -> CommandResult:
+        if self.host:
+            py_code = """
+import json
+users = []
+try:
+    with open("/etc/passwd") as f:
+        for line in f:
+            parts = line.strip().split(":")
+            if len(parts) >= 7:
+                users.append({
+                    "username": parts[0],
+                    "uid": int(parts[2]),
+                    "gid": int(parts[3]),
+                    "home": parts[5],
+                    "shell": parts[6],
+                })
+    print(json.dumps({"success": True, "users": users, "total": len(users)}))
+except Exception as e:
+    print(json.dumps({"success": False, "error": str(e)}))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**res)
+
         try:
             if platform.system() == "Linux":
                 users = []
@@ -1058,6 +1339,27 @@ class SystemsManagerBase(ABC):
             return CommandResult(**{"success": False, "error": str(e)})
 
     def list_groups(self) -> CommandResult:
+        if self.host:
+            py_code = """
+import json
+groups = []
+try:
+    with open("/etc/group") as f:
+        for line in f:
+            parts = line.strip().split(":")
+            if len(parts) >= 4:
+                groups.append({
+                    "name": parts[0],
+                    "gid": int(parts[2]),
+                    "members": parts[3].split(",") if parts[3] else [],
+                })
+    print(json.dumps({"success": True, "groups": groups, "total": len(groups)}))
+except Exception as e:
+    print(json.dumps({"success": False, "error": str(e)}))
+"""
+            res = self.remote_eval(py_code)
+            return CommandResult(**res)
+
         try:
             if platform.system() == "Linux":
                 groups = []
@@ -1752,8 +2054,13 @@ class SystemsManagerBase(ABC):
 
 
 class AptManager(SystemsManagerBase):
-    def __init__(self, silent: bool = False, log_file: str | None = None):
-        super().__init__(silent, log_file)
+    def __init__(
+        self,
+        host: str | None = None,
+        silent: bool = False,
+        log_file: str | None = None,
+    ):
+        super().__init__(host, silent, log_file)
         self.not_found_msg = "Unable to locate package"
 
     def install_applications(self, apps: list[str]) -> CommandResult:
@@ -1969,8 +2276,13 @@ class AptManager(SystemsManagerBase):
 
 
 class DnfManager(SystemsManagerBase):
-    def __init__(self, silent: bool = False, log_file: str | None = None):
-        super().__init__(silent, log_file)
+    def __init__(
+        self,
+        host: str | None = None,
+        silent: bool = False,
+        log_file: str | None = None,
+    ):
+        super().__init__(host, silent, log_file)
         self.not_found_msg = "Unable to find a match"
 
     def install_applications(self, apps: list[str]) -> CommandResult:
@@ -2138,8 +2450,13 @@ class DnfManager(SystemsManagerBase):
 
 
 class ZypperManager(SystemsManagerBase):
-    def __init__(self, silent: bool = False, log_file: str | None = None):
-        super().__init__(silent, log_file)
+    def __init__(
+        self,
+        host: str | None = None,
+        silent: bool = False,
+        log_file: str | None = None,
+    ):
+        super().__init__(host, silent, log_file)
         self.not_found_msg = "No provider of"
 
     def install_applications(self, apps: list[str]) -> CommandResult:
@@ -2312,8 +2629,13 @@ class ZypperManager(SystemsManagerBase):
 
 
 class PacmanManager(SystemsManagerBase):
-    def __init__(self, silent: bool = False, log_file: str | None = None):
-        super().__init__(silent, log_file)
+    def __init__(
+        self,
+        host: str | None = None,
+        silent: bool = False,
+        log_file: str | None = None,
+    ):
+        super().__init__(host, silent, log_file)
         self.not_found_msg = "target not found"
 
     def install_applications(self, apps: list[str]) -> CommandResult:
@@ -2492,8 +2814,13 @@ class PacmanManager(SystemsManagerBase):
 
 
 class WindowsManager(SystemsManagerBase):
-    def __init__(self, silent: bool = False, log_file: str | None = None):
-        super().__init__(silent, log_file)
+    def __init__(
+        self,
+        host: str | None = None,
+        silent: bool = False,
+        log_file: str | None = None,
+    ):
+        super().__init__(host, silent, log_file)
         self.winget_bin = os.path.expanduser(
             r"~\AppData\Local\Microsoft\WindowsApps\winget.exe"
         )
@@ -2727,25 +3054,73 @@ class WindowsManager(SystemsManagerBase):
 
 
 def detect_and_create_manager(
-    silent: bool | None = False, log_file: str | None = None
+    host: str | None = None,
+    silent: bool | None = False,
+    log_file: str | None = None,
 ) -> SystemsManagerBase:
     """
     Detect the current operating system and return the appropriate SystemsManager instance.
     """
     silent_bool = bool(silent)
-    sys_name = platform.system()
+    
+    if not host:
+        host = os.environ.get("SYSTEMS_MANAGER_HOST", None)
+        
+    if host:
+        from tunnel_manager.tunnel_manager import HostManager
+        hm = HostManager()
+        if host not in hm.hosts:
+            raise ValueError(f"Host '{host}' not configured in inventory ({hm.config_file})")
+        hinfo = hm.hosts[host]
+        
+        hostname = hinfo.get("hostname")
+        user = hinfo.get("user", "genius")
+        port = hinfo.get("port", 22)
+        identity_file = hinfo.get("key_path") or hinfo.get("identity_file")
+        
+        # Remote OS detection using SSH
+        ssh_cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=5"]
+        if identity_file:
+            ssh_cmd.extend(["-i", os.path.expanduser(identity_file)])
+        ssh_cmd.extend(["-p", str(port), f"{user}@{hostname}", "uname -s && python3 -c 'import distro; print(distro.id())'"])
+        
+        try:
+            res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=6)
+            if res.returncode != 0:
+                if res.returncode == 255 or "timed out" in res.stderr.lower() or "unreachable" in res.stderr.lower():
+                    raise RuntimeError(f"Host '{host}' is offline or unreachable via SSH: {res.stderr.strip() or 'Connection timed out'}")
+                # Fallback to pure shell detection if python/distro not installed on remote
+                ssh_cmd[-1] = "uname -s"
+                res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=6)
+                if res.returncode != 0:
+                    raise RuntimeError(f"Host '{host}' is offline or unreachable via SSH: {res.stderr.strip()}")
+                sys_name = res.stdout.strip()
+                dist_id = "ubuntu"  # Default fallback for Linux
+            else:
+                lines = res.stdout.strip().split("\n")
+                sys_name = lines[0].strip()
+                dist_id = lines[1].strip() if len(lines) > 1 else "ubuntu"
+        except subprocess.TimeoutExpired as e:
+            raise RuntimeError(f"Host '{host}' is offline or connection timed out.") from e
+        except Exception as e:
+            if isinstance(e, RuntimeError):
+                raise
+            raise RuntimeError(f"Failed to connect to remote host '{host}': {str(e)}") from e
+    else:
+        sys_name = platform.system()
+        dist_id = distro.id() if sys_name == "Linux" else ""
+
     if sys_name == "Windows":
-        return WindowsManager(silent_bool, log_file)
+        return WindowsManager(host, silent_bool, log_file)
     elif sys_name == "Linux":
-        dist_id = distro.id()
         if dist_id in ["ubuntu", "debian"]:
-            return AptManager(silent_bool, log_file)
+            return AptManager(host, silent_bool, log_file)
         elif dist_id in ["rhel", "ol", "centos"]:
-            return DnfManager(silent_bool, log_file)
+            return DnfManager(host, silent_bool, log_file)
         elif dist_id == "sles":
-            return ZypperManager(silent_bool, log_file)
+            return ZypperManager(host, silent_bool, log_file)
         elif dist_id == "arch":
-            return PacmanManager(silent_bool, log_file)
+            return PacmanManager(host, silent_bool, log_file)
         else:
             raise NotImplementedError(f"Unsupported Linux distro: {dist_id}")
     else:

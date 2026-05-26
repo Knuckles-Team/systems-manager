@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from typing import Any, Literal
+
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
@@ -128,30 +130,27 @@ def _get_maintenance() -> MaintenanceCron:
 # ══════════════════════════════════════════════════════════════════════
 
 
-@_guard
-def register_identity_tools(mcp: Any) -> None:
-    """Register agent identity lifecycle tools (AU-031)."""
-    from pydantic import Field
-
-    @mcp.tool(
-        annotations={
-            "title": "Issue Agent Identity",
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "idempotentHint": False,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "identity"},
-    )
-    async def issue_agent_identity(
-        agent_name: str = Field(description="Name of the agent to issue identity for"),
-        role: str = Field(
-            description="Agent role: admin, operator, specialist, sandbox, guest",
-            default="specialist",
-        ),
-    ) -> dict:
-        """Issues a signed identity token for an agent with the specified role."""
-        kernel = _get_permissions()
+async def sm_agent_identity_operations(
+    action: Literal["issue", "verify", "revoke", "list"],
+    agent_name: str | None = Field(
+        description="Name of the agent to issue identity for", default=None
+    ),
+    role: str = Field(
+        description="Agent role (for 'issue'): admin, operator, specialist, sandbox, guest",
+        default="specialist",
+    ),
+    agent_id: str | None = Field(
+        description="Agent ID to verify or revoke", default=None
+    ),
+) -> dict:
+    """Manages agent identity lifecycle: issue, verify, revoke, or list identities."""
+    kernel = _get_permissions()
+    if action == "issue":
+        if not agent_name:
+            return {
+                "success": False,
+                "error": "agent_name is required for 'issue' action",
+            }
         try:
             agent_role = AgentRole(role.lower())
         except ValueError:
@@ -165,22 +164,12 @@ def register_identity_tools(mcp: Any) -> None:
             "expires_at": identity.expires_at,
             "signature": identity.signature[:16] + "...",
         }
-
-    @mcp.tool(
-        annotations={
-            "title": "Verify Agent Identity",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "identity"},
-    )
-    async def verify_agent_identity(
-        agent_id: str = Field(description="Agent ID to verify"),
-    ) -> dict:
-        """Verifies that an agent's identity token is valid and not expired."""
-        kernel = _get_permissions()
+    elif action == "verify":
+        if not agent_id:
+            return {
+                "success": False,
+                "error": "agent_id is required for 'verify' action",
+            }
         identity = kernel.get_identity(agent_id)
         if not identity:
             return {"valid": False, "error": "Identity not found"}
@@ -191,50 +180,44 @@ def register_identity_tools(mcp: Any) -> None:
             "role": identity.role.value,
             "expires_at": identity.expires_at,
         }
-
-    @mcp.tool(
-        annotations={
-            "title": "Revoke Agent Identity",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "identity"},
-    )
-    async def revoke_agent_identity(
-        agent_id: str = Field(description="Agent ID to revoke"),
-    ) -> dict:
-        """Revokes an agent's identity, removing it from the active registry."""
-        kernel = _get_permissions()
+    elif action == "revoke":
+        if not agent_id:
+            return {
+                "success": False,
+                "error": "agent_id is required for 'revoke' action",
+            }
         if agent_id in kernel._identities:
             del kernel._identities[agent_id]
             return {"success": True, "revoked": agent_id}
         return {"success": False, "error": "Identity not found"}
-
-    @mcp.tool(
-        annotations={
-            "title": "List Agent Identities",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "identity"},
-    )
-    async def list_agent_identities() -> dict:
-        """Lists all currently registered agent identities and their roles."""
-        kernel = _get_permissions()
+    elif action == "list":
         identities = []
-        for agent_id, identity in kernel._identities.items():
+        for a_id, identity in kernel._identities.items():
             identities.append(
                 {
-                    "agent_id": agent_id,
+                    "agent_id": a_id,
                     "role": identity.role.value,
                     "valid": kernel.verify_identity(identity),
                 }
             )
         return {"identities": identities, "count": len(identities)}
+    else:
+        return {"success": False, "error": f"Unsupported action: {action}"}
+
+
+@_guard
+def register_identity_tools(mcp: Any) -> None:
+    """Register agent identity lifecycle tools (AU-031)."""
+    mcp.tool(
+        annotations={
+            "title": "Agent Identity Operations",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+        tags={"agent_os", "identity"},
+    )(sm_agent_identity_operations)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -242,29 +225,26 @@ def register_identity_tools(mcp: Any) -> None:
 # ══════════════════════════════════════════════════════════════════════
 
 
-@_guard
-def register_policy_tools(mcp: Any) -> None:
-    """Register agent policy management tools (AU-031)."""
-    from pydantic import Field
-
-    @mcp.tool(
-        annotations={
-            "title": "List Agent Policies",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "policy"},
-    )
-    async def list_agent_policies() -> dict:
-        """Lists all configured agent role policies and their permissions."""
-        kernel = _get_permissions()
+async def sm_agent_policy_operations(
+    action: Literal["list", "get", "update", "reload"],
+    role: str | None = Field(
+        description="Role name for 'get' or 'update' action", default=None
+    ),
+    allowed_tools: list[str] | None = Field(
+        description="List of allowed tool patterns for 'update'", default=None
+    ),
+    denied_tools: list[str] | None = Field(
+        description="List of denied tool patterns for 'update'", default=None
+    ),
+) -> dict:
+    """Manages agent policies: list role policies, get, update or reload policies."""
+    kernel = _get_permissions()
+    if action == "list":
         policies = []
-        for role, policy in kernel._policies.items():
+        for r, policy in kernel._policies.items():
             policies.append(
                 {
-                    "role": role,
+                    "role": r,
                     "allowed_tools": policy.allowed_tools,
                     "denied_tools": policy.denied_tools,
                     "require_approval": policy.require_approval,
@@ -272,22 +252,9 @@ def register_policy_tools(mcp: Any) -> None:
                 }
             )
         return {"policies": policies, "count": len(policies)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Get Agent Policy",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "policy"},
-    )
-    async def get_agent_policy(
-        role: str = Field(description="Role name to get policy for"),
-    ) -> dict:
-        """Gets the detailed policy configuration for a specific agent role."""
-        kernel = _get_permissions()
+    elif action == "get":
+        if not role:
+            return {"success": False, "error": "role is required for 'get' action"}
         policy = kernel._policies.get(role)
         if not policy:
             return {"success": False, "error": f"No policy for role: {role}"}
@@ -298,54 +265,39 @@ def register_policy_tools(mcp: Any) -> None:
             "require_approval": policy.require_approval,
             "max_tokens_per_session": policy.max_tokens_per_session,
         }
-
-    @mcp.tool(
-        annotations={
-            "title": "Update Agent Policy",
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "policy"},
-    )
-    async def update_agent_policy(
-        role: str = Field(description="Role to update"),
-        allowed_tools: list[str] = Field(
-            description="List of allowed tool patterns", default_factory=list
-        ),
-        denied_tools: list[str] = Field(
-            description="List of denied tool patterns", default_factory=list
-        ),
-    ) -> dict:
-        """Updates the allowed/denied tool patterns for an agent role policy."""
-        kernel = _get_permissions()
+    elif action == "update":
+        if not role:
+            return {"success": False, "error": "role is required for 'update' action"}
         policy = kernel._policies.get(role)
         if not policy:
             return {"success": False, "error": f"No policy for role: {role}"}
-        if allowed_tools:
+        if allowed_tools is not None:
             policy.allowed_tools = allowed_tools
-        if denied_tools:
+        if denied_tools is not None:
             policy.denied_tools = denied_tools
         return {"success": True, "role": role, "message": "Policy updated"}
-
-    @mcp.tool(
-        annotations={
-            "title": "Reload Agent Policies",
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "policy"},
-    )
-    async def reload_policies() -> dict:
-        """Reloads agent policies from the policies file on disk."""
-        kernel = _get_permissions()
+    elif action == "reload":
         if kernel._policies_path:
             kernel.load_policies(kernel._policies_path)
             return {"success": True, "message": "Policies reloaded from disk"}
         return {"success": False, "error": "No policies file configured"}
+    else:
+        return {"success": False, "error": f"Unsupported action: {action}"}
+
+
+@_guard
+def register_policy_tools(mcp: Any) -> None:
+    """Register agent policy management tools (AU-031)."""
+    mcp.tool(
+        annotations={
+            "title": "Agent Policy Operations",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+        tags={"agent_os", "policy"},
+    )(sm_agent_policy_operations)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -353,69 +305,37 @@ def register_policy_tools(mcp: Any) -> None:
 # ══════════════════════════════════════════════════════════════════════
 
 
-@_guard
-def register_specialist_registry_tools(mcp: Any) -> None:
-    """Register specialist package registry tools (AU-032)."""
-    from pydantic import Field
-
-    @mcp.tool(
-        annotations={
-            "title": "Install Specialist",
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "idempotentHint": False,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "registry"},
-    )
-    async def install_specialist(
-        package_name: str = Field(
-            description="Name of the specialist package to install"
-        ),
-    ) -> dict:
-        """Installs a specialist package: merges MCP config, hydrates KG, deploys container if needed."""
-        registry = _get_registry()
+async def sm_agent_specialist_operations(
+    action: Literal["install", "uninstall", "list", "search"],
+    package_name: str | None = Field(
+        description="Name of the specialist package to install or uninstall",
+        default=None,
+    ),
+    status: str = Field(
+        description="Filter (for 'list'): 'installed', 'available', or 'all'",
+        default="all",
+    ),
+    query: str | None = Field(description="Search term (for 'search')", default=None),
+) -> dict:
+    """Manages specialist packages: install, uninstall, list, or search."""
+    registry = _get_registry()
+    if action == "install":
+        if not package_name:
+            return {
+                "success": False,
+                "error": "package_name is required for 'install' action",
+            }
         result = await registry.install(package_name)
         return {"success": "✓" in result, "message": result}
-
-    @mcp.tool(
-        annotations={
-            "title": "Uninstall Specialist",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "registry"},
-    )
-    async def uninstall_specialist(
-        package_name: str = Field(
-            description="Name of the specialist package to uninstall"
-        ),
-    ) -> dict:
-        """Uninstalls a specialist package: removes MCP config, KG nodes, and container if running."""
-        registry = _get_registry()
+    elif action == "uninstall":
+        if not package_name:
+            return {
+                "success": False,
+                "error": "package_name is required for 'uninstall' action",
+            }
         result = await registry.uninstall(package_name)
         return {"success": "✓" in result, "message": result}
-
-    @mcp.tool(
-        annotations={
-            "title": "List Specialists",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "registry"},
-    )
-    async def list_specialists(
-        status: str = Field(
-            description="Filter: 'installed', 'available', or 'all'",
-            default="all",
-        ),
-    ) -> dict:
-        """Lists specialist packages filtered by installation status."""
-        registry = _get_registry()
+    elif action == "list":
         if status == "installed":
             packages = registry.list_installed()
         elif status == "available":
@@ -429,22 +349,9 @@ def register_specialist_registry_tools(mcp: Any) -> None:
             ],
             "count": len(packages),
         }
-
-    @mcp.tool(
-        annotations={
-            "title": "Search Specialists",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "registry"},
-    )
-    async def search_specialists(
-        query: str = Field(description="Search term (matches name, description, tags)"),
-    ) -> dict:
-        """Searches the specialist registry by name, description, or tags."""
-        registry = _get_registry()
+    elif action == "search":
+        if not query:
+            return {"success": False, "error": "query is required for 'search' action"}
         results = registry.search(query)
         return {
             "results": [
@@ -452,6 +359,23 @@ def register_specialist_registry_tools(mcp: Any) -> None:
             ],
             "count": len(results),
         }
+    else:
+        return {"success": False, "error": f"Unsupported action: {action}"}
+
+
+@_guard
+def register_specialist_registry_tools(mcp: Any) -> None:
+    """Register specialist package registry tools (AU-032)."""
+    mcp.tool(
+        annotations={
+            "title": "Agent Specialist Registry Operations",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+        tags={"agent_os", "registry"},
+    )(sm_agent_specialist_operations)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -459,58 +383,26 @@ def register_specialist_registry_tools(mcp: Any) -> None:
 # ══════════════════════════════════════════════════════════════════════
 
 
-@_guard
-def register_agent_health_tools(mcp: Any) -> None:
-    """Register cognitive scheduler health tools (AU-030)."""
-    from pydantic import Field
-
-    @mcp.tool(
-        annotations={
-            "title": "Get Scheduler Stats",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "scheduler"},
-    )
-    async def get_scheduler_stats() -> dict:
-        """Returns the current cognitive scheduler statistics including active processes and quotas."""
-        scheduler = _get_scheduler()
+async def sm_agent_scheduler_operations(
+    action: Literal["get_stats", "list_processes", "preempt", "reset_quota"],
+    process_id: str | None = Field(
+        description="Process ID to preempt or reset quota", default=None
+    ),
+    reason: str = Field(description="Reason for preemption", default="manual"),
+) -> dict:
+    """Manages the cognitive scheduler: get stats, list processes, preempt, or reset quota."""
+    scheduler = _get_scheduler()
+    if action == "get_stats":
         return scheduler.get_stats()
-
-    @mcp.tool(
-        annotations={
-            "title": "List Agent Processes",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "scheduler"},
-    )
-    async def list_agent_processes() -> dict:
-        """Lists all agent processes in the scheduler (running, waiting, preempted, completed)."""
-        scheduler = _get_scheduler()
+    elif action == "list_processes":
         table = scheduler.get_process_table()
         return {"processes": table, "count": len(table)}
-
-    @mcp.tool(
-        annotations={
-            "title": "Preempt Agent Process",
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "idempotentHint": False,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "scheduler"},
-    )
-    async def preempt_process(
-        process_id: str = Field(description="ID of the agent process to preempt"),
-        reason: str = Field(description="Reason for preemption", default="manual"),
-    ) -> dict:
-        """Preempts a running agent process, checkpointing its context for later resumption."""
-        scheduler = _get_scheduler()
+    elif action == "preempt":
+        if not process_id:
+            return {
+                "success": False,
+                "error": "process_id is required for 'preempt' action",
+            }
         checkpoint = scheduler.preempt(process_id, reason=reason)
         if checkpoint:
             return {"success": True, "checkpoint": checkpoint}
@@ -518,27 +410,34 @@ def register_agent_health_tools(mcp: Any) -> None:
             "success": False,
             "error": f"Process '{process_id}' not found or not running",
         }
-
-    @mcp.tool(
-        annotations={
-            "title": "Reset Agent Quota",
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "scheduler"},
-    )
-    async def reset_agent_quota(
-        process_id: str = Field(description="ID of the process to reset quota for"),
-    ) -> dict:
-        """Resets the token usage counter for an agent process."""
-        scheduler = _get_scheduler()
+    elif action == "reset_quota":
+        if not process_id:
+            return {
+                "success": False,
+                "error": "process_id is required for 'reset_quota' action",
+            }
         proc = scheduler._processes.get(process_id)
         if not proc:
             return {"success": False, "error": "Process not found"}
         proc.tokens_used = 0
         return {"success": True, "process_id": process_id, "tokens_used": 0}
+    else:
+        return {"success": False, "error": f"Unsupported action: {action}"}
+
+
+@_guard
+def register_agent_health_tools(mcp: Any) -> None:
+    """Register cognitive scheduler health tools (AU-030)."""
+    mcp.tool(
+        annotations={
+            "title": "Agent Scheduler Operations",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+        tags={"agent_os", "scheduler"},
+    )(sm_agent_scheduler_operations)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -546,44 +445,25 @@ def register_agent_health_tools(mcp: Any) -> None:
 # ══════════════════════════════════════════════════════════════════════
 
 
-@_guard
-def register_watchdog_tools(mcp: Any) -> None:
-    """Register file watcher trigger tools (AU-036)."""
-    from pydantic import Field
-
-    @mcp.tool(
-        annotations={
-            "title": "Check File Change",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "watchdog"},
-    )
-    async def check_file_change(
-        filepath: str = Field(description="Path of the changed file to evaluate"),
-    ) -> dict:
-        """Evaluates a file change against trigger rules and returns any matching query."""
-        watcher = _get_watcher()
+async def sm_agent_watchdog_operations(
+    action: Literal["check_change", "list_watchers", "drain_triggers"],
+    filepath: str | None = Field(
+        description="File path to check for 'check_change'", default=None
+    ),
+) -> dict:
+    """Manages file watchdog triggers: check file change, list active watchers, or drain triggers."""
+    watcher = _get_watcher()
+    if action == "check_change":
+        if not filepath:
+            return {
+                "success": False,
+                "error": "filepath is required for 'check_change' action",
+            }
         trigger = watcher.check_file_change(filepath)
         if trigger:
             return {"triggered": True, **trigger}
         return {"triggered": False, "filepath": filepath}
-
-    @mcp.tool(
-        annotations={
-            "title": "List Active Watchers",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "watchdog"},
-    )
-    async def list_active_watchers() -> dict:
-        """Lists all configured file watcher trigger rules and their status."""
-        watcher = _get_watcher()
+    elif action == "list_watchers":
         rules = []
         for rule in watcher.triggers:
             rules.append(
@@ -601,22 +481,26 @@ def register_watchdog_tools(mcp: Any) -> None:
             "count": len(rules),
             "project_root": watcher.project_root,
         }
+    elif action == "drain_triggers":
+        pending = watcher.drain_pending()
+        return {"triggers": pending, "count": len(pending)}
+    else:
+        return {"success": False, "error": f"Unsupported action: {action}"}
 
-    @mcp.tool(
+
+@_guard
+def register_watchdog_tools(mcp: Any) -> None:
+    """Register file watcher trigger tools (AU-036)."""
+    mcp.tool(
         annotations={
-            "title": "Drain Pending Triggers",
+            "title": "Agent Watchdog Operations",
             "readOnlyHint": False,
             "destructiveHint": False,
             "idempotentHint": False,
             "openWorldHint": False,
         },
         tags={"agent_os", "watchdog"},
-    )
-    async def drain_pending_triggers() -> dict:
-        """Drains and returns all pending file watcher triggers for processing."""
-        watcher = _get_watcher()
-        pending = watcher.drain_pending()
-        return {"triggers": pending, "count": len(pending)}
+    )(sm_agent_watchdog_operations)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -624,24 +508,29 @@ def register_watchdog_tools(mcp: Any) -> None:
 # ══════════════════════════════════════════════════════════════════════
 
 
-@_guard
-def register_maintenance_tools(mcp: Any) -> None:
-    """Register autonomous maintenance tools (AU-038)."""
-    from pydantic import Field
-
-    @mcp.tool(
-        annotations={
-            "title": "Get Due Maintenance Tasks",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "maintenance"},
-    )
-    async def list_maintenance_tasks() -> dict:
-        """Lists all maintenance tasks and identifies which are currently due for execution."""
-        cron = _get_maintenance()
+async def sm_agent_maintenance_operations(
+    action: Literal["list_tasks", "run_now", "schedule", "get_log"],
+    task_id: str | None = Field(
+        description="Unique task identifier to run or schedule", default=None
+    ),
+    name: str | None = Field(
+        description="Human-readable task name (for 'schedule')", default=None
+    ),
+    query: str | None = Field(
+        description="Graph query to execute (for 'schedule')", default=None
+    ),
+    frequency: str = Field(
+        description="Frequency (for 'schedule'): hourly, daily, weekly, on_demand",
+        default="daily",
+    ),
+    priority: str = Field(
+        description="Priority (for 'schedule'): LOW, MEDIUM, HIGH",
+        default="LOW",
+    ),
+) -> dict:
+    """Manages autonomous maintenance: list due tasks, run a task immediately, schedule a new task, or get logs."""
+    cron = _get_maintenance()
+    if action == "list_tasks":
         summary = cron.summary()
         tasks = []
         for task in cron.tasks:
@@ -656,24 +545,12 @@ def register_maintenance_tools(mcp: Any) -> None:
                 }
             )
         return {**summary, "tasks": tasks}
-
-    @mcp.tool(
-        annotations={
-            "title": "Run Maintenance Now",
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "idempotentHint": False,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "maintenance"},
-    )
-    async def run_maintenance_now(
-        task_id: str = Field(
-            description="ID of the maintenance task to run immediately"
-        ),
-    ) -> dict:
-        """Triggers immediate execution of a specific maintenance task."""
-        cron = _get_maintenance()
+    elif action == "run_now":
+        if not task_id:
+            return {
+                "success": False,
+                "error": "task_id is required for 'run_now' action",
+            }
         task = next((t for t in cron.tasks if t.id == task_id), None)
         if not task:
             return {"success": False, "error": f"Task '{task_id}' not found"}
@@ -686,29 +563,12 @@ def register_maintenance_tools(mcp: Any) -> None:
             "priority": task.priority,
             "message": f"Maintenance task '{task.name}' ready for graph execution",
         }
-
-    @mcp.tool(
-        annotations={
-            "title": "Schedule Maintenance Task",
-            "readOnlyHint": False,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"agent_os", "maintenance"},
-    )
-    async def schedule_maintenance(
-        task_id: str = Field(description="Unique task identifier"),
-        name: str = Field(description="Human-readable task name"),
-        query: str = Field(description="Graph query to execute"),
-        frequency: str = Field(
-            description="Frequency: hourly, daily, weekly, on_demand",
-            default="daily",
-        ),
-        priority: str = Field(description="Priority: LOW, MEDIUM, HIGH", default="LOW"),
-    ) -> dict:
-        """Adds a new custom maintenance task to the autonomous scheduler."""
-        cron = _get_maintenance()
+    elif action == "schedule":
+        if not task_id or not name or not query:
+            return {
+                "success": False,
+                "error": "task_id, name, and query are required for 'schedule' action",
+            }
         task = MaintenanceTask(
             id=task_id,
             name=name,
@@ -718,18 +578,22 @@ def register_maintenance_tools(mcp: Any) -> None:
         )
         cron.add_task(task)
         return {"success": True, "task_id": task_id, "message": f"Scheduled '{name}'"}
+    elif action == "get_log":
+        return cron.summary()
+    else:
+        return {"success": False, "error": f"Unsupported action: {action}"}
 
-    @mcp.tool(
+
+@_guard
+def register_maintenance_tools(mcp: Any) -> None:
+    """Register autonomous maintenance tools (AU-038)."""
+    mcp.tool(
         annotations={
-            "title": "Get Maintenance Log",
-            "readOnlyHint": True,
+            "title": "Agent Maintenance Operations",
+            "readOnlyHint": False,
             "destructiveHint": False,
-            "idempotentHint": True,
+            "idempotentHint": False,
             "openWorldHint": False,
         },
         tags={"agent_os", "maintenance"},
-    )
-    async def get_maintenance_log() -> dict:
-        """Returns the maintenance execution log with token usage statistics."""
-        cron = _get_maintenance()
-        return cron.summary()
+    )(sm_agent_maintenance_operations)

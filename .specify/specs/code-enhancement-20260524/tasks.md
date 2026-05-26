@@ -1,0 +1,87 @@
+# Tasks: Code Enhancement: systems-manager
+
+Generated: 2026-05-24T04:17:16.239752+00:00
+Skipped informational: 4
+
+- [ ] [P] **T001** [Dependency Audit] Minor update: pytest-xdist 3.6.0 (constraint — not installed) -> 3.8.0
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T002** [Dependency Audit] Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T003** [Dependency Audit] Minor update: psutil 7.1.0 (installed) -> 7.2.2
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T004** [Codebase Optimization] 2 functions exceed 200 lines (actionable refactoring targets): get_mcp_instance
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T005** [Codebase Optimization] Monolithic: systems_manager.py (2898L) — 9 functions with high complexity (worst
+  - Priority: P1-High | Effort: Large
+- [ ] [P] **T006** [Codebase Optimization] Needs attention: agent_os_tools.py (599L) — Low cohesion: 15 distinct concepts i
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T007** [Codebase Optimization] 23 functions with nesting depth >4
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T008** [Test Coverage] Test suite lacks intent diversity (only one type)
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T009** [Test Coverage] 12 potential doc-test drift items
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T010** [Documentation & Governance] README.md missing sections: usage|quick start
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T011** [Documentation & Governance] 2 broken internal links in README.md
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T012** [Documentation & Governance] README missing: Has a Table of Contents
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T013** [Documentation & Governance] README missing: Has usage examples with code blocks
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T014** [Architecture & Design Patterns] SRP: 5 modules exceed 500 lines (god modules)
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T015** [Architecture & Design Patterns] SRP: 2 classes have >15 methods
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T016** [Architecture & Design Patterns] No discernible layer architecture (no domain/service/adapter separation)
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T017** [Concept Traceability] Low traceability ratio: 0% concepts fully traced
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T018** [Concept Traceability] 18 orphaned concepts (only in one source)
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T019** [Concept Traceability] 90 test functions missing concept markers
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T020** [Concept Traceability] 138 significant functions (>10 lines) missing concept markers in docstrings
+  - Priority: P4-Enhancement | Effort: Small
+- [ ] [P] **T021** [Linting & Formatting] Total lint findings: 0 (high/error: 0, medium/warning: 0, low: 0)
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T022** [Pre-Commit Compliance] 1 hook(s) may be outdated: ruff-pre-commit
+  - Priority: P2-Medium | Effort: Small
+- [ ] [P] **T023** [Directory Organization] 1 rogue/throwaway scripts detected (fix_*, validate_*, patch_*, etc.): scripts/v
+  - Priority: P4-Enhancement | Effort: Medium
+- [ ] [P] **T024** [Version Sync Analysis] Found 2 file(s) with version '1.15.0' that are NOT tracked in .bumpversion.cfg:
+  - Priority: P2-Medium | Effort: Small
+- [ ] [P] **T025** [Version Sync Analysis]   - specify_reports/systems-manager/code_enhancement_report.md
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T026** [Version Sync Analysis]   - specify_reports/systems-manager/results_static.json
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T027** [Changelog Audit] CHANGELOG.md exists but could not be parsed — check format compliance
+  - Priority: P3-Low | Effort: Medium
+- [ ] [P] **T028** [Changelog Audit] No changelog entries within the last 30 days
+  - Priority: P3-Low | Effort: Medium
+- [ ] [P] **T029** [Changelog Audit] keepachangelog not installed — pip install 'universal-skills[code-enhancer]'
+  - Priority: P3-Low | Effort: Small
+- [ ] [P] **T030** [Pytest Quality] 3 test files exceed 500 lines — split into focused modules
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T031** [Pytest Quality] Test directory lacks subdirectory organization (consider unit/, integration/, e2
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T032** [Pytest Quality] Low fixture usage: only 19% of tests use fixtures
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T033** [Pytest Quality] 1 tests have no assertions
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T034** [Pytest Quality] 24 tests use weak assertions (assert result is not None, assert True, etc.)
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T035** [Pytest Quality] 34 tests have >5 assertions — consider splitting (single responsibility)
+  - Priority: P2-Medium | Effort: Large
+- [ ] [P] **T036** [Pytest Quality] 5 tests have excessive mocking (>5 mocks) — test behavior, not implementation
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T037** [Pytest Quality] 1 tests exceed 100 lines — likely doing too much per test
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T038** [Environment Variables] Only 29% of env vars documented in README.md
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T039** [Environment Variables] Undocumented env vars: AGENT_POLICIES_PATH, AUTH_TYPE, EUNOMIA_POLICY_FILE, EUNO
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T040** [Environment Variables] 8 Python env vars not in .env.example: AGENT_POLICIES_PATH, MAINTENANCE_PRIORITY
+  - Priority: P2-Medium | Effort: Medium
+- [ ] [P] **T041** [analyze_xdg_kg] Analysis error: No module named 'agent_utilities.knowledge_graph'
+  - Priority: P1-High | Effort: Medium
