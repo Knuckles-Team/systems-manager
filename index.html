@@ -344,6 +344,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#multi-host-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Host Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#mcp" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -717,6 +728,87 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="sudo_security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sudo Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Day 0 Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="day_0_provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Day 0 Provisioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -768,6 +860,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-host-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Host Configuration
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1163,7 +1266,11 @@
 <li><strong>System and Hardware Stats</strong>: Retrieve detailed OS and hardware information using <code>psutil</code>.</li>
 <li><strong>Logging</strong>: Optional logging to a specified file or default <code>systems_manager.log</code> in the script directory.</li>
 <li><strong>FastMCP Server</strong>: Expose all functionality via a Model Context Protocol (MCP) server over stdio or HTTP for integration with AI or automation systems.</li>
+<li><strong>Zero-Script Multi-Host Routing</strong>: Seamless routing of all system tool methods to remote target hosts defined in standard <code>inventory.yaml</code> paths using secure SSH wrapping and dynamic <code>remote_eval</code>.</li>
 </ul>
+<h2 id="multi-host-configuration">Multi-Host Configuration<a class="headerlink" href="#multi-host-configuration" title="Permanent link">&para;</a></h2>
+<p>Systems-Manager allows routing tool calls directly to remote targets without installing any daemons on those hosts.
+See the detailed <a href="multi_host/">Multi-Host Architecture and Configuration Guide</a> for setup and use instructions.</p>
 <h2 id="mcp">MCP<a class="headerlink" href="#mcp" title="Permanent link">&para;</a></h2>
 <h3 id="mcp-tools">MCP tools:<a class="headerlink" href="#mcp-tools" title="Permanent link">&para;</a></h3>
 <ul>

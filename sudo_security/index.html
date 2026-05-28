@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="..">
+        <link rel="prev" href="../overview/">
       
       
-        <link rel="next" href="../sudo_security/">
+        <link rel="next" href="../installation/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Overview - systems-manager</title>
+        <title>Sudo Security - systems-manager</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#systems-manager-concept-overview" class="md-skip">
+        <a href="#secure-sudo-wrapper-architecture-threat-model" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              Sudo Security
             
           </span>
         </div>
@@ -282,6 +282,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -301,7 +328,7 @@
   <span class="md-ellipsis">
     
   
-    Overview
+    Sudo Security
   
 
     
@@ -319,7 +346,7 @@
   <span class="md-ellipsis">
     
   
-    Overview
+    Sudo Security
   
 
     
@@ -345,55 +372,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#description" class="md-nav__link">
+  <a href="#1-threat-model-security-risks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Description
+        1. Threat Model &amp; Security Risks
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enterprise-readiness" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Enterprise Readiness
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#concept-registry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Concept Registry
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#architecture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Architecture
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Architecture">
+    <nav class="md-nav" aria-label="1. Threat Model &amp; Security Risks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dynamic-os-provider-subclass-selection" class="md-nav__link">
+  <a href="#key-attack-vectors-mitigations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dynamic OS Provider Subclass Selection
+        Key Attack Vectors &amp; Mitigations
       
     </span>
   </a>
@@ -406,22 +400,73 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#mcp-configuration" class="md-nav__link">
+  <a href="#2-secure-sudo-wrapper-design-the-gold-standard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MCP Configuration
+        2. Secure Sudo Wrapper Design (The Gold Standard)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="MCP Configuration">
+    <nav class="md-nav" aria-label="2. Secure Sudo Wrapper Design (The Gold Standard)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#stdio-mode" class="md-nav__link">
+  <a href="#the-security-policy-whitelist" class="md-nav__link">
     <span class="md-ellipsis">
       
-        stdio Mode
+        The Security Policy (Whitelist)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-package-distribution-bootstrapping-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Package Distribution &amp; Bootstrapping Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-multi-host-cluster-bootstrapping-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Multi-Host Cluster Bootstrapping Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Multi-Host Cluster Bootstrapping Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-security-operational-safeguards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Security &amp; Operational Safeguards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Security &amp; Operational Safeguards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-host-connection-pre-flight-checks-anti-hang-guard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Host Connection Pre-flight Checks (Anti-Hang Guard)
       
     </span>
   </a>
@@ -429,13 +474,29 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#streamable-http-mode" class="md-nav__link">
+  <a href="#b-single-prompt-credential-piping" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Streamable HTTP Mode
+        B. Single-Prompt Credential Piping
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-isolated-rule-staging-and-atomic-visudo-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Isolated Rule Staging and Atomic Visudo Check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -448,33 +509,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../sudo_security/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sudo Security
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -560,55 +594,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#description" class="md-nav__link">
+  <a href="#1-threat-model-security-risks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Description
+        1. Threat Model &amp; Security Risks
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enterprise-readiness" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Enterprise Readiness
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#concept-registry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Concept Registry
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#architecture" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Architecture
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Architecture">
+    <nav class="md-nav" aria-label="1. Threat Model &amp; Security Risks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#dynamic-os-provider-subclass-selection" class="md-nav__link">
+  <a href="#key-attack-vectors-mitigations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dynamic OS Provider Subclass Selection
+        Key Attack Vectors &amp; Mitigations
       
     </span>
   </a>
@@ -621,22 +622,73 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#mcp-configuration" class="md-nav__link">
+  <a href="#2-secure-sudo-wrapper-design-the-gold-standard" class="md-nav__link">
     <span class="md-ellipsis">
       
-        MCP Configuration
+        2. Secure Sudo Wrapper Design (The Gold Standard)
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="MCP Configuration">
+    <nav class="md-nav" aria-label="2. Secure Sudo Wrapper Design (The Gold Standard)">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#stdio-mode" class="md-nav__link">
+  <a href="#the-security-policy-whitelist" class="md-nav__link">
     <span class="md-ellipsis">
       
-        stdio Mode
+        The Security Policy (Whitelist)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-package-distribution-bootstrapping-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Package Distribution &amp; Bootstrapping Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-multi-host-cluster-bootstrapping-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Multi-Host Cluster Bootstrapping Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Multi-Host Cluster Bootstrapping Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-security-operational-safeguards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Security &amp; Operational Safeguards
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key Security &amp; Operational Safeguards">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-host-connection-pre-flight-checks-anti-hang-guard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A. Host Connection Pre-flight Checks (Anti-Hang Guard)
       
     </span>
   </a>
@@ -644,13 +696,29 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#streamable-http-mode" class="md-nav__link">
+  <a href="#b-single-prompt-credential-piping" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Streamable HTTP Mode
+        B. Single-Prompt Credential Piping
       
     </span>
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#c-isolated-rule-staging-and-atomic-visudo-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        C. Isolated Rule Staging and Atomic Visudo Check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -679,193 +747,124 @@
   
 
 
-<h1 id="systems-manager-concept-overview">systems-manager — Concept Overview<a class="headerlink" href="#systems-manager-concept-overview" title="Permanent link">&para;</a></h1>
-<blockquote>
-<p><strong>Category</strong>: Infrastructure | <strong>Ecosystem Role</strong>: MCP Server + A2A Agent
-Built on <a href="https://github.com/Knuckles-Team/agent-utilities"><code>agent-utilities</code></a> — the unified AGI Harness.</p>
-</blockquote>
-<h2 id="description">Description<a class="headerlink" href="#description" title="Permanent link">&para;</a></h2>
-<p>Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server</p>
-<h2 id="enterprise-readiness">Enterprise Readiness<a class="headerlink" href="#enterprise-readiness" title="Permanent link">&para;</a></h2>
-<p>All agents in the ecosystem inherit enterprise-grade infrastructure from <code>agent-utilities</code>:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Feature</th>
-<th style="text-align: left;">Status</th>
-<th style="text-align: left;">Source</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;"><strong>JWT/OIDC Authentication</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;"><code>agent-utilities[auth]</code> — Authlib JWKS + API key middleware</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>OpenTelemetry Instrumentation</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;"><code>agent-utilities[logfire]</code> — OTLP export, FastAPI auto-instrumentation</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>HashiCorp Vault Integration</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;"><code>agent-utilities[vault]</code> — <code>secret://</code>, <code>env://</code>, <code>vault://</code> URI schemes</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Audit Logging</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;">Append-only compliance trail with 30+ action types (CONCEPT:OS-5.4)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Token Usage Analytics</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;">4-bucket tracking with budget alerting (CONCEPT:OS-5.4)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Prompt Injection Defense</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;">25+ pattern scanner + jailbreak taxonomy (CONCEPT:OS-5.1)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Guardrail Engine</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;">Input/output interception with block/redact/warn (CONCEPT:OS-5.3)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Action Execution Pipeline</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;">Token, cost, duration, and node transition limits Dry-run / commit / rollback phases (CONCEPT:ORCH-1.4)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Resource Scheduling</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;">Priority queuing + preemption limits (CONCEPT:OS-5.2)</td>
-</tr>
-<tr>
-<td style="text-align: left;"><strong>Session Concurrency</strong></td>
-<td style="text-align: left;">✅ Built-in</td>
-<td style="text-align: left;">Enqueue/reject/interrupt/rollback (CONCEPT:OS-5.3)</td>
-</tr>
-</tbody>
-</table>
-<h2 id="concept-registry">Concept Registry<a class="headerlink" href="#concept-registry" title="Permanent link">&para;</a></h2>
-<p>This project implements or inherits the following ecosystem concepts:</p>
-<table>
-<thead>
-<tr>
-<th style="text-align: left;">Concept ID</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Source</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align: left;">SYS-1.0</td>
-<td style="text-align: left;">Abstracted OS Provider</td>
-<td style="text-align: left;"><code>systems-manager</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">SYS-1.1</td>
-<td style="text-align: left;">Distributed Fleet Control Plane</td>
-<td style="text-align: left;"><code>systems-manager</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">SYS-1.2</td>
-<td style="text-align: left;">Deep Introspection Telemetry</td>
-<td style="text-align: left;"><code>systems-manager</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">SYS-1.3</td>
-<td style="text-align: left;">Package &amp; Service Mutation</td>
-<td style="text-align: left;"><code>systems-manager</code></td>
-</tr>
-<tr>
-<td style="text-align: left;">ECO-4.1</td>
-<td style="text-align: left;">MCP &amp; Universal Skills</td>
-<td style="text-align: left;"><code>agent-utilities</code> (inherited)</td>
-</tr>
-<tr>
-<td style="text-align: left;">OS-5.0</td>
-<td style="text-align: left;">Agent OS Kernel</td>
-<td style="text-align: left;"><code>agent-utilities</code> (inherited)</td>
-</tr>
-<tr>
-<td style="text-align: left;">OS-5.2</td>
-<td style="text-align: left;">Resource Scheduling</td>
-<td style="text-align: left;"><code>agent-utilities</code> (inherited)</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p>📖 <strong>Full Breakdown</strong>: See <a href="../pillars/1_agent_os_layer/">Pillar 1: Agent OS Layer</a> for deep dives into <code>SYS-1.X</code>.</p>
-<p>📖 <strong>Full Registry</strong>: See <a href="https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/overview.md"><code>agent-utilities/docs/overview.md</code></a> for the complete 5-Pillar concept index.</p>
-</blockquote>
-<h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
-<p>The <code>systems-manager</code> acts as the physical execution layer (Agent OS Layer) driven by the core <code>agent-utilities</code> kernel.</p>
-<pre class="mermaid"><code>flowchart TD
-    subgraph "Agent OS Kernel (agent-utilities)"
-        Orchestrator[Graph Orchestrator]
-        Auth[Permissions Kernel]
-    end
-
-    subgraph "Agent OS Layer (systems-manager)"
-        MCP[MCP Server]
-        OSProvider[Abstracted OS Provider]
-        Linux[Linux Backend]
-        Windows[Windows Backend]
-    end
-
-    Orchestrator --&gt;|Tool Calls| MCP
-    Auth --&gt;|Token Validation| MCP
-    MCP --&gt; OSProvider
-    OSProvider --&gt; Linux
-    OSProvider --&gt; Windows</code></pre>
-<h3 id="dynamic-os-provider-subclass-selection">Dynamic OS Provider Subclass Selection<a class="headerlink" href="#dynamic-os-provider-subclass-selection" title="Permanent link">&para;</a></h3>
-<p>The <code>systems-manager</code> dynamically detects the running operating system at runtime and instantiates the corresponding specialized subclass. While standard operations are composed and routed through common sub-manager components (like file systems, python packages, or node switchers), OS-specific mutations like application updates, service management, and platform packages are isolated in clean platform subclasses:</p>
+<h1 id="secure-sudo-wrapper-architecture-threat-model">Secure Sudo Wrapper Architecture &amp; Threat Model<a class="headerlink" href="#secure-sudo-wrapper-architecture-threat-model" title="Permanent link">&para;</a></h1>
+<p>Allowing automated AI agents to execute actions with root privileges (<code>sudo</code>) is a high-risk operational vector. Hallucinations, prompt injections, or malicious tool invocations could result in the catastrophic compromise of the host system.</p>
+<p>This document outlines the professional, enterprise-safe security architecture implemented in <code>systems-manager</code> to enable elevated capabilities for the agent while strictly enforcing the <strong>Principle of Least Privilege (PoLP)</strong>.</p>
+<hr />
+<h2 id="1-threat-model-security-risks">1. Threat Model &amp; Security Risks<a class="headerlink" href="#1-threat-model-security-risks" title="Permanent link">&para;</a></h2>
+<p>When an agent executes shell commands via <code>sudo</code>, it creates several attack vectors:</p>
 <pre class="mermaid"><code>graph TD
-    A[detect_and_create_manager] --&gt;|platform.system &amp; distro.id| B{OS Subclass Selection}
-    B --&gt;|Ubuntu / Debian| C[AptManager]
-    B --&gt;|RHEL / CentOS| D[YumManager]
-    B --&gt;|Arch Linux| E[PacmanManager]
-    B --&gt;|macOS / Darwin| F[BrewManager]
-    B --&gt;|Windows / NT| G[WindowsManager]
+    UserQuery["User Query / Prompt Injection"] --&gt;|1. Hijacks Context| Agent["Agent LLM"]
+    Agent --&gt;|2. Hallucinates / Generates Payload| Tool["systems-manager Tool"]
+    Tool --&gt;|3. Invokes Sudo| Subprocess["Subprocess Execution"]
+    Subprocess --&gt;|4. Full Root Compromise| Host["Host Operating System"]
 
-    C &amp; D &amp; E &amp; F &amp; G --&gt;|Inherit| H[SystemsManagerBase]
+    style Host fill:#ffdddd,stroke:#ff0000,stroke-width:2px
+    style UserQuery fill:#ffffcc,stroke:#d4af37,stroke-width:2px</code></pre>
+<h3 id="key-attack-vectors-mitigations">Key Attack Vectors &amp; Mitigations<a class="headerlink" href="#key-attack-vectors-mitigations" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Attack Vector</th>
+<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Mitigation Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Prompt Injection</strong></td>
+<td style="text-align: left;">An attacker injects instructions causing the agent to execute commands like <code>sudo rm -rf /</code> or download malicious binaries.</td>
+<td style="text-align: left;">Strict parameter schemas and whitelisting at the system wrapper layer.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Command Chaining / Injection</strong></td>
+<td style="text-align: left;">Input parameters containing characters like <code>;</code>, <code>&amp;&amp;</code>, <code>\|</code>, or backticks lead to executing unintended secondary commands.</td>
+<td style="text-align: left;">Avoid <code>shell=True</code> in Python subprocess calls; perform strict regex and whitelist validation.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Pager Escapes</strong></td>
+<td style="text-align: left;">Commands like <code>systemctl status</code> or <code>journalctl</code> default to using a pager (like <code>less</code> or <code>more</code>). An interactive pager allows shell escape commands (e.g., typing <code>!/bin/sh</code> to get a root shell).</td>
+<td style="text-align: left;">Set environment variable <code>SYSTEMD_PAGER=cat</code> or use the <code>--no-pager</code> flag.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Turing-Complete Interpreter Execution</strong></td>
+<td style="text-align: left;">Allowing <code>sudo python3</code> allows the caller to execute arbitrary code using python's standard libraries.</td>
+<td style="text-align: left;">Never allow passwordless sudo on general-purpose interpreters. Always point to a highly locked-down binary.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-secure-sudo-wrapper-design-the-gold-standard">2. Secure Sudo Wrapper Design (The Gold Standard)<a class="headerlink" href="#2-secure-sudo-wrapper-design-the-gold-standard" title="Permanent link">&para;</a></h2>
+<p>To secure <code>systems-manager</code>, we rejected unsafe approaches like blanket passwordless sudo (<code>ALL=(ALL) NOPASSWD: ALL</code>) or wildcard-based sudoers lists (<code>/usr/bin/systemctl start *</code>). Instead, we implemented a <strong>Secure Sudo Wrapper</strong> (<code>systems-manager-helper</code>):</p>
+<ol>
+<li><strong>Structured Inputs</strong>: The helper accepts highly structured CLI arguments (<code>service &lt;action&gt; &lt;name&gt;</code> or <code>package &lt;action&gt; [name]</code>) rather than arbitrary command strings.</li>
+<li><strong>Whitelist Restrictions</strong>: The helper enforces a hardcoded, read-only whitelist of allowed service names and package names. Any request to touch a service or package not in this whitelist is rejected immediately.</li>
+<li><strong>Execution Safety</strong>: Commands are run with <code>shell=False</code>, a strict <code>PATH</code> environment, and <code>SYSTEMD_PAGER=cat</code> to eliminate command-chaining and pager-escape vulnerabilities.</li>
+<li><strong>Structured JSON Output</strong>: All results are returned as standardized JSON objects (<code>{"success": true, "stdout": "...", "stderr": "..."}</code>) which are then parsed programmatically by the non-privileged agent space.</li>
+</ol>
+<h3 id="the-security-policy-whitelist">The Security Policy (Whitelist)<a class="headerlink" href="#the-security-policy-whitelist" title="Permanent link">&para;</a></h3>
+<p>The secure wrapper restricts elevated actions to the following pre-approved assets:</p>
+<ul>
+<li><strong>Whitelisted Services</strong>: <code>nginx</code>, <code>caddy</code>, <code>docker</code>, <code>ssh</code>, <code>fail2ban</code>, <code>snapd.socket</code>, <code>snapd</code>.</li>
+<li><strong>Whitelisted Packages</strong>: <code>curl</code>, <code>git</code>, <code>htop</code>, <code>rsync</code>, <code>ufw</code>, <code>trash-cli</code>, <code>snapd</code>, <code>nginx</code>, <code>caddy</code>, <code>docker.io</code>, <code>fail2ban</code>.</li>
+</ul>
+<p>Any attempt to manipulate other system entities will fail with a security violation.</p>
+<hr />
+<h2 id="3-package-distribution-bootstrapping-architecture">3. Package Distribution &amp; Bootstrapping Architecture<a class="headerlink" href="#3-package-distribution-bootstrapping-architecture" title="Permanent link">&para;</a></h2>
+<p>Since <code>pip</code> or <code>uv</code> installations cannot write directly to system files like <code>/etc/sudoers</code> or change file ownership to <code>root</code>, <code>systems-manager</code> includes a self-triggering bootstrapping utility (<code>--setup-sudo</code>) that administrators can execute once to install the policy securely:</p>
+<pre class="mermaid"><code>graph TD
+    PyPI["PyPI: pip install systems-manager"] --&gt;|1. Registers Entrypoints| Binaries["systems-manager &amp; systems-manager-helper"]
+    Binaries --&gt;|2. Installed in PATH| LocalPath["~/.local/bin/ OR .venv/bin/"]
+    User --&gt;|3. Executed by Administrator| Bootstrap["systems-manager --setup-sudo"]
+    Bootstrap --&gt;|4. Detects Active User &amp; Binary Path| Detect["Dynamic Environment Detection"]
+    Detect --&gt;|5. Installs policy with Root permission| Sudoers["/etc/sudoers.d/systems-manager-&lt;user&gt;"]
 
-    H --&gt;|Composition| I[FileSystemManager]
-    H --&gt;|Composition| J[ShellProfileManager]
-    H --&gt;|Composition| K[PythonManager]
-    H --&gt;|Composition| L[NodeManager]</code></pre>
-<p>This project follows the standardized agent-package pattern:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>systems-manager/
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── systems_manager/        # Source code
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>│   ├── __init__.py
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│   ├── agent_server.py      # Entry point (create_graph_agent_server)
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│   ├── api_client.py        # REST/GraphQL API wrapper
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│   └── mcp_server.py        # FastMCP tool definitions
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>├── tests/                   # Test suite
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>├── docs/                    # Documentation
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>├── pyproject.toml           # Package metadata
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>├── mcp_config.json          # MCP server configuration
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>├── main_agent.json          # Agent identity &amp; system prompt
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>└── Dockerfile               # Container deployment
-</code></pre></div>
-<h2 id="mcp-configuration">MCP Configuration<a class="headerlink" href="#mcp-configuration" title="Permanent link">&para;</a></h2>
-<h3 id="stdio-mode">stdio Mode<a class="headerlink" href="#stdio-mode" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uv&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;run&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--with&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;systems-manager&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;systems-mcp&quot;</span><span class="p">],</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="p">}</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
-</code></pre></div>
-<h3 id="streamable-http-mode">Streamable HTTP Mode<a class="headerlink" href="#streamable-http-mode" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>systems-mcp<span class="w"> </span>--transport<span class="w"> </span>streamable-http<span class="w"> </span>--port<span class="w"> </span><span class="m">8001</span>
-</code></pre></div>
+    style Sudoers fill:#ddffdd,stroke:#00aa00,stroke-width:2px</code></pre>
+<ol>
+<li><strong>Entrypoints Registration</strong>: Two console scripts are registered in <code>pyproject.toml</code>:<ul>
+<li><code>systems-manager</code>: Standard user CLI.</li>
+<li><code>systems-manager-helper</code>: The secure root-only helper wrapper.</li>
+</ul>
+</li>
+<li><strong>Dynamic Location Discovery</strong>: When running <code>--setup-sudo</code>, the script dynamically determines the absolute path of the <code>systems-manager-helper</code> within the active virtual environment or user bin folder.</li>
+<li><strong>Visudo Verification</strong>: To prevent configuration syntax errors that could lock administrators out of the system, a temporary configuration file is generated, validated via <code>visudo -c -f &lt;file&gt;</code>, and only then copied to <code>/etc/sudoers.d/systems-manager-&lt;user&gt;</code> with strict permissions <code>0440</code> owned by <code>root:root</code>.</li>
+</ol>
+<hr />
+<h2 id="4-multi-host-cluster-bootstrapping-architecture">4. Multi-Host Cluster Bootstrapping Architecture<a class="headerlink" href="#4-multi-host-cluster-bootstrapping-architecture" title="Permanent link">&para;</a></h2>
+<p>For multi-host topologies, configuring sudoers rules manually on every single node is highly inefficient and error-prone. To solve this, <code>systems-manager</code> introduces a cluster-wide automated sudo bootstrapping system triggered via the <code>--bootstrap-cluster-sudo</code> flag.</p>
+<pre class="mermaid"><code>graph TD
+    Controller["systems-manager --bootstrap-cluster-sudo"] --&gt;|1. Loads Inventory| HostManager["HostManager (tunnel-manager)"]
+    HostManager --&gt;|2. Reads Config| Inv["inventory.yaml"]
+    Controller --&gt;|3. Reachability Pre-flight| Reach["SSH Reachability Check (BatchMode)"]
+    Reach --&gt;|Offline/Unreachable| Skip["Skip Host (Graceful)"]
+    Reach --&gt;|4. Passwordless Sudo Check| SudoCheck["ssh ... sudo -n true"]
+    SudoCheck --&gt;|Already Active| Skip
+    SudoCheck --&gt;|Needs Bootstrap| BootList["Compile Active Targets List"]
+    Controller --&gt;|5. Secure Password Input| GetPass["getpass.getpass() (Secure Stdin)"]
+    Controller --&gt;|6. Pipe Temp Sudoers Rule| RemoteTemp["cat &gt; /tmp/systems-manager-sudoers"]
+    Controller --&gt;|7. Install and Verify| Visudo["sudo -S cp &amp;&amp; chown/chmod &amp;&amp; visudo -c"]
+    Visudo --&gt;|Success| Active["Passwordless Helper Active"]
+    Visudo --&gt;|Cleanup| RM["rm -f /tmp/systems-manager-sudoers"]
+
+    style Controller fill:#d0f0ff,stroke:#006699,stroke-width:2px
+    style Visudo fill:#ddffdd,stroke:#00aa00,stroke-width:2px</code></pre>
+<h3 id="key-security-operational-safeguards">Key Security &amp; Operational Safeguards<a class="headerlink" href="#key-security-operational-safeguards" title="Permanent link">&para;</a></h3>
+<h4 id="a-host-connection-pre-flight-checks-anti-hang-guard">A. Host Connection Pre-flight Checks (Anti-Hang Guard)<a class="headerlink" href="#a-host-connection-pre-flight-checks-anti-hang-guard" title="Permanent link">&para;</a></h4>
+<p>When running across a cluster, any host that is offline or misconfigured can cause standard SSH connections to hang or interactively prompt for passwords/passphrases. To guarantee non-blocking batch execution, the bootstrap routine:
+1. <strong>Explicit Offline Skip</strong>: Skips specific nodes known to be structurally offline in the environment (e.g. <code>gr1080</code>).
+2. <strong>Fast Connection Test</strong>: Runs a connection test using SSH with <code>ConnectTimeout=3</code> and <code>-o BatchMode=yes</code> set. This forces SSH to fail instantly and return non-zero if the port is unreachable or key-authentication is not yet ready, avoiding hanging the orchestrator.
+3. <strong>Passwordless Check</strong>: Executes <code>sudo -n true</code> over SSH to check if passwordless sudo for the <code>systems-manager-helper</code> (or generic passwordless execution) is already active. If it is, the host is skipped, avoiding redundant configuration cycles.</p>
+<h4 id="b-single-prompt-credential-piping">B. Single-Prompt Credential Piping<a class="headerlink" href="#b-single-prompt-credential-piping" title="Permanent link">&para;</a></h4>
+<p>For hosts requiring bootstrap, asking the operator to type their password multiple times or storing credentials in plain text are severe security vulnerabilities.
+* <strong>Prompt Once</strong>: The utility prompts the operator exactly <em>once</em> using <code>getpass.getpass()</code>.
+* <strong>Zero CLI Leaks</strong>: Sudo passwords are never passed as CLI arguments (which would expose them to the process list e.g. via <code>ps aux</code>).
+* <strong>Secure Stdin Piping</strong>: The password is piped directly to the remote SSH command stream (<code>sudo -S -p '' sh -c ...</code>) using <code>subprocess.communicate(input=password + "\n")</code> over a secure socket.</p>
+<h4 id="c-isolated-rule-staging-and-atomic-visudo-check">C. Isolated Rule Staging and Atomic Visudo Check<a class="headerlink" href="#c-isolated-rule-staging-and-atomic-visudo-check" title="Permanent link">&para;</a></h4>
+<p>Modifying <code>/etc/sudoers</code> or <code>/etc/sudoers.d/*</code> files directly can lead to system-wide lockouts if syntax errors occur. The multi-host bootstrap workflow employs a strict three-stage atomic transaction:
+1. <strong>Write to /tmp</strong>: The NOPASSWD helper rule (<code>&lt;user&gt; ALL=(ALL) NOPASSWD: /path/to/systems-manager-helper</code>) is piped safely into a temporary file <code>/tmp/systems-manager-sudoers</code> via <code>cat</code> over standard SSH.
+2. <strong>Privileged Setup &amp; Verification</strong>: The temporary file is copied to <code>/etc/sudoers.d/systems-manager-&lt;user&gt;</code>, its ownership is changed to <code>root:root</code>, and permissions are set to <code>0440</code>.
+3. <strong>visudo Verification</strong>: The command executes <code>visudo -c -f /etc/sudoers.d/systems-manager-&lt;user&gt;</code> to verify syntax. If visudo fails, the configuration is instantly rolled back (deleted) and the command exits with <code>1</code>, ensuring the host's sudo system remains fully functional.
+4. <strong>Guaranteed Remote Cleanup</strong>: Under all circumstances (success or failure), a cleanup command <code>rm -f /tmp/systems-manager-sudoers</code> is dispatched to prevent leaking temporary configuration files.</p>
 
 
 
