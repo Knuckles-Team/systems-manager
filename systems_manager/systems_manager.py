@@ -24,7 +24,7 @@ from systems_manager.models import (
     SystemStats,
 )
 
-__version__ = "1.15.0"
+__version__ = "1.16.0"
 
 
 def setup_logging(
@@ -282,7 +282,9 @@ class NodeManager:
 
 
 class SystemsManagerBase(ABC):
-    def __init__(self, host: str | None = None, silent: bool = False, log_file: str | None = None):
+    def __init__(
+        self, host: str | None = None, silent: bool = False, log_file: str | None = None
+    ):
         self.host = host
         self.silent = silent
         self.logger = setup_logging(log_file)  # type: ignore
@@ -312,27 +314,31 @@ class SystemsManagerBase(ABC):
     def remote_eval(self, py_code: str) -> Any:
         if not self.host:
             raise ValueError("remote_eval called but no remote host is configured")
-            
+
         from tunnel_manager.tunnel_manager import HostManager
+
         hm = HostManager()
         if self.host not in hm.hosts:
-            raise ValueError(f"Host '{self.host}' not configured in inventory ({hm.config_file})")
+            raise ValueError(
+                f"Host '{self.host}' not configured in inventory ({hm.config_file})"
+            )
         hinfo = hm.hosts[self.host]
-        
+
         hostname = hinfo.get("hostname")
         user = hinfo.get("user", "genius")
         port = hinfo.get("port", 22)
         identity_file = hinfo.get("key_path") or hinfo.get("identity_file")
-        
+
         import base64
+
         encoded_py = base64.b64encode(py_code.encode("utf-8")).decode("utf-8")
         remote_py_cmd = f"python3 -c \"import base64; exec(base64.b64decode('{encoded_py}').decode('utf-8'))\""
-        
+
         ssh_cmd = ["ssh", "-o", "StrictHostKeyChecking=no"]
         if identity_file:
             ssh_cmd.extend(["-i", os.path.expanduser(identity_file)])
         ssh_cmd.extend(["-p", str(port), f"{user}@{hostname}", remote_py_cmd])
-        
+
         try:
             res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=15)
             if res.returncode != 0:
@@ -342,6 +348,59 @@ class SystemsManagerBase(ABC):
             self.logger.error(f"Failed to execute remote_eval: {str(e)}")
             raise
 
+    def run_elevated_tool(
+        self, category: str, action: str, target: str | None = None
+    ) -> dict:
+        """
+        Subprocess invocation from non-privileged space to secure helper.
+        """
+        helper_name = "systems-manager-helper"
+        helper_path = shutil.which(helper_name)
+        if not helper_path:
+            helper_path = os.path.join(os.path.dirname(sys.executable), helper_name)
+            if not os.path.exists(helper_path):
+                # Check default user paths
+                home = os.path.expanduser("~")
+                possible_path = os.path.join(home, ".local", "bin", helper_name)
+                if os.path.exists(possible_path):
+                    helper_path = possible_path
+
+        cmd = ["sudo", helper_path, category, action]
+        if target:
+            cmd.append(target)
+
+        try:
+            # Enforce shell=False to ensure no shell injection
+            res = subprocess.run(cmd, capture_output=True, text=True, shell=False)
+            if res.returncode != 0:
+                err_msg = (
+                    res.stderr.strip()
+                    or f"Elevated helper failed with returncode {res.returncode}"
+                )
+                if res.stdout:
+                    try:
+                        return json.loads(res.stdout)
+                    except json.JSONDecodeError:
+                        pass
+                return {
+                    "success": False,
+                    "error": err_msg,
+                    "returncode": res.returncode,
+                    "stdout": res.stdout.strip(),
+                    "stderr": res.stderr.strip(),
+                }
+
+            return json.loads(res.stdout)
+        except json.JSONDecodeError:
+            return {
+                "success": False,
+                "error": "Failed to parse structured JSON response from elevated helper.",
+                "stdout": res.stdout,
+                "stderr": res.stderr,
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def run_command(
         self,
         command: list[str] | str,
@@ -350,31 +409,41 @@ class SystemsManagerBase(ABC):
     ) -> CommandResult:
         if self.host:
             from tunnel_manager.tunnel_manager import HostManager
+
             hm = HostManager()
             if self.host not in hm.hosts:
-                raise ValueError(f"Host '{self.host}' not configured in inventory ({hm.config_file})")
+                raise ValueError(
+                    f"Host '{self.host}' not configured in inventory ({hm.config_file})"
+                )
             hinfo = hm.hosts[self.host]
-            
+
             if isinstance(command, str):
                 remote_cmd = command
             else:
-                remote_cmd = " ".join(f'"{c}"' if " " in c or "*" in c or "$" in c or "?" in c or ";" in c else c for c in command)
-            
+                remote_cmd = " ".join(
+                    (
+                        f'"{c}"'
+                        if " " in c or "*" in c or "$" in c or "?" in c or ";" in c
+                        else c
+                    )
+                    for c in command
+                )
+
             if elevated:
                 remote_cmd = f"sudo {remote_cmd}"
-                
+
             ssh_args = ["ssh", "-o", "StrictHostKeyChecking=no"]
             identity_file = hinfo.get("key_path") or hinfo.get("identity_file")
             if identity_file:
                 ssh_args.extend(["-i", os.path.expanduser(identity_file)])
             port = hinfo.get("port", 22)
             ssh_args.extend(["-p", str(port)])
-            
+
             user = hinfo.get("user", "genius")
             hostname = hinfo.get("hostname")
             ssh_args.append(f"{user}@{hostname}")
             ssh_args.append(remote_cmd)
-            
+
             command = ssh_args
             shell = False
 
@@ -821,7 +890,17 @@ print(json.dumps(stats))
 
     def start_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
-            return self.run_command(["systemctl", "start", name], elevated=True)
+            if self.host is None:
+                res = self.run_elevated_tool("service", "start", name)
+                return CommandResult(
+                    success=res.get("success", False),
+                    stdout=res.get("stdout"),
+                    stderr=res.get("stderr"),
+                    error=res.get("error"),
+                    command=f"sudo systems-manager-helper service start {name}",
+                )
+            else:
+                return self.run_command(["systemctl", "start", name], elevated=True)
         elif platform.system() == "Windows":
             return self.run_command(
                 ["powershell.exe", "-Command", f"Start-Service -Name '{name}'"],
@@ -834,7 +913,17 @@ print(json.dumps(stats))
 
     def stop_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
-            return self.run_command(["systemctl", "stop", name], elevated=True)
+            if self.host is None:
+                res = self.run_elevated_tool("service", "stop", name)
+                return CommandResult(
+                    success=res.get("success", False),
+                    stdout=res.get("stdout"),
+                    stderr=res.get("stderr"),
+                    error=res.get("error"),
+                    command=f"sudo systems-manager-helper service stop {name}",
+                )
+            else:
+                return self.run_command(["systemctl", "stop", name], elevated=True)
         elif platform.system() == "Windows":
             return self.run_command(
                 ["powershell.exe", "-Command", f"Stop-Service -Name '{name}' -Force"],
@@ -847,7 +936,17 @@ print(json.dumps(stats))
 
     def restart_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
-            return self.run_command(["systemctl", "restart", name], elevated=True)
+            if self.host is None:
+                res = self.run_elevated_tool("service", "restart", name)
+                return CommandResult(
+                    success=res.get("success", False),
+                    stdout=res.get("stdout"),
+                    stderr=res.get("stderr"),
+                    error=res.get("error"),
+                    command=f"sudo systems-manager-helper service restart {name}",
+                )
+            else:
+                return self.run_command(["systemctl", "restart", name], elevated=True)
         elif platform.system() == "Windows":
             if not os.path.exists(self.winget_bin):  # type: ignore
                 self.winget_bin = "winget.exe"
@@ -866,7 +965,17 @@ print(json.dumps(stats))
 
     def enable_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
-            return self.run_command(["systemctl", "enable", name], elevated=True)
+            if self.host is None:
+                res = self.run_elevated_tool("service", "enable", name)
+                return CommandResult(
+                    success=res.get("success", False),
+                    stdout=res.get("stdout"),
+                    stderr=res.get("stderr"),
+                    error=res.get("error"),
+                    command=f"sudo systems-manager-helper service enable {name}",
+                )
+            else:
+                return self.run_command(["systemctl", "enable", name], elevated=True)
         elif platform.system() == "Windows":
             return self.run_command(
                 [
@@ -883,7 +992,17 @@ print(json.dumps(stats))
 
     def disable_service(self, name: str) -> CommandResult:
         if platform.system() == "Linux":
-            return self.run_command(["systemctl", "disable", name], elevated=True)
+            if self.host is None:
+                res = self.run_elevated_tool("service", "disable", name)
+                return CommandResult(
+                    success=res.get("success", False),
+                    stdout=res.get("stdout"),
+                    stderr=res.get("stderr"),
+                    error=res.get("error"),
+                    command=f"sudo systems-manager-helper service disable {name}",
+                )
+            else:
+                return self.run_command(["systemctl", "disable", name], elevated=True)
         elif platform.system() == "Windows":
             return self.run_command(
                 [
@@ -919,7 +1038,9 @@ for proc in psutil.process_iter(["pid", "name", "username", "cpu_percent", "memo
 print(json.dumps(processes))
 """
             res = self.remote_eval(py_code)
-            return CommandResult(**{"success": True, "processes": res, "total": len(res)})
+            return CommandResult(
+                **{"success": True, "processes": res, "total": len(res)}
+            )
 
         try:
             processes = []
@@ -2070,15 +2191,38 @@ class AptManager(SystemsManagerBase):
             "failed": [],
             "success": True,
         }
-        update_result = self.run_command(["apt", "update"], elevated=True)
+        if self.host is None:
+            res = self.run_elevated_tool("package", "update")
+            update_result = CommandResult(
+                success=res.get("success", False),
+                stdout=res.get("stdout"),
+                stderr=res.get("stderr"),
+                error=res.get("error"),
+                command="sudo systems-manager-helper package update",
+            )
+        else:
+            update_result = self.run_command(["apt", "update"], elevated=True)
+
         if not update_result["success"]:
             results["success"] = False
             results["update_error"] = update_result.get("error")
             self.logger.error("apt update failed")
+
         for app in apps:
-            install_result = self.run_command(
-                ["apt", "install", "-y", app], elevated=True
-            )
+            if self.host is None:
+                res = self.run_elevated_tool("package", "install", app)
+                install_result = CommandResult(
+                    success=res.get("success", False),
+                    stdout=res.get("stdout"),
+                    stderr=res.get("stderr"),
+                    error=res.get("error"),
+                    command=f"sudo systems-manager-helper package install {app}",
+                )
+            else:
+                install_result = self.run_command(
+                    ["apt", "install", "-y", app], elevated=True
+                )
+
             if install_result["success"]:
                 results["natively_installed"].append(app)  # type: ignore
             else:
@@ -2107,7 +2251,18 @@ class AptManager(SystemsManagerBase):
 
     def update(self) -> CommandResult:
         try:
-            update_result = self.run_command(["apt", "update"], elevated=True)
+            if self.host is None:
+                res = self.run_elevated_tool("package", "update")
+                update_result = CommandResult(
+                    success=res.get("success", False),
+                    stdout=res.get("stdout"),
+                    stderr=res.get("stderr"),
+                    error=res.get("error"),
+                    command="sudo systems-manager-helper package update",
+                )
+            else:
+                update_result = self.run_command(["apt", "update"], elevated=True)
+
             if not update_result["success"]:
                 return CommandResult(
                     **{
@@ -2116,7 +2271,21 @@ class AptManager(SystemsManagerBase):
                         "details": update_result,
                     }
                 )
-            upgrade_result = self.run_command(["apt", "upgrade", "-y"], elevated=True)
+
+            if self.host is None:
+                res = self.run_elevated_tool("package", "upgrade")
+                upgrade_result = CommandResult(
+                    success=res.get("success", False),
+                    stdout=res.get("stdout"),
+                    stderr=res.get("stderr"),
+                    error=res.get("error"),
+                    command="sudo systems-manager-helper package upgrade",
+                )
+            else:
+                upgrade_result = self.run_command(
+                    ["apt", "upgrade", "-y"], elevated=True
+                )
+
             if not upgrade_result["success"]:
                 return CommandResult(
                     **{
@@ -2133,9 +2302,20 @@ class AptManager(SystemsManagerBase):
             return CommandResult(**{"success": False, "error": str(e)})
 
     def clean(self) -> CommandResult:
-        install_result = self.run_command(
-            ["apt", "install", "-y", "trash-cli"], elevated=True
-        )
+        if self.host is None:
+            res = self.run_elevated_tool("package", "install", "trash-cli")
+            install_result = CommandResult(
+                success=res.get("success", False),
+                stdout=res.get("stdout"),
+                stderr=res.get("stderr"),
+                error=res.get("error"),
+                command="sudo systems-manager-helper package install trash-cli",
+            )
+        else:
+            install_result = self.run_command(
+                ["apt", "install", "-y", "trash-cli"], elevated=True
+            )
+
         if not install_result["success"]:
             self.logger.warning("Failed to install trash-cli")
         empty_result = self.run_command(["trash-empty"])
@@ -2151,8 +2331,29 @@ class AptManager(SystemsManagerBase):
             )
 
     def optimize(self) -> CommandResult:
-        autoremove_result = self.run_command(["apt", "autoremove", "-y"], elevated=True)
-        autoclean_result = self.run_command(["apt", "autoclean"], elevated=True)
+        if self.host is None:
+            res_remove = self.run_elevated_tool("package", "autoremove")
+            autoremove_result = CommandResult(
+                success=res_remove.get("success", False),
+                stdout=res_remove.get("stdout"),
+                stderr=res_remove.get("stderr"),
+                error=res_remove.get("error"),
+                command="sudo systems-manager-helper package autoremove",
+            )
+            res_clean = self.run_elevated_tool("package", "autoclean")
+            autoclean_result = CommandResult(
+                success=res_clean.get("success", False),
+                stdout=res_clean.get("stdout"),
+                stderr=res_clean.get("stderr"),
+                error=res_clean.get("error"),
+                command="sudo systems-manager-helper package autoclean",
+            )
+        else:
+            autoremove_result = self.run_command(
+                ["apt", "autoremove", "-y"], elevated=True
+            )
+            autoclean_result = self.run_command(["apt", "autoclean"], elevated=True)
+
         overall_success = autoremove_result["success"] and autoclean_result["success"]
         return CommandResult(
             **{
@@ -2168,7 +2369,17 @@ class AptManager(SystemsManagerBase):
         )
 
     def install_snapd(self) -> CommandResult:
-        result = self.run_command(["apt", "install", "-y", "snapd"], elevated=True)
+        if self.host is None:
+            res = self.run_elevated_tool("package", "install", "snapd")
+            result = CommandResult(
+                success=res.get("success", False),
+                stdout=res.get("stdout"),
+                stderr=res.get("stderr"),
+                error=res.get("error"),
+                command="sudo systems-manager-helper package install snapd",
+            )
+        else:
+            result = self.run_command(["apt", "install", "-y", "snapd"], elevated=True)
         return CommandResult(
             **{
                 "success": result["success"],
@@ -3062,38 +3273,56 @@ def detect_and_create_manager(
     Detect the current operating system and return the appropriate SystemsManager instance.
     """
     silent_bool = bool(silent)
-    
+
     if not host:
         host = os.environ.get("SYSTEMS_MANAGER_HOST", None)
-        
+
     if host:
         from tunnel_manager.tunnel_manager import HostManager
+
         hm = HostManager()
         if host not in hm.hosts:
-            raise ValueError(f"Host '{host}' not configured in inventory ({hm.config_file})")
+            raise ValueError(
+                f"Host '{host}' not configured in inventory ({hm.config_file})"
+            )
         hinfo = hm.hosts[host]
-        
+
         hostname = hinfo.get("hostname")
         user = hinfo.get("user", "genius")
         port = hinfo.get("port", 22)
         identity_file = hinfo.get("key_path") or hinfo.get("identity_file")
-        
+
         # Remote OS detection using SSH
         ssh_cmd = ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=5"]
         if identity_file:
             ssh_cmd.extend(["-i", os.path.expanduser(identity_file)])
-        ssh_cmd.extend(["-p", str(port), f"{user}@{hostname}", "uname -s && python3 -c 'import distro; print(distro.id())'"])
-        
+        ssh_cmd.extend(
+            [
+                "-p",
+                str(port),
+                f"{user}@{hostname}",
+                "uname -s && python3 -c 'import distro; print(distro.id())'",
+            ]
+        )
+
         try:
             res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=6)
             if res.returncode != 0:
-                if res.returncode == 255 or "timed out" in res.stderr.lower() or "unreachable" in res.stderr.lower():
-                    raise RuntimeError(f"Host '{host}' is offline or unreachable via SSH: {res.stderr.strip() or 'Connection timed out'}")
+                if (
+                    res.returncode == 255
+                    or "timed out" in res.stderr.lower()
+                    or "unreachable" in res.stderr.lower()
+                ):
+                    raise RuntimeError(
+                        f"Host '{host}' is offline or unreachable via SSH: {res.stderr.strip() or 'Connection timed out'}"
+                    )
                 # Fallback to pure shell detection if python/distro not installed on remote
                 ssh_cmd[-1] = "uname -s"
                 res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=6)
                 if res.returncode != 0:
-                    raise RuntimeError(f"Host '{host}' is offline or unreachable via SSH: {res.stderr.strip()}")
+                    raise RuntimeError(
+                        f"Host '{host}' is offline or unreachable via SSH: {res.stderr.strip()}"
+                    )
                 sys_name = res.stdout.strip()
                 dist_id = "ubuntu"  # Default fallback for Linux
             else:
@@ -3101,11 +3330,15 @@ def detect_and_create_manager(
                 sys_name = lines[0].strip()
                 dist_id = lines[1].strip() if len(lines) > 1 else "ubuntu"
         except subprocess.TimeoutExpired as e:
-            raise RuntimeError(f"Host '{host}' is offline or connection timed out.") from e
+            raise RuntimeError(
+                f"Host '{host}' is offline or connection timed out."
+            ) from e
         except Exception as e:
             if isinstance(e, RuntimeError):
                 raise
-            raise RuntimeError(f"Failed to connect to remote host '{host}': {str(e)}") from e
+            raise RuntimeError(
+                f"Failed to connect to remote host '{host}': {str(e)}"
+            ) from e
     else:
         sys_name = platform.system()
         dist_id = distro.id() if sys_name == "Linux" else ""
@@ -3125,6 +3358,347 @@ def detect_and_create_manager(
             raise NotImplementedError(f"Unsupported Linux distro: {dist_id}")
     else:
         raise NotImplementedError(f"Unsupported OS: {sys_name}")
+
+
+def setup_sudo():
+    """
+    Bootstrapping routine executed by standard user to generate sudoers configuration.
+    """
+    import getpass
+
+    current_user = getpass.getuser()
+    helper_name = "systems-manager-helper"
+    helper_path = shutil.which(helper_name)
+
+    if not helper_path:
+        # If running inside virtualenv, construct path relative to sys.executable
+        possible_helper = os.path.join(os.path.dirname(sys.executable), helper_name)
+        if os.path.exists(possible_helper):
+            helper_path = possible_helper
+
+    if not helper_path:
+        # Let's also check default ~/.local/bin or standard paths
+        home = os.path.expanduser("~")
+        possible_helper = os.path.join(home, ".local", "bin", helper_name)
+        if os.path.exists(possible_helper):
+            helper_path = possible_helper
+
+    if not helper_path:
+        print(
+            f"[-] Error: '{helper_name}' executable not found in PATH or standard environment locations.",
+            file=sys.stderr,
+        )
+        print(
+            "    Please install systems-manager first using: pip install systems-manager",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # Clean/resolve absolute path
+    helper_path = os.path.abspath(helper_path)
+
+    # Generate the exact sudoers configuration block
+    sudoers_rule = f"{current_user} ALL=(ALL) NOPASSWD: {helper_path}\n"
+
+    print("[*] Secure Sudo Wrapper Configuration Detected:", file=sys.stderr)
+    print(f"    - Execution User: {current_user}", file=sys.stderr)
+    print(f"    - Helper Path:    {helper_path}", file=sys.stderr)
+    print(f"    - Rule to Write:  {sudoers_rule.strip()}", file=sys.stderr)
+    print(
+        "\n[!] To complete the installation, the systems manager requires elevation ONCE to write the configuration:",
+        file=sys.stderr,
+    )
+
+    temp_path = None
+    try:
+        # Write temporary file
+        fd, temp_path = tempfile.mkstemp()
+        with os.fdopen(fd, "w") as f:
+            f.write(sudoers_rule)
+
+        print(
+            "[*] Requesting temporary sudo access to apply configuration...",
+            file=sys.stderr,
+        )
+
+        # 1. Copy the sudoers file to /etc/sudoers.d/
+        dest_path = f"/etc/sudoers.d/systems-manager-{current_user}"
+        cp_cmd = ["sudo", "cp", temp_path, dest_path]
+        subprocess.run(cp_cmd, check=True)
+
+        # 2. Set strict permissions (must be 0440 and owned by root)
+        subprocess.run(["sudo", "chown", "root:root", dest_path], check=True)
+        subprocess.run(["sudo", "chmod", "0440", dest_path], check=True)
+
+        # 3. Use visudo to validate syntax
+        visudo_check = subprocess.run(
+            ["sudo", "visudo", "-c", "-f", dest_path], capture_output=True, text=True
+        )
+        if visudo_check.returncode != 0:
+            print(
+                "[-] Error: visudo syntax check failed. Reverting changes.",
+                file=sys.stderr,
+            )
+            print(f"    visudo output: {visudo_check.stderr.strip()}", file=sys.stderr)
+            subprocess.run(["sudo", "rm", "-f", dest_path], check=True)
+            sys.exit(1)
+
+        print(
+            f"[+] Sudoers rule installed successfully under {dest_path}!",
+            file=sys.stderr,
+        )
+        print(
+            "[+] Any agents running in this user space can now execute elevated tools securely.",
+            file=sys.stderr,
+        )
+    except Exception as e:
+        print(f"[-] Installation failed: {str(e)}", file=sys.stderr)
+        print(
+            "[*] Alternatively, ask your system administrator to append this line to /etc/sudoers:",
+            file=sys.stderr,
+        )
+        print(f"    {sudoers_rule.strip()}", file=sys.stderr)
+        sys.exit(1)
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+def bootstrap_cluster_sudo():
+    """
+    Automated cluster-wide sudo bootstrapping capability.
+    Reads inventory from ~/.config/agent-utilities/inventory.yaml, checks reachable hosts,
+    checks if passwordless sudo is already configured, prompts securely once for sudo password,
+    and configures passwordless sudo on remote hosts.
+    """
+    import getpass
+
+    from tunnel_manager.tunnel_manager import HostManager
+
+    print("[*] Starting automated cluster-wide sudo bootstrapping...", file=sys.stderr)
+    try:
+        hm = HostManager()
+    except Exception as e:
+        print(f"[-] Error loading host inventory: {str(e)}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"[*] Loaded inventory config file: {hm.config_file}", file=sys.stderr)
+    active_hosts = {}
+
+    for alias, hinfo in hm.hosts.items():
+        if alias == "gr1080":
+            print(
+                "[*] Skipping gr1080 (marked offline in environment metadata)",
+                file=sys.stderr,
+            )
+            continue
+
+        hostname = hinfo.get("hostname")
+        user = hinfo.get("user", "genius")
+        port = hinfo.get("port", 22)
+        identity_file = hinfo.get("key_path") or hinfo.get("identity_file")
+
+        # 1. SSH Connection/Reachability Check with BatchMode=yes to prevent hangs
+        ssh_cmd = [
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-o",
+            "ConnectTimeout=3",
+            "-o",
+            "BatchMode=yes",
+        ]
+        if identity_file:
+            ssh_cmd.extend(["-i", os.path.expanduser(identity_file)])
+        ssh_cmd.extend(["-p", str(port), f"{user}@{hostname}", "echo reachable"])
+
+        try:
+            res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=5)
+            if res.returncode != 0:
+                print(
+                    f"[-] Host '{alias}' ({hostname}) is unreachable. Skipping.",
+                    file=sys.stderr,
+                )
+                continue
+        except Exception as e:
+            print(
+                f"[-] Host '{alias}' ({hostname}) connection failed: {str(e)}. Skipping.",
+                file=sys.stderr,
+            )
+            continue
+
+        # 2. Check if passwordless sudo is already active
+        sudo_cmd = [
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-o",
+            "ConnectTimeout=3",
+            "-o",
+            "BatchMode=yes",
+        ]
+        if identity_file:
+            sudo_cmd.extend(["-i", os.path.expanduser(identity_file)])
+        sudo_cmd.extend(["-p", str(port), f"{user}@{hostname}", "sudo -n true"])
+
+        try:
+            res_sudo = subprocess.run(
+                sudo_cmd, capture_output=True, text=True, timeout=5
+            )
+            if res_sudo.returncode == 0:
+                print(
+                    f"[+] Passwordless sudo already configured on '{alias}' ({hostname})!",
+                    file=sys.stderr,
+                )
+                continue
+        except Exception:
+            pass
+
+        print(
+            f"[*] Host '{alias}' ({hostname}) is reachable but requires interactive sudo password.",
+            file=sys.stderr,
+        )
+        active_hosts[alias] = hinfo
+
+    if not active_hosts:
+        print(
+            "[+] All reachable cluster hosts already have passwordless sudo configured. No action needed!",
+            file=sys.stderr,
+        )
+        return
+
+    # 3. Prompt user securely once for the sudo password
+    print(
+        f"\n[!] Prompting for remote sudo password to configure {len(active_hosts)} hosts.",
+        file=sys.stderr,
+    )
+    password = getpass.getpass("Enter sudo password for remote hosts: ")
+    if not password:
+        print("[-] Sudo password cannot be empty. Aborting.", file=sys.stderr)
+        sys.exit(1)
+
+    # 4. Bootstrap remote sudo configuration
+    for alias, hinfo in active_hosts.items():
+        hostname = hinfo.get("hostname")
+        user = hinfo.get("user", "genius")
+        port = hinfo.get("port", 22)
+        identity_file = hinfo.get("key_path") or hinfo.get("identity_file")
+
+        print(f"[*] Bootstrapping '{alias}' ({hostname})...", file=sys.stderr)
+
+        # Write helper path rules to a temp file on the remote host via stdin pipe
+        helper_rule = (
+            f"{user} ALL=(ALL) NOPASSWD: /usr/local/bin/systems-manager-helper, "
+            f"/home/{user}/.local/bin/systems-manager-helper\n"
+        )
+
+        cat_cmd = [
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-o",
+            "ConnectTimeout=3",
+            "-o",
+            "BatchMode=yes",
+        ]
+        if identity_file:
+            cat_cmd.extend(["-i", os.path.expanduser(identity_file)])
+        cat_cmd.extend(
+            [
+                "-p",
+                str(port),
+                f"{user}@{hostname}",
+                "cat > /tmp/systems-manager-sudoers",
+            ]
+        )
+
+        try:
+            proc = subprocess.Popen(
+                cat_cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            stdout, stderr = proc.communicate(input=helper_rule, timeout=5)
+            if proc.returncode != 0:
+                print(
+                    f"[-] Failed to write temp sudoers file to '{alias}': {stderr.strip()}",
+                    file=sys.stderr,
+                )
+                continue
+        except Exception as e:
+            print(f"[-] Failed to copy file to '{alias}': {str(e)}", file=sys.stderr)
+            continue
+
+        # Install sudoers rule safely with visudo check
+        dest_path = f"/etc/sudoers.d/systems-manager-{user}"
+        remote_setup_cmd = (
+            f"sudo -S -p '' sh -c '"
+            f"cp /tmp/systems-manager-sudoers {dest_path} && "
+            f"chown root:root {dest_path} && "
+            f"chmod 0440 {dest_path} && "
+            f"(visudo -c -f {dest_path} || (rm -f {dest_path} && exit 1))"
+            f"'"
+        )
+
+        ssh_setup = [
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-o",
+            "ConnectTimeout=5",
+            "-o",
+            "BatchMode=yes",
+        ]
+        if identity_file:
+            ssh_setup.extend(["-i", os.path.expanduser(identity_file)])
+        ssh_setup.extend(["-p", str(port), f"{user}@{hostname}", remote_setup_cmd])
+
+        try:
+            proc = subprocess.Popen(
+                ssh_setup,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            stdout, stderr = proc.communicate(input=password + "\n", timeout=10)
+
+            # Always clean up the temp file
+            cleanup_cmd = [
+                "ssh",
+                "-o",
+                "StrictHostKeyChecking=no",
+                "-o",
+                "BatchMode=yes",
+                "-p",
+                str(port),
+                f"{user}@{hostname}",
+                "rm -f /tmp/systems-manager-sudoers",
+            ]
+            if identity_file:
+                cleanup_cmd.insert(2, "-i")
+                cleanup_cmd.insert(3, os.path.expanduser(identity_file))
+            subprocess.run(cleanup_cmd, capture_output=True)
+
+            if proc.returncode == 0:
+                print(
+                    f"[+] Successfully configured passwordless sudo on '{alias}' ({hostname})!",
+                    file=sys.stderr,
+                )
+            else:
+                print(
+                    f"[-] Failed to configure sudo on '{alias}' ({hostname}): {stderr.strip()}",
+                    file=sys.stderr,
+                )
+        except Exception as e:
+            print(
+                f"[-] Execution error during bootstrap on '{alias}': {str(e)}",
+                file=sys.stderr,
+            )
+
+    print("[*] Cluster bootstrapping complete.", file=sys.stderr)
 
 
 def systems_manager():
@@ -3189,12 +3763,36 @@ def systems_manager():
         help="Install local package files, comma-separated (Linux only)",
     )
 
+    parser.add_argument(
+        "--setup-sudo",
+        action="store_true",
+        help="Bootstrap secure sudo wrapper configuration (Linux only)",
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        help="Specify target host from inventory (Linux only)",
+    )
+    parser.add_argument(
+        "--bootstrap-cluster-sudo",
+        action="store_true",
+        help="Configure passwordless sudo cluster-wide (Linux only)",
+    )
+
     parser.add_argument("--help", action="store_true", help="Show usage")
 
     args = parser.parse_args()
 
     if hasattr(args, "help") and args.help:
         parser.print_help()
+        sys.exit(0)
+
+    if hasattr(args, "setup_sudo") and args.setup_sudo:
+        setup_sudo()
+        sys.exit(0)
+
+    if hasattr(args, "bootstrap_cluster_sudo") and args.bootstrap_cluster_sudo:
+        bootstrap_cluster_sudo()
         sys.exit(0)
 
     log_file = args.log_file
@@ -3222,7 +3820,9 @@ def systems_manager():
     add_repo = args.add_repo
     install_local = args.install_local
 
-    manager = detect_and_create_manager(silent, log_file)
+    manager = detect_and_create_manager(
+        host=args.host, silent=silent, log_file=log_file
+    )
 
     if update:
         manager.update()
@@ -3246,9 +3846,15 @@ def systems_manager():
         for f in files:
             manager.install_local_package(f)
     if os_stats:
-        print(json.dumps(manager.get_os_statistics(), indent=2), file=sys.stderr)
+        print(
+            json.dumps(manager.get_os_statistics().model_dump(), indent=2),
+            file=sys.stderr,
+        )
     if hw_stats:
-        print(json.dumps(manager.get_hardware_statistics(), indent=2), file=sys.stderr)
+        print(
+            json.dumps(manager.get_hardware_statistics().model_dump(), indent=2),
+            file=sys.stderr,
+        )
     if list_features:
         if isinstance(manager, WindowsManager):
             features = manager.list_windows_features()
@@ -3267,6 +3873,9 @@ def systems_manager():
             print("Feature disabling is only available on Windows.", file=sys.stderr)
 
     print("Done!", file=sys.stderr)
+
+
+main = systems_manager
 
 
 if __name__ == "__main__":

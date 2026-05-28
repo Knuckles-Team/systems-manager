@@ -303,10 +303,10 @@ def test_apt_manager_install_apps():
     mgr = AptManager(silent=True)
 
     # Happy Path (Natively installed)
-    with patch.object(mgr, "run_command") as mock_run:
+    with patch.object(mgr, "run_elevated_tool") as mock_run:
         mock_run.side_effect = [
-            CommandResult(success=True),  # apt update
-            CommandResult(success=True),  # apt install htop
+            {"success": True, "stdout": "", "stderr": ""},  # apt update
+            {"success": True, "stdout": "", "stderr": ""},  # apt install htop
         ]
         res = mgr.install_applications(["htop"])
         assert res.get("success") is True
@@ -314,14 +314,15 @@ def test_apt_manager_install_apps():
 
     # Native Failure - Package Not Found, Snap fallback success
     with (
-        patch.object(mgr, "run_command") as mock_run,
+        patch.object(mgr, "run_elevated_tool") as mock_run,
         patch.object(mgr, "install_via_snap") as mock_snap,
     ):
         mock_run.side_effect = [
-            CommandResult(success=True),  # apt update
-            CommandResult(
-                success=False, stderr="Unable to locate package someapp"
-            ),  # apt install
+            {"success": True, "stdout": "", "stderr": ""},  # apt update
+            {
+                "success": False,
+                "stderr": "Unable to locate package someapp",
+            },  # apt install
         ]
         mock_snap.return_value = CommandResult(success=True)
 
@@ -331,14 +332,15 @@ def test_apt_manager_install_apps():
 
     # Native Failure - Package Not Found, Snap fallback failure
     with (
-        patch.object(mgr, "run_command") as mock_run,
+        patch.object(mgr, "run_elevated_tool") as mock_run,
         patch.object(mgr, "install_via_snap") as mock_snap,
     ):
         mock_run.side_effect = [
-            CommandResult(success=True),  # apt update
-            CommandResult(
-                success=False, stderr="Unable to locate package someapp"
-            ),  # apt install
+            {"success": True, "stdout": "", "stderr": ""},  # apt update
+            {
+                "success": False,
+                "stderr": "Unable to locate package someapp",
+            },  # apt install
         ]
         mock_snap.return_value = CommandResult(success=False, error="snap store down")
 
@@ -347,10 +349,10 @@ def test_apt_manager_install_apps():
         assert "someapp" in res.get("failed")
 
     # Native Failure - Other Error
-    with patch.object(mgr, "run_command") as mock_run:
+    with patch.object(mgr, "run_elevated_tool") as mock_run:
         mock_run.side_effect = [
-            CommandResult(success=True),  # apt update
-            CommandResult(success=False, stderr="dpkg locked"),  # apt install
+            {"success": True, "stdout": "", "stderr": ""},  # apt update
+            {"success": False, "stderr": "dpkg locked"},  # apt install
         ]
         res = mgr.install_applications(["someapp"])
         assert res.get("success") is False
@@ -359,7 +361,14 @@ def test_apt_manager_install_apps():
 
 def test_apt_manager_standard_actions():
     mgr = AptManager(silent=True)
-    with patch.object(mgr, "run_command", return_value=CommandResult(success=True)):
+    with (
+        patch.object(mgr, "run_command", return_value=CommandResult(success=True)),
+        patch.object(
+            mgr,
+            "run_elevated_tool",
+            return_value={"success": True, "stdout": "", "stderr": ""},
+        ),
+    ):
         assert mgr.update().success is True
         assert mgr.clean().success is True
         assert mgr.optimize().success is True

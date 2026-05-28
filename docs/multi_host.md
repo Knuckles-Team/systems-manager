@@ -58,11 +58,10 @@ This virtual namespacing maintains a single centralized executable on the contro
 The controller locates host details from `inventory.yaml`. By default, `systems-manager` implements XDG-standard search paths to share the inventory with other tools (like `tunnel-manager` and `container-manager-mcp`).
 
 ### Standard Search Paths:
-1. `~/.config/agent_utilities/inventory.yaml`
-2. `~/.tunnel_manager/hosts.yaml` (legacy fallback)
+1. `~/.config/agent-utilities/inventory.yaml`
 
 ### `inventory.yaml` Format:
-Create or edit your inventory file at `~/.config/agent_utilities/inventory.yaml`:
+Create or edit your inventory file at `~/.config/agent-utilities/inventory.yaml`:
 
 ```yaml
 hosts:
@@ -70,12 +69,12 @@ hosts:
     hostname: "192.168.1.10"
     port: 22
     user: "ubuntu"
-    key_path: "/home/genius/.ssh/id_rsa"
+    key_path: "/home/ubuntu/.ssh/id_rsa"
   node-beta:
     hostname: "10.0.0.5"
     port: 2222
     user: "admin"
-    identity_file: "/home/genius/.ssh/id_ed25519"
+    identity_file: "/home/admin/.ssh/id_ed25519"
 ```
 
 ---
@@ -90,7 +89,7 @@ For tools that return complex python metrics and structures (such as `get_os_sta
 3. The controller dynamically generates a base64-encoded or inline Python snippet that gathers metrics using python's standard libraries or psutil.
 4. The controller runs:
    ```bash
-   ssh -o StrictHostKeyChecking=no -i /home/genius/.ssh/id_rsa ubuntu@192.168.1.10 -p 22 "python3 -c '...'"
+   ssh -o StrictHostKeyChecking=no -i /home/ubuntu/.ssh/id_rsa ubuntu@192.168.1.10 -p 22 "python3 -c '...'"
    ```
 5. The remote output is returned as standard JSON, deserialized by the controller, and yielded to the client.
 

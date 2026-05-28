@@ -40,12 +40,13 @@ from systems_manager.systems_manager import (
     detect_and_create_manager,
 )
 
-__version__ = "1.15.0"
+__version__ = "1.16.0"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = get_logger("SystemsManagerServer")
+
 
 def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
     """Initialize the MCP server."""
@@ -119,11 +120,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         file_path: str | None = Field(None, description="Path to local package file"),
         feature_name: str | None = Field(None, description="Windows feature name"),
         env_var: str | None = Field(None, description="Environment variable name"),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_system_operations: {action} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_system_operations: {action} target_host={target_host}",
+        )
         try:
             if action == "install_applications":
                 return manager.install_applications(packages or [])
@@ -200,11 +208,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             "disable_service",
         ] = Field(..., description="Action to perform"),
         service_name: str | None = Field(None, description="Name of the service"),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_service_operations: {action} {service_name} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_service_operations: {action} {service_name} target_host={target_host}",
+        )
         try:
             if action == "list_services":
                 return manager.list_services()
@@ -230,7 +245,9 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ),
         pid: int | None = Field(None, description="Process ID"),
         name: str | None = Field(None, description="Process name"),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
@@ -261,11 +278,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ] = Field(..., description="Action to perform"),
         host: str | None = Field(None, description="Host to ping or lookup"),
         count: int = Field(4, description="Ping count"),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_network_operations: {action} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_network_operations: {action} target_host={target_host}",
+        )
         try:
             if action == "list_network_interfaces":
                 return manager.list_network_interfaces()
@@ -284,11 +308,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             "list_disks", "get_disk_usage", "get_disk_space_report"
         ] = Field(..., description="Action to perform"),
         path: str | None = Field(None, description="Path for disk usage"),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_disk_operations: {action} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_disk_operations: {action} target_host={target_host}",
+        )
         try:
             if action == "list_disks":
                 return manager.list_disks()
@@ -304,11 +335,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         action: Literal["list_users", "list_groups"] = Field(
             ..., description="Action to perform"
         ),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_user_operations: {action} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_user_operations: {action} target_host={target_host}",
+        )
         try:
             if action == "list_users":
                 return manager.list_users()
@@ -338,11 +376,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         pattern: str | None = Field(None, description="Search pattern"),
         recursive: bool = Field(False, description="Recursive search"),
         depth: int = Field(1, description="Depth for list_files"),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_file_operations: {action} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_file_operations: {action} target_host={target_host}",
+        )
         try:
             if action == "run_command":
                 return manager.run_command(command or "")
@@ -373,11 +418,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         command: str | None = Field(None, description="Command for cron job"),
         schedule: str | None = Field(None, description="Cron schedule expression"),
         user: str | None = Field(None, description="User for cron job"),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_cron_operations: {action} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_cron_operations: {action} target_host={target_host}",
+        )
         try:
             if action == "list_cron_jobs":
                 return manager.list_cron_jobs(user)
@@ -396,11 +448,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         rule: str | None = Field(
             None, description="Firewall rule (e.g. 'allow 80/tcp')"
         ),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_firewall_operations: {action} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_firewall_operations: {action} target_host={target_host}",
+        )
         try:
             if action == "get_firewall_status":
                 return manager.get_firewall_status()
@@ -429,11 +488,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         path: str | None = Field(None, description="Path for venv"),
         version: str | None = Field(None, description="Version of python/node"),
         package: str | None = Field(None, description="Package name to install"),
-        target_host: str | None = Field(None, description="Optional target remote host from inventory"),
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
         ctx: Context | None = None,
     ) -> Any:
         manager = detect_and_create_manager(host=target_host)
-        ctx_log(ctx, logger, "info", f"sm_advanced_operations: {action} target_host={target_host}")
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"sm_advanced_operations: {action} target_host={target_host}",
+        )
         try:
             if action == "add_authorized_key":
                 return manager.add_authorized_key(public_key or "")
@@ -456,6 +522,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     return args, mcp, middlewares
 
+
 def mcp_server() -> None:
     args, mcp, middlewares = get_mcp_instance()
     print(f"systems-manager MCP v{__version__}", file=sys.stderr)
@@ -473,8 +540,10 @@ def mcp_server() -> None:
         logger.error("Invalid transport", extra={"transport": args.transport})
         sys.exit(1)
 
+
 def main():
     mcp_server()
+
 
 if __name__ == "__main__":
     main()

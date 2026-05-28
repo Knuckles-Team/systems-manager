@@ -46,3 +46,6 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Overview: overview.md
+  - Sudo Security: sudo_security.md
+  - Day 0 Installation: installation.md
+  - Day 0 Provisioning: day_0_provisioning.md

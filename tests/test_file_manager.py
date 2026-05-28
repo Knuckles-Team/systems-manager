@@ -1,12 +1,15 @@
 import os
 from unittest.mock import patch
 
+import pytest
+
 from systems_manager.systems_manager import (
     detect_and_create_manager,
 )
 
 
-def test_file_system_manager_list_files(mock_linux_platform, temp_home):
+@pytest.mark.usefixtures("mock_linux_platform")
+def test_file_system_manager_list_files(temp_home):
     """Test list_files method in FileSystemManager under Linux."""
     manager = detect_and_create_manager(silent=True)
     fs = manager.fs_manager
@@ -62,7 +65,8 @@ def test_file_system_manager_list_files(mock_linux_platform, temp_home):
         assert res_err.error is not None and "Read error" in res_err.error
 
 
-def test_file_system_manager_search_files(mock_linux_platform, temp_home):
+@pytest.mark.usefixtures("mock_linux_platform")
+def test_file_system_manager_search_files(temp_home):
     """Test search_files method in FileSystemManager."""
     manager = detect_and_create_manager(silent=True)
     fs = manager.fs_manager
@@ -87,7 +91,8 @@ def test_file_system_manager_search_files(mock_linux_platform, temp_home):
         assert res_err.error is not None and "Walk failed" in res_err.error
 
 
-def test_file_system_manager_grep_files(mock_linux_platform):
+@pytest.mark.usefixtures("mock_linux_platform")
+def test_file_system_manager_grep_files():
     """Test grep_files method in FileSystemManager."""
     manager = detect_and_create_manager(silent=True)
     fs = manager.fs_manager
@@ -123,7 +128,8 @@ def test_file_system_manager_grep_files(mock_linux_platform):
         assert res_err.error is not None and "Grep failed" in res_err.error
 
 
-def test_file_system_manager_manage_file(mock_linux_platform, temp_home):
+@pytest.mark.usefixtures("mock_linux_platform")
+def test_file_system_manager_manage_file(temp_home):
     """Test manage_file method in FileSystemManager."""
     manager = detect_and_create_manager(silent=True)
     fs = manager.fs_manager
@@ -173,7 +179,8 @@ def test_file_system_manager_manage_file(mock_linux_platform, temp_home):
         assert res_err.error is not None and "Permission denied" in res_err.error
 
 
-def test_shell_profile_manager(mock_linux_platform, temp_home):
+@pytest.mark.usefixtures("mock_linux_platform")
+def test_shell_profile_manager(temp_home):
     """Test ShellProfileManager on Linux platform."""
     manager = detect_and_create_manager(silent=True)
     sh = manager.shell_manager
@@ -206,7 +213,8 @@ def test_shell_profile_manager(mock_linux_platform, temp_home):
         assert res_err.error is not None and "Disk full" in res_err.error
 
 
-def test_shell_profile_manager_windows(mock_windows_platform, temp_home):
+@pytest.mark.usefixtures("mock_windows_platform")
+def test_shell_profile_manager_windows(temp_home):
     """Test ShellProfileManager on Windows platform."""
     manager = detect_and_create_manager(silent=True)
     sh = manager.shell_manager
