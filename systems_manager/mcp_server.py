@@ -40,7 +40,7 @@ from systems_manager.systems_manager import (
     detect_and_create_manager,
 )
 
-__version__ = "1.24.1"
+__version__ = "1.24.2"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
