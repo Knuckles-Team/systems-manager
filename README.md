@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 1.24.0*
+*Version: 1.24.1*
 
 ---
 
