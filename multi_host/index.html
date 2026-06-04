@@ -565,12 +565,12 @@
     subgraph Client / IDE Layer
         A[MCP Client or IDE] --&gt;|Interact with| B[Unified mcp-multiplexer]
         B --&gt;|Dynamically parses| C[(inventory.yaml)]
-        B --&gt;|Generates namespaced virtual servers| D["sys_&amp;lt;host&amp;gt;__ (Virtual Subprocess)"]
+        B --&gt;|Generates namespaced virtual servers| D["sys_&lt;host&gt;__ (Virtual Subprocess)"]
     end
 
     subgraph Centralized Controller Layer (Zero Remote Daemons)
         D --&gt;|Prefills Target Host Env| E[Centralized Systems Manager Instance]
-        E --&gt;|Executes remote_eval over SSH| F[Remote Target Host: &amp;lt;host&amp;gt;]
+        E --&gt;|Executes remote_eval over SSH| F["Remote Target Host: &lt;host&gt;"]
         F --&gt;|Runs inline standard library| G[Python 3 Inline Runtime]
     end
 
