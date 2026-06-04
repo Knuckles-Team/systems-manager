@@ -30,12 +30,12 @@ graph TD
     subgraph Client / IDE Layer
         A[MCP Client or IDE] -->|Interact with| B[Unified mcp-multiplexer]
         B -->|Dynamically parses| C[(inventory.yaml)]
-        B -->|Generates namespaced virtual servers| D["sys_&lt;host&gt;__ (Virtual Subprocess)"]
+        B -->|Generates namespaced virtual servers| D["sys_<host>__ (Virtual Subprocess)"]
     end
 
     subgraph Centralized Controller Layer (Zero Remote Daemons)
         D -->|Prefills Target Host Env| E[Centralized Systems Manager Instance]
-        E -->|Executes remote_eval over SSH| F[Remote Target Host: &lt;host&gt;]
+        E -->|Executes remote_eval over SSH| F["Remote Target Host: <host>"]
         F -->|Runs inline standard library| G[Python 3 Inline Runtime]
     end
 
