@@ -16,12 +16,12 @@ Through targeted architectural testing, the codebase's overall code coverage was
 
 | Module File | Statement Count | Missed Statements | Current Coverage | Status | Key Targeted Gaps Filled |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| [`os_provider_tools.py`](../systems_manager/os_provider_tools.py) | 101 | 0 | **100%** | 🟢 Passed | Comprehensive registration and execution of OS provider MCP tools. |
-| [`agent_os_tools.py`](../systems_manager/agent_os_tools.py) | 230 | 28 | **88%** | 🟢 Passed | Covered specialist registration, identities, schedulers, and watchdogs. |
-| [`os_provider.py`](../systems_manager/os_provider.py) | 171 | 8 | **95%** | 🟢 Passed | Mocked `psutil` metrics, telemetry, and platform service listings. |
-| [`models.py`](../systems_manager/models.py) | 57 | 6 | **89%** | 🟢 Passed | Covered dictionary override and fallback checks. |
-| [`mcp_server.py`](../systems_manager/mcp_server.py) | 260 | 37 | **86%** | 🟢 Passed | Routing of system operations, platform operations, and tools. |
-| [`systems_manager.py`](../systems_manager/systems_manager.py) | 1399 | 767 | **45%** | 🟡 Improving | Covered FileSystem and Profile Manager, PythonManager, and NodeManager. |
+| [`os_provider_tools.py`](https://github.com/Knuckles-Team/systems-manager/blob/main/systems_manager/os_provider_tools.py) | 101 | 0 | **100%** | 🟢 Passed | Comprehensive registration and execution of OS provider MCP tools. |
+| [`agent_os_tools.py`](https://github.com/Knuckles-Team/systems-manager/blob/main/systems_manager/agent_os_tools.py) | 230 | 28 | **88%** | 🟢 Passed | Covered specialist registration, identities, schedulers, and watchdogs. |
+| [`os_provider.py`](https://github.com/Knuckles-Team/systems-manager/blob/main/systems_manager/os_provider.py) | 171 | 8 | **95%** | 🟢 Passed | Mocked `psutil` metrics, telemetry, and platform service listings. |
+| [`models.py`](https://github.com/Knuckles-Team/systems-manager/blob/main/systems_manager/models.py) | 57 | 6 | **89%** | 🟢 Passed | Covered dictionary override and fallback checks. |
+| [`mcp_server.py`](https://github.com/Knuckles-Team/systems-manager/blob/main/systems_manager/mcp_server.py) | 260 | 37 | **86%** | 🟢 Passed | Routing of system operations, platform operations, and tools. |
+| [`systems_manager.py`](https://github.com/Knuckles-Team/systems-manager/blob/main/systems_manager/systems_manager.py) | 1399 | 767 | **45%** | 🟡 Improving | Covered FileSystem and Profile Manager, PythonManager, and NodeManager. |
 
 ---
 

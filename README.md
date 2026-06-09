@@ -22,6 +22,10 @@
 
 *Version: 1.29.0*
 
+> **Documentation** — Installation, deployment, and usage across the CLI, API, MCP,
+> and agent interfaces are maintained in the
+> [official documentation](https://knuckles-team.github.io/systems-manager/).
+
 ---
 
 ## Overview
@@ -280,6 +284,26 @@ uv pip install systems-manager[all]
 # Using standard pip
 python -m pip install systems-manager[all]
 ```
+
+---
+
+## Documentation
+
+The complete documentation is published as the
+[official documentation site](https://knuckles-team.github.io/systems-manager/) and is
+the recommended reference for installation, deployment, and day-to-day operation.
+
+| Page | Contents |
+|---|---|
+| [Installation](https://knuckles-team.github.io/systems-manager/installation/) | pip, source, extras, prebuilt Docker image |
+| [Deployment](https://knuckles-team.github.io/systems-manager/deployment/) | run the MCP and agent servers, Compose, Caddy + Technitium, env config |
+| [Usage](https://knuckles-team.github.io/systems-manager/usage/) | the MCP tools, the `SystemsManager` API, the CLI |
+| [Overview](https://knuckles-team.github.io/systems-manager/overview/) | ecosystem role and concept map |
+| [Sudo Security](https://knuckles-team.github.io/systems-manager/sudo_security/) | least-privilege elevated-execution model |
+| [Multi-Host](https://knuckles-team.github.io/systems-manager/multi_host/) | zero-script remote telemetry and control plane |
+| [Day 0 Installation](https://knuckles-team.github.io/systems-manager/day_0_provisioning/) | bare-metal to managed cluster node |
+
+`AGENTS.md` is the canonical contributor/agent guidance.
 
 ---
 
