@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 1.30.0*
+*Version: 1.31.0*
 
 > **Documentation** — Installation, deployment, and usage across the CLI, API, MCP,
 > and agent interfaces are maintained in the
