@@ -15,7 +15,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential \
     && rm -rf /var/lib/apt/lists/*
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system --upgrade --break-system-packages --prerelease=allow systems-manager[all]>=1.31.0
+    uv pip install --system --upgrade --break-system-packages --prerelease=allow systems-manager[all]>=1.32.0
 
 FROM python:3.11-slim
 
