@@ -18,11 +18,22 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Literal
+from typing import Any
 
+from agent_utilities.mcp_utilities import resolve_action
 from pydantic import Field
 
 logger = logging.getLogger(__name__)
+
+# Canonical action sets per action-routed tool, reused by ``resolve_action``
+# to provide list_actions discovery, plural->singular aliases, and
+# did-you-mean errors on unknown actions.
+IDENTITY_ACTIONS = ("issue", "verify", "revoke", "list")
+POLICY_ACTIONS = ("list", "get", "update", "reload")
+SPECIALIST_ACTIONS = ("install", "uninstall", "list", "search")
+SCHEDULER_ACTIONS = ("get_stats", "list_processes", "preempt", "reset_quota")
+WATCHDOG_ACTIONS = ("check_change", "list_watchers", "drain_triggers")
+MAINTENANCE_ACTIONS = ("list_tasks", "run_now", "schedule", "get_log")
 
 # Graceful import — all registration functions become no-ops if
 # agent-utilities is not installed (backward compatible).
@@ -131,7 +142,10 @@ def _get_maintenance() -> MaintenanceCron:
 
 
 async def sm_agent_identity_operations(
-    action: Literal["issue", "verify", "revoke", "list"],
+    action: str = Field(
+        description="Action to perform. Must be one of: "
+        + ", ".join(f"'{a}'" for a in IDENTITY_ACTIONS),
+    ),
     agent_name: str | None = Field(
         description="Name of the agent to issue identity for", default=None
     ),
@@ -144,6 +158,10 @@ async def sm_agent_identity_operations(
     ),
 ) -> dict:
     """Manages agent identity lifecycle: issue, verify, revoke, or list identities."""
+    resolved = resolve_action(action, IDENTITY_ACTIONS, service="systems-manager")
+    if isinstance(resolved, dict):
+        return resolved
+    action = resolved
     kernel = _get_permissions()
     if action == "issue":
         if not agent_name:
@@ -226,7 +244,10 @@ def register_identity_tools(mcp: Any) -> None:
 
 
 async def sm_agent_policy_operations(
-    action: Literal["list", "get", "update", "reload"],
+    action: str = Field(
+        description="Action to perform. Must be one of: "
+        + ", ".join(f"'{a}'" for a in POLICY_ACTIONS),
+    ),
     role: str | None = Field(
         description="Role name for 'get' or 'update' action", default=None
     ),
@@ -238,6 +259,10 @@ async def sm_agent_policy_operations(
     ),
 ) -> dict:
     """Manages agent policies: list role policies, get, update or reload policies."""
+    resolved = resolve_action(action, POLICY_ACTIONS, service="systems-manager")
+    if isinstance(resolved, dict):
+        return resolved
+    action = resolved
     kernel = _get_permissions()
     if action == "list":
         policies = []
@@ -306,7 +331,10 @@ def register_policy_tools(mcp: Any) -> None:
 
 
 async def sm_agent_specialist_operations(
-    action: Literal["install", "uninstall", "list", "search"],
+    action: str = Field(
+        description="Action to perform. Must be one of: "
+        + ", ".join(f"'{a}'" for a in SPECIALIST_ACTIONS),
+    ),
     package_name: str | None = Field(
         description="Name of the specialist package to install or uninstall",
         default=None,
@@ -318,6 +346,10 @@ async def sm_agent_specialist_operations(
     query: str | None = Field(description="Search term (for 'search')", default=None),
 ) -> dict:
     """Manages specialist packages: install, uninstall, list, or search."""
+    resolved = resolve_action(action, SPECIALIST_ACTIONS, service="systems-manager")
+    if isinstance(resolved, dict):
+        return resolved
+    action = resolved
     registry = _get_registry()
     if action == "install":
         if not package_name:
@@ -384,13 +416,20 @@ def register_specialist_registry_tools(mcp: Any) -> None:
 
 
 async def sm_agent_scheduler_operations(
-    action: Literal["get_stats", "list_processes", "preempt", "reset_quota"],
+    action: str = Field(
+        description="Action to perform. Must be one of: "
+        + ", ".join(f"'{a}'" for a in SCHEDULER_ACTIONS),
+    ),
     process_id: str | None = Field(
         description="Process ID to preempt or reset quota", default=None
     ),
     reason: str = Field(description="Reason for preemption", default="manual"),
 ) -> dict:
     """Manages the cognitive scheduler: get stats, list processes, preempt, or reset quota."""
+    resolved = resolve_action(action, SCHEDULER_ACTIONS, service="systems-manager")
+    if isinstance(resolved, dict):
+        return resolved
+    action = resolved
     scheduler = _get_scheduler()
     if action == "get_stats":
         return scheduler.get_stats()
@@ -446,12 +485,19 @@ def register_agent_health_tools(mcp: Any) -> None:
 
 
 async def sm_agent_watchdog_operations(
-    action: Literal["check_change", "list_watchers", "drain_triggers"],
+    action: str = Field(
+        description="Action to perform. Must be one of: "
+        + ", ".join(f"'{a}'" for a in WATCHDOG_ACTIONS),
+    ),
     filepath: str | None = Field(
         description="File path to check for 'check_change'", default=None
     ),
 ) -> dict:
     """Manages file watchdog triggers: check file change, list active watchers, or drain triggers."""
+    resolved = resolve_action(action, WATCHDOG_ACTIONS, service="systems-manager")
+    if isinstance(resolved, dict):
+        return resolved
+    action = resolved
     watcher = _get_watcher()
     if action == "check_change":
         if not filepath:
@@ -509,7 +555,10 @@ def register_watchdog_tools(mcp: Any) -> None:
 
 
 async def sm_agent_maintenance_operations(
-    action: Literal["list_tasks", "run_now", "schedule", "get_log"],
+    action: str = Field(
+        description="Action to perform. Must be one of: "
+        + ", ".join(f"'{a}'" for a in MAINTENANCE_ACTIONS),
+    ),
     task_id: str | None = Field(
         description="Unique task identifier to run or schedule", default=None
     ),
@@ -529,6 +578,10 @@ async def sm_agent_maintenance_operations(
     ),
 ) -> dict:
     """Manages autonomous maintenance: list due tasks, run a task immediately, schedule a new task, or get logs."""
+    resolved = resolve_action(action, MAINTENANCE_ACTIONS, service="systems-manager")
+    if isinstance(resolved, dict):
+        return resolved
+    action = resolved
     cron = _get_maintenance()
     if action == "list_tasks":
         summary = cron.summary()
