@@ -32,6 +32,7 @@ from agent_utilities.mcp_utilities import (
     create_mcp_server,
     ctx_log,
     resolve_action,
+    run_blocking,
 )
 from dotenv import find_dotenv, load_dotenv
 
@@ -191,65 +192,97 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "install_applications":
-                return manager.install_applications(packages or [])
+                return await run_blocking(manager.install_applications, packages or [])
             elif action == "update":
-                return manager.update()
+                return await run_blocking(
+                    manager.update,
+                )
             elif action == "clean":
-                return manager.clean()
+                return await run_blocking(
+                    manager.clean,
+                )
             elif action == "optimize":
-                return manager.optimize()
+                return await run_blocking(
+                    manager.optimize,
+                )
             elif action == "install_python_modules":
-                return manager.install_python_modules(packages or [])
+                return await run_blocking(
+                    manager.install_python_modules, packages or []
+                )
             elif action == "get_os_statistics":
-                return manager.get_os_statistics()
+                return await run_blocking(
+                    manager.get_os_statistics,
+                )
             elif action == "get_hardware_statistics":
-                return manager.get_hardware_statistics()
+                return await run_blocking(
+                    manager.get_hardware_statistics,
+                )
             elif action == "search_package":
-                return manager.search_package(package or "")
+                return await run_blocking(manager.search_package, package or "")
             elif action == "get_package_info":
-                return manager.get_package_info(package or "")
+                return await run_blocking(manager.get_package_info, package or "")
             elif action == "list_installed_packages":
-                return manager.list_installed_packages()
+                return await run_blocking(
+                    manager.list_installed_packages,
+                )
             elif action == "list_upgradable_packages":
-                return manager.list_upgradable_packages()
+                return await run_blocking(
+                    manager.list_upgradable_packages,
+                )
             elif action == "system_health_check":
-                return manager.system_health_check()
+                return await run_blocking(
+                    manager.system_health_check,
+                )
             elif action == "get_uptime":
-                return manager.get_uptime()
+                return await run_blocking(
+                    manager.get_uptime,
+                )
             elif action == "list_env_vars":
-                return manager.list_env_vars()
+                return await run_blocking(
+                    manager.list_env_vars,
+                )
             elif action == "get_env_var":
-                return manager.get_env_var(env_var or "")
+                return await run_blocking(manager.get_env_var, env_var or "")
             elif action == "clean_temp_files":
-                return manager.clean_temp_files()
+                return await run_blocking(
+                    manager.clean_temp_files,
+                )
             elif action == "clean_package_cache":
-                return manager.clean_package_cache()
+                return await run_blocking(
+                    manager.clean_package_cache,
+                )
             elif action == "list_windows_features":
                 return (
-                    manager.list_windows_features()
+                    await run_blocking(
+                        manager.list_windows_features,
+                    )
                     if isinstance(manager, WindowsManager)
                     else "Not supported"
                 )
             elif action == "enable_windows_features":
                 return (
-                    manager.enable_windows_features(
-                        [feature_name] if feature_name else []
+                    await run_blocking(
+                        manager.enable_windows_features,
+                        [feature_name] if feature_name else [],
                     )
                     if isinstance(manager, WindowsManager)
                     else "Not supported"
                 )
             elif action == "disable_windows_features":
                 return (
-                    manager.disable_windows_features(
-                        [feature_name] if feature_name else []
+                    await run_blocking(
+                        manager.disable_windows_features,
+                        [feature_name] if feature_name else [],
                     )
                     if isinstance(manager, WindowsManager)
                     else "Not supported"
                 )
             elif action == "add_repository":
-                return manager.add_repository(repository or "")
+                return await run_blocking(manager.add_repository, repository or "")
             elif action == "install_local_package":
-                return manager.install_local_package(file_path or "")
+                return await run_blocking(
+                    manager.install_local_package, file_path or ""
+                )
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -279,19 +312,23 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "list_services":
-                return manager.list_services()
+                return await run_blocking(
+                    manager.list_services,
+                )
             elif action == "get_service_status":
-                return manager.get_service_status(service_name or "")
+                return await run_blocking(
+                    manager.get_service_status, service_name or ""
+                )
             elif action == "start_service":
-                return manager.start_service(service_name or "")
+                return await run_blocking(manager.start_service, service_name or "")
             elif action == "stop_service":
-                return manager.stop_service(service_name or "")
+                return await run_blocking(manager.stop_service, service_name or "")
             elif action == "restart_service":
-                return manager.restart_service(service_name or "")
+                return await run_blocking(manager.restart_service, service_name or "")
             elif action == "enable_service":
-                return manager.enable_service(service_name or "")
+                return await run_blocking(manager.enable_service, service_name or "")
             elif action == "disable_service":
-                return manager.disable_service(service_name or "")
+                return await run_blocking(manager.disable_service, service_name or "")
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -322,14 +359,16 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "list_processes":
-                return manager.list_processes()
+                return await run_blocking(
+                    manager.list_processes,
+                )
             elif action == "get_process_info":
                 if pid is not None:
-                    return manager.get_process_info(pid)
+                    return await run_blocking(manager.get_process_info, pid)
                 return "pid is required"
             elif action == "kill_process":
                 if pid is not None:
-                    return manager.kill_process(pid)
+                    return await run_blocking(manager.kill_process, pid)
                 return "pid is required"
         except Exception as e:
             return f"Error: {str(e)}"
@@ -361,13 +400,17 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "list_network_interfaces":
-                return manager.list_network_interfaces()
+                return await run_blocking(
+                    manager.list_network_interfaces,
+                )
             elif action == "list_open_ports":
-                return manager.list_open_ports()
+                return await run_blocking(
+                    manager.list_open_ports,
+                )
             elif action == "ping_host":
-                return manager.ping_host(host or "", count)
+                return await run_blocking(manager.ping_host, host or "", count)
             elif action == "dns_lookup":
-                return manager.dns_lookup(host or "")
+                return await run_blocking(manager.dns_lookup, host or "")
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -397,11 +440,15 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "list_disks":
-                return manager.list_disks()
+                return await run_blocking(
+                    manager.list_disks,
+                )
             elif action == "get_disk_usage":
-                return manager.get_disk_usage(path or "/")
+                return await run_blocking(manager.get_disk_usage, path or "/")
             elif action == "get_disk_space_report":
-                return manager.get_disk_space_report()
+                return await run_blocking(
+                    manager.get_disk_space_report,
+                )
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -430,9 +477,13 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "list_users":
-                return manager.list_users()
+                return await run_blocking(
+                    manager.list_users,
+                )
             elif action == "list_groups":
-                return manager.list_groups()
+                return await run_blocking(
+                    manager.list_groups,
+                )
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -471,11 +522,11 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "run_command":
-                return manager.run_command(command or "")
+                return await run_blocking(manager.run_command, command or "")
             elif action == "get_system_logs":
-                return manager.get_system_logs(lines=lines)
+                return await run_blocking(manager.get_system_logs, lines=lines)
             elif action == "tail_log_file":
-                return manager.tail_log_file(filepath or "", lines)
+                return await run_blocking(manager.tail_log_file, filepath or "", lines)
             elif action == "list_files":
                 return manager.fs_manager.list_files(filepath or ".", recursive, depth)
             elif action == "search_files":
@@ -519,11 +570,13 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "list_cron_jobs":
-                return manager.list_cron_jobs(user)
+                return await run_blocking(manager.list_cron_jobs, user)
             elif action == "add_cron_job":
-                return manager.add_cron_job(command or "", schedule or "", user)
+                return await run_blocking(
+                    manager.add_cron_job, command or "", schedule or "", user
+                )
             elif action == "remove_cron_job":
-                return manager.remove_cron_job(command or "", user)
+                return await run_blocking(manager.remove_cron_job, command or "", user)
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -555,11 +608,13 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "get_firewall_status":
-                return manager.get_firewall_status()
+                return await run_blocking(
+                    manager.get_firewall_status,
+                )
             elif action == "add_firewall_rule":
-                return manager.add_firewall_rule(rule or "")
+                return await run_blocking(manager.add_firewall_rule, rule or "")
             elif action == "remove_firewall_rule":
-                return manager.remove_firewall_rule(rule or "")
+                return await run_blocking(manager.remove_firewall_rule, rule or "")
         except Exception as e:
             return f"Error: {str(e)}"
 
@@ -594,7 +649,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         )
         try:
             if action == "add_authorized_key":
-                return manager.add_authorized_key(public_key or "")
+                return await run_blocking(manager.add_authorized_key, public_key or "")
             elif action == "add_alias":
                 return manager.shell_manager.add_alias(name or "", command or "")
             elif action == "install_uv":
