@@ -31,6 +31,7 @@ from agent_utilities.base_utilities import to_boolean
 from agent_utilities.mcp_utilities import (
     create_mcp_server,
     ctx_log,
+    resolve_action,
 )
 from dotenv import find_dotenv, load_dotenv
 
@@ -46,6 +47,77 @@ logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = get_logger("SystemsManagerServer")
+
+# Canonical action sets per action-routed tool. Used both as the documented
+# enum in each tool's ``action`` Field and by ``resolve_action`` to provide
+# list_actions discovery, plural->singular aliases, and did-you-mean errors.
+SYSTEM_ACTIONS = (
+    "install_applications",
+    "update",
+    "clean",
+    "optimize",
+    "install_python_modules",
+    "get_os_statistics",
+    "get_hardware_statistics",
+    "search_package",
+    "get_package_info",
+    "list_installed_packages",
+    "list_upgradable_packages",
+    "system_health_check",
+    "get_uptime",
+    "list_env_vars",
+    "get_env_var",
+    "clean_temp_files",
+    "clean_package_cache",
+    "list_windows_features",
+    "enable_windows_features",
+    "disable_windows_features",
+    "add_repository",
+    "install_local_package",
+)
+SERVICE_ACTIONS = (
+    "list_services",
+    "get_service_status",
+    "start_service",
+    "stop_service",
+    "restart_service",
+    "enable_service",
+    "disable_service",
+)
+PROCESS_ACTIONS = ("list_processes", "get_process_info", "kill_process")
+NETWORK_ACTIONS = (
+    "list_network_interfaces",
+    "list_open_ports",
+    "ping_host",
+    "dns_lookup",
+)
+DISK_ACTIONS = ("list_disks", "get_disk_usage", "get_disk_space_report")
+USER_ACTIONS = ("list_users", "list_groups")
+FILE_ACTIONS = (
+    "run_command",
+    "get_system_logs",
+    "tail_log_file",
+    "list_files",
+    "search_files",
+    "grep_files",
+    "manage_file",
+)
+CRON_ACTIONS = ("list_cron_jobs", "add_cron_job", "remove_cron_job")
+FIREWALL_ACTIONS = (
+    "get_firewall_status",
+    "add_firewall_rule",
+    "remove_firewall_rule",
+)
+ADVANCED_ACTIONS = (
+    "add_authorized_key",
+    "add_alias",
+    "install_uv",
+    "create_venv",
+    "install_package",
+    "install_nvm",
+    "install_node",
+    "use_node",
+)
 
 
 def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
@@ -88,30 +160,11 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         description="System operations for managing packages, system health, and updates"
     )
     async def sm_system_operations(
-        action: Literal[
-            "install_applications",
-            "update",
-            "clean",
-            "optimize",
-            "install_python_modules",
-            "get_os_statistics",
-            "get_hardware_statistics",
-            "search_package",
-            "get_package_info",
-            "list_installed_packages",
-            "list_upgradable_packages",
-            "system_health_check",
-            "get_uptime",
-            "list_env_vars",
-            "get_env_var",
-            "clean_temp_files",
-            "clean_package_cache",
-            "list_windows_features",
-            "enable_windows_features",
-            "disable_windows_features",
-            "add_repository",
-            "install_local_package",
-        ] = Field(..., description="Action to perform"),
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in SYSTEM_ACTIONS),
+        ),
         packages: list[str] | None = Field(
             None, description="List of applications/packages"
         ),
@@ -125,6 +178,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, SYSTEM_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -198,21 +255,21 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for managing system services")
     async def sm_service_operations(
-        action: Literal[
-            "list_services",
-            "get_service_status",
-            "start_service",
-            "stop_service",
-            "restart_service",
-            "enable_service",
-            "disable_service",
-        ] = Field(..., description="Action to perform"),
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in SERVICE_ACTIONS),
+        ),
         service_name: str | None = Field(None, description="Name of the service"),
         target_host: str | None = Field(
             None, description="Optional target remote host from inventory"
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, SERVICE_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -240,8 +297,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for managing system processes")
     async def sm_process_operations(
-        action: Literal["list_processes", "get_process_info", "kill_process"] = Field(
-            ..., description="Action to perform"
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in PROCESS_ACTIONS),
         ),
         pid: int | None = Field(None, description="Process ID"),
         name: str | None = Field(None, description="Process name"),
@@ -250,6 +309,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, PROCESS_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -273,9 +336,11 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for network analysis")
     async def sm_network_operations(
-        action: Literal[
-            "list_network_interfaces", "list_open_ports", "ping_host", "dns_lookup"
-        ] = Field(..., description="Action to perform"),
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in NETWORK_ACTIONS),
+        ),
         host: str | None = Field(None, description="Host to ping or lookup"),
         count: int = Field(4, description="Ping count"),
         target_host: str | None = Field(
@@ -283,6 +348,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, NETWORK_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -304,15 +373,21 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for managing system disks")
     async def sm_disk_operations(
-        action: Literal[
-            "list_disks", "get_disk_usage", "get_disk_space_report"
-        ] = Field(..., description="Action to perform"),
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in DISK_ACTIONS),
+        ),
         path: str | None = Field(None, description="Path for disk usage"),
         target_host: str | None = Field(
             None, description="Optional target remote host from inventory"
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, DISK_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -332,14 +407,20 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for user and group management")
     async def sm_user_operations(
-        action: Literal["list_users", "list_groups"] = Field(
-            ..., description="Action to perform"
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in USER_ACTIONS),
         ),
         target_host: str | None = Field(
             None, description="Optional target remote host from inventory"
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, USER_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -357,15 +438,11 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for file and log management")
     async def sm_file_operations(
-        action: Literal[
-            "run_command",
-            "get_system_logs",
-            "tail_log_file",
-            "list_files",
-            "search_files",
-            "grep_files",
-            "manage_file",
-        ] = Field(..., description="Action to perform"),
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in FILE_ACTIONS),
+        ),
         command: str | None = Field(None, description="Command to run"),
         filepath: str | None = Field(None, description="Path to file"),
         content: str | None = Field(None, description="Content to write/append"),
@@ -381,6 +458,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, FILE_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -412,8 +493,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for cron jobs")
     async def sm_cron_operations(
-        action: Literal["list_cron_jobs", "add_cron_job", "remove_cron_job"] = Field(
-            ..., description="Action to perform"
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in CRON_ACTIONS),
         ),
         command: str | None = Field(None, description="Command for cron job"),
         schedule: str | None = Field(None, description="Cron schedule expression"),
@@ -423,6 +506,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, CRON_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -442,9 +529,11 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for firewall management")
     async def sm_firewall_operations(
-        action: Literal[
-            "get_firewall_status", "add_firewall_rule", "remove_firewall_rule"
-        ] = Field(..., description="Action to perform"),
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in FIREWALL_ACTIONS),
+        ),
         rule: str | None = Field(
             None, description="Firewall rule (e.g. 'allow 80/tcp')"
         ),
@@ -453,6 +542,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, FIREWALL_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,
@@ -472,16 +565,11 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for SSH and specialized managers")
     async def sm_advanced_operations(
-        action: Literal[
-            "add_authorized_key",
-            "add_alias",
-            "install_uv",
-            "create_venv",
-            "install_package",
-            "install_nvm",
-            "install_node",
-            "use_node",
-        ] = Field(..., description="Action to perform"),
+        action: str = Field(
+            ...,
+            description="Action to perform. Must be one of: "
+            + ", ".join(f"'{a}'" for a in ADVANCED_ACTIONS),
+        ),
         public_key: str | None = Field(None, description="Public key content"),
         name: str | None = Field(None, description="Name for alias or environment"),
         command: str | None = Field(None, description="Command for alias"),
@@ -493,6 +581,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         ),
         ctx: Context | None = None,
     ) -> Any:
+        resolved = resolve_action(action, ADVANCED_ACTIONS, service="systems-manager")
+        if isinstance(resolved, dict):
+            return resolved
+        action = resolved
         manager = detect_and_create_manager(host=target_host)
         ctx_log(
             ctx,

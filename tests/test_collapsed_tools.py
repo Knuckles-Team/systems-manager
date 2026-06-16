@@ -137,8 +137,8 @@ async def test_identity_operations():
         assert data_list["identities"][0]["agent_id"] == "agent-1"
 
         # Action: unsupported (Direct Python call to hit the else branch)
-        res_unsupported = await sm_agent_identity_operations(action="invalid_action")  # type: ignore
-        assert res_unsupported["success"] is False
+        with pytest.raises(ValueError, match="list_actions"):
+            await sm_agent_identity_operations(action="invalid_action")
 
 
 @pytest.mark.asyncio
@@ -238,8 +238,8 @@ async def test_policy_operations():
         assert data_reload_nf["success"] is False
 
         # Action: unsupported (Direct Python call to hit the else branch)
-        res_unsupported = await sm_agent_policy_operations(action="invalid_action")  # type: ignore
-        assert res_unsupported["success"] is False
+        with pytest.raises(ValueError, match="list_actions"):
+            await sm_agent_policy_operations(action="invalid_action")
 
 
 @pytest.mark.asyncio
@@ -329,8 +329,8 @@ async def test_specialist_operations():
         assert data_search_missing["success"] is False
 
         # Action: unsupported (Direct Python call to hit the else branch)
-        res_unsupported = await sm_agent_specialist_operations(action="invalid_action")  # type: ignore
-        assert res_unsupported["success"] is False
+        with pytest.raises(ValueError, match="list_actions"):
+            await sm_agent_specialist_operations(action="invalid_action")
 
 
 @pytest.mark.asyncio
@@ -412,8 +412,8 @@ async def test_scheduler_operations():
         assert data_reset_nf["success"] is False
 
         # Action: unsupported (Direct Python call to hit the else branch)
-        res_unsupported = await sm_agent_scheduler_operations(action="invalid_action")  # type: ignore
-        assert res_unsupported["success"] is False
+        with pytest.raises(ValueError, match="list_actions"):
+            await sm_agent_scheduler_operations(action="invalid_action")
 
 
 @pytest.mark.asyncio
@@ -475,8 +475,8 @@ async def test_watchdog_operations():
         assert data_drain["count"] == 1
 
         # Action: unsupported (Direct Python call to hit the else branch)
-        res_unsupported = await sm_agent_watchdog_operations(action="invalid_action")  # type: ignore
-        assert res_unsupported["success"] is False
+        with pytest.raises(ValueError, match="list_actions"):
+            await sm_agent_watchdog_operations(action="invalid_action")
 
 
 @pytest.mark.asyncio
@@ -571,8 +571,8 @@ async def test_maintenance_operations():
         assert data_log["log_entry"] == 1
 
         # Action: unsupported (Direct Python call to hit the else branch)
-        res_unsupported = await sm_agent_maintenance_operations(action="invalid_action")  # type: ignore
-        assert res_unsupported["success"] is False
+        with pytest.raises(ValueError, match="list_actions"):
+            await sm_agent_maintenance_operations(action="invalid_action")
 
 
 def test_guard_no_agent_utilities():
