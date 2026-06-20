@@ -75,14 +75,14 @@ _Auto-generated from the live MCP server — do not edit by hand._
 
 | MCP Tool | Toggle Env Var | Description |
 |----------|----------------|-------------|
-| `capture_system_snapshot` | `OBSERVABILITYTOOL` | Takes a point-in-time snapshot of the system state (CPU, RAM, Processes). |
-| `get_network_connections` | `NETWORKTOOL` | Maps active TCP/UDP endpoints directly to owning processes. |
-| `get_process_details` | `OBSERVABILITYTOOL` | Retrieves deep cross-platform process details (threads, modules, memory). |
+| `capture_system_snapshot` | `OS_PROVIDERTOOL` | Takes a point-in-time snapshot of the system state (CPU, RAM, Processes). |
+| `get_network_connections` | `OS_PROVIDERTOOL` | Maps active TCP/UDP endpoints directly to owning processes. |
+| `get_process_details` | `OS_PROVIDERTOOL` | Retrieves deep cross-platform process details (threads, modules, memory). |
 | `health_check` | — |  |
-| `list_kernel_modules` | `DRIVERSTOOL` | List loaded drivers/modules (lsmod or driverquery). |
-| `list_services` | `SERVICESTOOL` | Cross-platform service enumeration (systemctl or Get-Service). |
-| `manage_service` | `SERVICESTOOL` | Start/Stop/Restart/Enable/Disable services cross-platform. |
-| `query_system_logs` | `LOGSTOOL` | Cross-platform log querying (journalctl or Get-WinEvent). |
+| `list_kernel_modules` | `OS_PROVIDERTOOL` | List loaded drivers/modules (lsmod or driverquery). |
+| `list_services` | `OS_PROVIDERTOOL` | Cross-platform service enumeration (systemctl or Get-Service). |
+| `manage_service` | `OS_PROVIDERTOOL` | Start/Stop/Restart/Enable/Disable services cross-platform. |
+| `query_system_logs` | `OS_PROVIDERTOOL` | Cross-platform log querying (journalctl or Get-WinEvent). |
 | `sm_advanced_operations` | — | Operations for SSH and specialized managers |
 | `sm_cron_operations` | — | Operations for cron jobs |
 | `sm_disk_operations` | — | Operations for managing system disks |
@@ -93,8 +93,8 @@ _Auto-generated from the live MCP server — do not edit by hand._
 | `sm_service_operations` | — | Operations for managing system services |
 | `sm_system_operations` | — | System operations for managing packages, system health, and updates |
 | `sm_user_operations` | — | Operations for user and group management |
-| `start_system_trace` | `SYSTEMTOOL` | Start a kernel-level event trace (ETW on Windows, or strace on Linux). |
-| `stop_system_trace` | `SYSTEMTOOL` | Stop a kernel-level event trace. |
+| `start_system_trace` | `OS_PROVIDERTOOL` | Start a kernel-level event trace (ETW on Windows, or strace on Linux). |
+| `stop_system_trace` | `OS_PROVIDERTOOL` | Stop a kernel-level event trace. |
 
 _20 action-routed tools (default `MCP_TOOL_MODE=condensed`). Each is enabled unless its toggle is set false; set `MCP_TOOL_MODE=verbose` (or `both`) for the 1:1 per-operation surface. Auto-generated — do not edit._
 <!-- MCP-TOOLS-TABLE:END -->
