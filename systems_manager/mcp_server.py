@@ -31,10 +31,10 @@ from agent_utilities.base_utilities import to_boolean
 from agent_utilities.mcp_utilities import (
     create_mcp_server,
     ctx_log,
+    load_config,
     resolve_action,
     run_blocking,
 )
-from dotenv import find_dotenv, load_dotenv
 
 from systems_manager.os_provider_tools import register_os_provider_tools
 from systems_manager.systems_manager import (
@@ -123,7 +123,7 @@ ADVANCED_ACTIONS = (
 
 def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
     """Initialize the MCP server."""
-    load_dotenv(find_dotenv())
+    load_config()
     args, mcp, middlewares = create_mcp_server(
         name="systems-manager",
         version=__version__,
