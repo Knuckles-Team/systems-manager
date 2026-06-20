@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import argparse
 import logging
-import os
 import sys
 import warnings
 from typing import Any, Literal, cast
@@ -27,17 +26,19 @@ warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 # Filter AuthlibDeprecationWarning
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="authlib.*")
 
-from agent_utilities.base_utilities import to_boolean
+from agent_utilities.core.config import setting
 from agent_utilities.mcp_utilities import (
     create_mcp_server,
     ctx_log,
     load_config,
+    register_tool_surface,
     resolve_action,
     run_blocking,
 )
 
 from systems_manager.os_provider_tools import register_os_provider_tools
 from systems_manager.systems_manager import (
+    SystemsManagerBase,
     WindowsManager,
     detect_and_create_manager,
 )
@@ -130,17 +131,12 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         instructions="Systems Manager MCP Server",
     )
 
-    DEFAULT_MISCTOOL = to_boolean(os.getenv("MISCTOOL", "True"))
-    if DEFAULT_MISCTOOL:
+    if bool(setting("MISCTOOL", True)):
 
         @mcp.tool(annotations={"title": "Health Check"})
         async def health_check() -> str:
             return "OK"
 
-    # Register OS provider tools if needed
-    register_os_provider_tools(mcp)
-
-    # Register Agent OS tools
     from systems_manager.agent_os_tools import (
         register_agent_health_tools,
         register_identity_tools,
@@ -150,12 +146,21 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         register_watchdog_tools,
     )
 
-    register_agent_health_tools(mcp)
-    register_identity_tools(mcp)
-    register_maintenance_tools(mcp)
-    register_policy_tools(mcp)
-    register_specialist_registry_tools(mcp)
-    register_watchdog_tools(mcp)
+    register_tool_surface(
+        mcp,
+        client_cls=SystemsManagerBase,
+        get_client=detect_and_create_manager,
+        service="systems-manager",
+        registrars=[
+            register_os_provider_tools,
+            register_agent_health_tools,
+            register_identity_tools,
+            register_maintenance_tools,
+            register_policy_tools,
+            register_specialist_registry_tools,
+            register_watchdog_tools,
+        ],
+    )
 
     @mcp.tool(
         description="System operations for managing packages, system health, and updates"
