@@ -68,9 +68,36 @@ Detailed instructions on how to use the underlying API wrappers, extended schema
 This server utilizes dynamic Action-Routed tools to optimize token overhead and maximize IDE compatibility.
 
 ### Available MCP Tools
-| Tool Module | Toggle Env Var | Enabled by Default | Description & Nested Methods |
-|-------------|----------------|--------------------|------------------------------|
-| **Misc** | `MISCTOOL` | `True` | Manage misc operations. |
+
+_Auto-generated from the live MCP server — do not edit by hand._
+
+<!-- MCP-TOOLS-TABLE:START -->
+
+| MCP Tool | Toggle Env Var | Description |
+|----------|----------------|-------------|
+| `capture_system_snapshot` | `OBSERVABILITYTOOL` | Takes a point-in-time snapshot of the system state (CPU, RAM, Processes). |
+| `get_network_connections` | `NETWORKTOOL` | Maps active TCP/UDP endpoints directly to owning processes. |
+| `get_process_details` | `OBSERVABILITYTOOL` | Retrieves deep cross-platform process details (threads, modules, memory). |
+| `health_check` | — |  |
+| `list_kernel_modules` | `DRIVERSTOOL` | List loaded drivers/modules (lsmod or driverquery). |
+| `list_services` | `SERVICESTOOL` | Cross-platform service enumeration (systemctl or Get-Service). |
+| `manage_service` | `SERVICESTOOL` | Start/Stop/Restart/Enable/Disable services cross-platform. |
+| `query_system_logs` | `LOGSTOOL` | Cross-platform log querying (journalctl or Get-WinEvent). |
+| `sm_advanced_operations` | — | Operations for SSH and specialized managers |
+| `sm_cron_operations` | — | Operations for cron jobs |
+| `sm_disk_operations` | — | Operations for managing system disks |
+| `sm_file_operations` | — | Operations for file and log management |
+| `sm_firewall_operations` | — | Operations for firewall management |
+| `sm_network_operations` | — | Operations for network analysis |
+| `sm_process_operations` | — | Operations for managing system processes |
+| `sm_service_operations` | — | Operations for managing system services |
+| `sm_system_operations` | — | System operations for managing packages, system health, and updates |
+| `sm_user_operations` | — | Operations for user and group management |
+| `start_system_trace` | `SYSTEMTOOL` | Start a kernel-level event trace (ETW on Windows, or strace on Linux). |
+| `stop_system_trace` | `SYSTEMTOOL` | Stop a kernel-level event trace. |
+
+_20 action-routed tools (default `MCP_TOOL_MODE=condensed`). Each is enabled unless its toggle is set false; set `MCP_TOOL_MODE=verbose` (or `both`) for the 1:1 per-operation surface. Auto-generated — do not edit._
+<!-- MCP-TOOLS-TABLE:END -->
 
 Detailed tool schemas, parameter shapes, and validation constraints are preserved in [docs/mcp.md](docs/mcp.md).
 
