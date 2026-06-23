@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   systems-manager-mcp:
-    image: knucklessg1/systems-manager:latest
+    image: knucklessg1/systems-manager:mcp
     container_name: systems-manager-mcp
     hostname: systems-manager-mcp
     restart: always
