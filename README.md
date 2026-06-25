@@ -124,6 +124,14 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
 
 ### MCP Configuration Examples
 
+> **Install the slim `[mcp]` extra.** All examples below install
+> `systems-manager[mcp]` — the MCP-server extra that pulls only the FastMCP /
+> FastAPI tooling (`agent-utilities[mcp]`). It deliberately **excludes** the heavy
+> agent runtime (the epistemic-graph engine, `pydantic-ai`, `dspy`, `llama-index`,
+> `tree-sitter`), so `uvx`/container installs are dramatically smaller and faster.
+> Use the full `[agent]` extra only when you need the integrated Pydantic AI agent
+> (see [Installation](#installation)).
+
 #### stdio Transport (Recommended for local IDEs e.g., Cursor, Claude Desktop)
 Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
 
@@ -134,7 +142,7 @@ Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
       "command": "uvx",
       "args": [
         "--from",
-        "systems-manager",
+        "systems-manager[mcp]",
         "systems-manager-mcp"
       ],
       "env": {
@@ -155,7 +163,7 @@ Configure your client's `mcp.json` to launch the Streamable-HTTP server via `uvx
       "command": "uvx",
       "args": [
         "--from",
-        "systems-manager",
+        "systems-manager[mcp]",
         "systems-manager-mcp"
       ],
       "env": {
@@ -190,8 +198,15 @@ docker run -d \
   -e TRANSPORT=streamable-http \
   -e PORT=8000 \
   -e SYSTEMS_API_KEY="your_value" \
-  knucklessg1/systems-manager:latest
+  knucklessg1/systems-manager:mcp
 ```
+
+> The `:mcp` tag is the **slim MCP-server image** (built from
+> `docker/Dockerfile --target mcp`, installing `systems-manager[mcp]`). The default
+> `:latest` tag is the **full agent image** (`--target agent`, `systems-manager[agent]`)
+> which also bundles the Pydantic AI agent and the epistemic-graph engine — use it
+> when you run `systems-manager-agent` (the agent), not just the MCP server. See
+> [Container images](#container-images-mcp-vs-agent).
 
 ---
 
@@ -209,6 +224,70 @@ consumed from a **remote deployment**. The
 - **Remote URL** — connect to a server deployed behind Caddy at
   `http://systems-manager-mcp.arpa/mcp` using the `"url"` key.
 <!-- END GENERATED: additional-deployment-options -->
+
+---
+
+## Environment Variables
+
+Every variable the server reads, grouped by purpose.
+
+### MCP server / transport
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TRANSPORT` | `stdio`, `streamable-http`, or `sse` | `stdio` |
+| `HOST` | Bind host (HTTP transports) | `0.0.0.0` |
+| `PORT` | Bind port (HTTP transports) | `8000` |
+| `MCP_TOOL_MODE` | Tool surface: `condensed`, `verbose`, or `both` | `condensed` |
+| `MCP_ENABLED_TOOLS` / `MCP_DISABLED_TOOLS` | Comma-separated tool allow/deny list | — |
+| `MCP_ENABLED_TAGS` / `MCP_DISABLED_TAGS` | Comma-separated tag allow/deny list | — |
+| `DEBUG` | Verbose logging | `False` |
+| `PYTHONUNBUFFERED` | Unbuffered stdout (recommended in containers) | `1` |
+
+### Connection & credentials
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SYSTEMS_API_KEY` | Optional API key for the managed system / control plane | — |
+| `SYSTEMS_MANAGER_HOST` | Target host for remote telemetry/control (defaults to local) | — |
+
+### Multi-host remote orchestration
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PROJECT_ROOT` | Project root used to resolve config/inventory paths | — |
+| `MCP_CONFIG_PATH` | Path to the MCP config (`mcp_config.json`) | — |
+
+The remote inventory is loaded from `~/.config/agent_utilities/inventory.yaml` (XDG path);
+see the [Multi-Host Architecture Guide](docs/multi_host.md).
+
+### Tool toggles
+Each action-routed tool can be disabled individually via its toggle env var (set to `false`).
+The full list is in the [Available MCP Tools](#available-mcp-tools) table above
+(e.g. `OS_PROVIDERTOOL`, `MISCTOOL`).
+
+### Telemetry & governance
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ENABLE_OTEL` | Enable OpenTelemetry export | `True` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint | — |
+| `OTEL_EXPORTER_OTLP_PUBLIC_KEY` / `OTEL_EXPORTER_OTLP_SECRET_KEY` | OTLP auth keys | — |
+| `OTEL_EXPORTER_OTLP_PROTOCOL` | OTLP protocol (e.g. `http/protobuf`) | — |
+| `EUNOMIA_TYPE` | Authorization mode: `none`, `embedded`, `remote` | `none` |
+| `EUNOMIA_POLICY_FILE` | Embedded policy file | `mcp_policies.json` |
+| `EUNOMIA_REMOTE_URL` | Remote Eunomia server URL | — |
+
+### Agent runtime governance (full `[agent]` runtime only)
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `MCP_URL` | URL of the MCP server the agent connects to | `http://localhost:8000/mcp` |
+| `PROVIDER` | LLM provider (e.g. `openai`) | `openai` |
+| `MODEL_ID` | Model id (e.g. `gpt-4o`) | `gpt-4o` |
+| `ENABLE_WEB_UI` | Serve the AG-UI web interface | `True` |
+| `MAX_CONCURRENT_AGENTS` | Cap on concurrently dispatched sub-agents | — |
+| `MAINTENANCE_PRIORITY` / `MAINTENANCE_TOKEN_BUDGET` | Maintenance-lane scheduling controls | — |
+| `AGENT_POLICIES_PATH` | Path to agent authorization policies | — |
+| `PERMISSIONS_SIGNING_KEY` | Signing key for elevated-permission tokens | — |
+| `SPECIALIST_REGISTRY_PATH` | Path to the specialist/domain registry | — |
+
+See [`.env.example`](.env.example) for a copy-paste starting point.
 
 ## Agent
 
@@ -233,7 +312,7 @@ version: '3.8'
 
 services:
   systems-manager-mcp:
-    image: knucklessg1/systems-manager:latest
+    image: knucklessg1/systems-manager:mcp
     container_name: systems-manager-mcp
     hostname: systems-manager-mcp
     restart: always
@@ -317,15 +396,51 @@ Built directly upon the enterprise-ready [`agent-utilities`](https://github.com/
 
 ## Installation
 
-Install the Python package locally:
+Pick the extra that matches what you want to run:
+
+| Extra | Installs | Use when |
+|-------|----------|----------|
+| `systems-manager[mcp]` | Slim MCP server only (`agent-utilities[mcp]` — FastMCP/FastAPI) | You only run the **MCP server** (smallest install / image) |
+| `systems-manager[agent]` | Full agent runtime (`agent-utilities[agent,logfire]` — Pydantic AI + the epistemic-graph engine) | You run the **integrated agent** |
+| `systems-manager[all]` | Everything (`mcp` + `agent` + `logfire`) | Development / both surfaces |
 
 ```bash
-# Using uv (highly recommended)
-uv pip install systems-manager[all]
+# MCP server only (recommended for tool hosting — slim deps)
+uv pip install "systems-manager[mcp]"
 
-# Using standard pip
-python -m pip install systems-manager[all]
+# Full agent runtime (Pydantic AI + epistemic-graph engine)
+uv pip install "systems-manager[agent]"
+
+# Everything (development)
+uv pip install "systems-manager[all]"      # or: python -m pip install "systems-manager[all]"
 ```
+
+### Container images (`:mcp` vs `:agent`)
+
+One multi-stage `docker/Dockerfile` builds two right-sized images, selected by `--target`:
+
+| Image tag | Build target | Contents | Entrypoint |
+|-----------|--------------|----------|------------|
+| `knucklessg1/systems-manager:mcp` | `--target mcp` | `systems-manager[mcp]` — **slim**, no engine/`pydantic-ai`/`dspy`/`llama-index`/`tree-sitter` | `systems-manager-mcp` |
+| `knucklessg1/systems-manager:latest` | `--target agent` (default) | `systems-manager[agent]` — **full** agent runtime + epistemic-graph engine | `systems-manager-agent` |
+
+```bash
+docker build --target mcp   -t knucklessg1/systems-manager:mcp    docker/   # slim MCP server
+docker build --target agent -t knucklessg1/systems-manager:latest docker/   # full agent
+```
+
+`docker/mcp.compose.yml` runs the slim `:mcp` server; `docker/agent.compose.yml` runs the
+agent (`:latest`) with a co-located `:mcp` sidecar.
+
+### Knowledge-graph database (`epistemic-graph`)
+
+The **full agent** (`[agent]` / `:latest`) embeds the **epistemic-graph** engine (pulled in
+transitively via `agent-utilities[agent]`). For production — or to share one knowledge graph
+across multiple agents — run **epistemic-graph as its own database container** and point the
+agent at it instead of embedding it. Deployment recipes (single-node + Raft HA), connection
+config, and the full database architecture (with diagrams) are documented in the
+[epistemic-graph deployment guide](https://knuckles-team.github.io/epistemic-graph/deployment/).
+The slim `[mcp]` server does **not** require the database.
 
 ---
 
