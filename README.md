@@ -73,6 +73,8 @@ _Auto-generated from the live MCP server — do not edit by hand._
 
 <!-- MCP-TOOLS-TABLE:START -->
 
+#### Condensed action-routed tools (default — `MCP_TOOL_MODE=condensed`)
+
 | MCP Tool | Toggle Env Var | Description |
 |----------|----------------|-------------|
 | `capture_system_snapshot` | `OS_PROVIDERTOOL` | Takes a point-in-time snapshot of the system state (CPU, RAM, Processes). |
@@ -96,7 +98,7 @@ _Auto-generated from the live MCP server — do not edit by hand._
 | `start_system_trace` | `OS_PROVIDERTOOL` | Start a kernel-level event trace (ETW on Windows, or strace on Linux). |
 | `stop_system_trace` | `OS_PROVIDERTOOL` | Stop a kernel-level event trace. |
 
-_20 action-routed tools (default `MCP_TOOL_MODE=condensed`). Each is enabled unless its toggle is set false; set `MCP_TOOL_MODE=verbose` (or `both`) for the 1:1 per-operation surface. Auto-generated — do not edit._
+_20 action-routed tool(s) (default) · 0 verbose 1:1 tool(s). Each is enabled unless its `<DOMAIN>TOOL` toggle is set false; `MCP_TOOL_MODE` selects the surface (`condensed` default · `verbose` 1:1 · `both`). Auto-generated — do not edit._
 <!-- MCP-TOOLS-TABLE:END -->
 
 Detailed tool schemas, parameter shapes, and validation constraints are preserved in [docs/mcp.md](docs/mcp.md).
@@ -146,7 +148,7 @@ Configure your IDE's `mcp.json` to launch the MCP server via `uvx`:
         "systems-manager-mcp"
       ],
       "env": {
-        "SYSTEMS_API_KEY": "your_systems_api_key_here"
+        "MCP_TOOL_MODE": "condensed"
       }
     }
   }
@@ -169,8 +171,7 @@ Configure your client's `mcp.json` to launch the Streamable-HTTP server via `uvx
       "env": {
         "TRANSPORT": "streamable-http",
         "HOST": "0.0.0.0",
-        "PORT": "8000",
-        "SYSTEMS_API_KEY": "your_systems_api_key_here"
+        "PORT": "8000"
       }
     }
   }
@@ -197,7 +198,6 @@ docker run -d \
   -p 8000:8000 \
   -e TRANSPORT=streamable-http \
   -e PORT=8000 \
-  -e SYSTEMS_API_KEY="your_value" \
   knucklessg1/systems-manager:mcp
 ```
 
@@ -246,9 +246,23 @@ consumed from a **remote deployment**. The
 | `EUNOMIA_TYPE` | `none` | options: none, embedded, remote |
 | `EUNOMIA_POLICY_FILE` | `mcp_policies.json` |  |
 | `EUNOMIA_REMOTE_URL` | `http://eunomia-server:8000` |  |
-| `SYSTEMS_API_KEY` | `your_systems_api_key_here` |  |
+| `SYSTEMS_MANAGER_HOST` | — | target host for remote telemetry/control (defaults to local) |
+| `PROJECT_ROOT` | — | project root used to resolve config/inventory paths |
+| `MCP_CONFIG_PATH` | — | path to the MCP config (mcp_config.json) |
+| `MAX_CONCURRENT_AGENTS` | — | cap on concurrently dispatched sub-agents |
+| `MAINTENANCE_PRIORITY` | — | maintenance-lane scheduling priority |
+| `MAINTENANCE_TOKEN_BUDGET` | — | maintenance-lane token budget |
+| `AGENT_POLICIES_PATH` | — | path to agent authorization policies |
+| `PERMISSIONS_SIGNING_KEY` | — | signing key for elevated-permission tokens |
+| `SPECIALIST_REGISTRY_PATH` | — | path to the specialist/domain registry |
 | `OS_PROVIDERTOOL` | `True` | MCP tools table (condensed action-routed surface). |
 | `MISCTOOL` | `True` |  |
+| `AGENT_HEALTHTOOL` | `True` |  |
+| `IDENTITYTOOL` | `True` |  |
+| `MAINTENANCETOOL` | `True` |  |
+| `POLICYTOOL` | `True` |  |
+| `SPECIALIST_REGISTRYTOOL` | `True` |  |
+| `WATCHDOGTOOL` | `True` |  |
 
 #### Inherited agent-utilities variables (apply to every connector)
 
@@ -269,7 +283,7 @@ consumed from a **remote deployment**. The
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_14 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_28 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 
@@ -290,7 +304,6 @@ Every variable the server reads, grouped by purpose.
 ### Connection & credentials
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SYSTEMS_API_KEY` | Optional API key for the managed system / control plane | — |
 | `SYSTEMS_MANAGER_HOST` | Target host for remote telemetry/control (defaults to local) | — |
 
 ### Multi-host remote orchestration
@@ -341,8 +354,8 @@ This repository features a fully integrated Pydantic AI Graph Agent. It communic
 To start the interactive command-line agent:
 
 ```bash
-# Set credentials
-export SYSTEMS_API_KEY="your_value"
+# Optional: target a remote host for telemetry/control
+export SYSTEMS_MANAGER_HOST="remote-host.local"
 
 # Run the agent server
 systems-manager-agent --provider openai --model-id gpt-4o
