@@ -1037,19 +1037,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fan-manager"
-version = "1.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "agent-utilities" },
-    { name = "python-dotenv" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/aa/28/26809725ebfe421599d4b1d42bb0a3a57c25ef6eed41780114c46c6460bb/fan_manager-1.5.0.tar.gz", hash = "sha256:b46c340e342b3be7d1020506a9e39ecd03094a863e91d5153a4644d0e07f2a96", size = 33916, upload-time = "2026-06-25T12:34:15.918Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/f7/833294676063dd22da1df22bb175707f46ad1706195c1f362174b3d4fb99/fan_manager-1.5.0-py3-none-any.whl", hash = "sha256:25a05a195808aa9b4cb30ed560b8b608bb25523f94371bdc7f1d3b4db780ceb7", size = 29717, upload-time = "2026-06-25T12:34:14.782Z" },
-]
-
-[[package]]
 name = "fasta2a"
 version = "0.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -4206,9 +4193,6 @@ agent = [
 all = [
     { name = "agent-utilities", extra = ["agent", "logfire", "mcp"] },
 ]
-ipmi = [
-    { name = "fan-manager" },
-]
 mcp = [
     { name = "agent-utilities", extra = ["mcp"] },
 ]
@@ -4226,14 +4210,13 @@ requires-dist = [
     { name = "agent-utilities", extras = ["mcp"], marker = "extra == 'mcp'", specifier = ">=0.51.0" },
     { name = "agent-utilities", extras = ["mcp", "agent", "logfire"], marker = "extra == 'all'", specifier = ">=0.51.0" },
     { name = "distro", specifier = ">=1.9.0" },
-    { name = "fan-manager", marker = "extra == 'ipmi'" },
     { name = "psutil", specifier = ">=7.0.0" },
     { name = "pytest", marker = "extra == 'test'" },
     { name = "pytest-asyncio", marker = "extra == 'test'" },
     { name = "pytest-cov", marker = "extra == 'test'" },
     { name = "pytest-xdist", marker = "extra == 'test'", specifier = ">=3.6.0" },
 ]
-provides-extras = ["mcp", "agent", "all", "ipmi", "test"]
+provides-extras = ["mcp", "agent", "all", "test"]
 
 [[package]]
 name = "tenacity"
