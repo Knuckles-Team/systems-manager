@@ -17,6 +17,8 @@
 | `CONCEPT:SYS-005` | Policy Operations | MCP tool domain `policy` — Action-routed dynamic tool registration |
 | `CONCEPT:SYS-006` | Specialist Registry Operations | MCP tool domain `specialist_registry` — Action-routed dynamic tool registration |
 | `CONCEPT:SYS-007` | Watchdog Operations | MCP tool domain `watchdog` — Action-routed dynamic tool registration |
+| `CONCEPT:SYS-1.4` | Physical Storage Health | MCP tool domain `storage_health` — SMART (incl. RAID megaraid passthrough), RAID physical-disk state, and a combined `report` correlating media health with controller state. Manager-seam (local or remote host). |
+| `CONCEPT:SYS-1.5` | BMC Drive-Fault Correlation | BMC/IPMI drive-slot fault detection (reusing the `fan-manager` IPMI wrapper, in-band or OpenBao-credentialed out-of-band) wired into `system_health_check`; a BMC-flagged disk with clean SMART media is classified as a link/aging fault, not media wear. |
 
 ## Cross-Project References (from agent-utilities)
 

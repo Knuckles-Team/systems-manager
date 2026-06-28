@@ -20,7 +20,7 @@
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
 ![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
 
-*Version: 1.34.0*
+*Version: 1.35.0*
 
 > **Documentation** — Installation, deployment, and usage across the CLI, API, MCP,
 > and agent interfaces are maintained in the
@@ -93,6 +93,7 @@ _Auto-generated from the live MCP server — do not edit by hand._
 | `sm_network_operations` | — | Operations for network analysis |
 | `sm_process_operations` | — | Operations for managing system processes |
 | `sm_service_operations` | — | Operations for managing system services |
+| `sm_storage_health` | `STORAGE_HEALTHTOOL` | Physical disk + BMC drive-fault health: SMART (incl. RAID megaraid passthrough), BMC/IPMI drive-slot faults (OpenBao-credentialed OOB), RAID PD state — correlated. |
 | `sm_system_operations` | — | System operations for managing packages, system health, and updates |
 | `sm_user_operations` | — | Operations for user and group management |
 | `start_system_trace` | `OS_PROVIDERTOOL` | Start a kernel-level event trace (ETW on Windows, or strace on Linux). |
@@ -255,7 +256,10 @@ consumed from a **remote deployment**. The
 | `AGENT_POLICIES_PATH` | — | path to agent authorization policies |
 | `PERMISSIONS_SIGNING_KEY` | — | signing key for elevated-permission tokens |
 | `SPECIALIST_REGISTRY_PATH` | — | path to the specialist/domain registry |
+| `OPENBAO_URL` | `http://openbao.arpa` | OpenBao address for out-of-band BMC creds (apps/idrac) |
+| `OPENBAO_TOKEN` | — | OpenBao token with read on apps/data/idrac (agent-apps-rw) |
 | `OS_PROVIDERTOOL` | `True` | MCP tools table (condensed action-routed surface). |
+| `STORAGE_HEALTHTOOL` | `True` |  |
 | `MISCTOOL` | `True` |  |
 | `AGENT_HEALTHTOOL` | `True` |  |
 | `IDENTITYTOOL` | `True` |  |

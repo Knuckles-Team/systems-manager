@@ -24,7 +24,7 @@ from systems_manager.models import (
     SystemStats,
 )
 
-__version__ = "1.34.0"
+__version__ = "1.35.0"
 
 
 def setup_logging(
@@ -1624,12 +1624,24 @@ except Exception as e:
                 warnings.append(f"HIGH SWAP: {swap.percent}%")
             for dw in disk_warnings:
                 warnings.append(f"DISK FULL: {dw['mountpoint']} at {dw['percent']}%")
+            # Physical drive-fault signal from the BMC (CONCEPT:SYS-1.5) — best-effort,
+            # never fatal to the health check (no BMC -> empty list).
+            drive_faults: list = []
+            try:
+                from systems_manager.storage_health import drive_health_summary
+
+                ds = drive_health_summary(self)
+                warnings.extend(ds.get("warnings", []))
+                drive_faults = ds.get("faults", [])
+            except Exception:
+                drive_faults = []
             load_avg = os.getloadavg() if platform.system() != "Windows" else None
             return CommandResult(
                 **{
                     "success": True,
                     "status": "warning" if warnings else "healthy",
                     "warnings": warnings,
+                    "drive_faults": drive_faults,
                     "uptime_seconds": int(uptime.total_seconds()),
                     "uptime_human": str(uptime).split(".")[0],
                     "cpu_percent": cpu_percent,
