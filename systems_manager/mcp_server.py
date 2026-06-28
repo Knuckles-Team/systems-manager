@@ -37,13 +37,14 @@ from agent_utilities.mcp_utilities import (
 )
 
 from systems_manager.os_provider_tools import register_os_provider_tools
+from systems_manager.storage_tools import register_storage_health_tools
 from systems_manager.systems_manager import (
     SystemsManagerBase,
     WindowsManager,
     detect_and_create_manager,
 )
 
-__version__ = "1.34.0"
+__version__ = "1.35.0"
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -153,6 +154,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         service="systems-manager",
         registrars=[
             register_os_provider_tools,
+            register_storage_health_tools,
             register_agent_health_tools,
             register_identity_tools,
             register_maintenance_tools,

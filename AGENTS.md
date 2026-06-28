@@ -10,6 +10,11 @@
 - Architecture:
     - `mcp_server.py`: Main MCP server entry point and tool registration.
     - `agent.py`: Pydantic AI agent definition and logic.
+    - `storage_health.py`: Physical-disk + BMC drive-fault health (CONCEPT:SYS-1.4/1.5)
+      — SMART (incl. RAID `megaraid` passthrough), BMC/IPMI drive-slot faults, RAID PD
+      state, correlated; runs over the manager seam (local or remote host). Reuses the
+      `fan-manager` IPMI wrapper for BMC reads when present (else shells `ipmitool`).
+    - `bmc_credentials.py`: runtime OpenBao read of `apps/idrac` for out-of-band BMC.
     - `skills/`: Directory containing modular agent skills (if applicable).
 
 ### Architecture Diagram
@@ -20,6 +25,11 @@ graph TD
     Agent --> Skills[Modular Skills]
     Agent --> MCP[MCP Server / FastMCP]
     MCP --> Client[API Client / Wrapper]
+    MCP --> Storage[sm_storage_health — SYS-1.4/1.5]
+    Storage --> Mgr[manager.run_command — local or remote]
+    Storage --> SMART([smartctl / megaraid])
+    Storage --> BMC([fan-manager IPMI / ipmitool])
+    Storage -.OOB creds.-> Bao([OpenBao apps/idrac])
     Client --> ExternalAPI([External Service API])
 ```
 
