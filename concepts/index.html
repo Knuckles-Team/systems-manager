@@ -1046,6 +1046,16 @@
 <td>Watchdog Operations</td>
 <td>MCP tool domain <code>watchdog</code> — Action-routed dynamic tool registration</td>
 </tr>
+<tr>
+<td><code>CONCEPT:SYS-1.4</code></td>
+<td>Physical Storage Health</td>
+<td>MCP tool domain <code>storage_health</code> — SMART (incl. RAID megaraid passthrough), RAID physical-disk state, and a combined <code>report</code> correlating media health with controller state. Manager-seam (local or remote host).</td>
+</tr>
+<tr>
+<td><code>CONCEPT:SYS-1.5</code></td>
+<td>BMC Drive-Fault Correlation</td>
+<td>BMC/IPMI drive-slot fault detection (reusing the <code>fan-manager</code> IPMI wrapper, in-band or OpenBao-credentialed out-of-band) wired into <code>system_health_check</code>; a BMC-flagged disk with clean SMART media is classified as a link/aging fault, not media wear.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="cross-project-references-from-agent-utilities">Cross-Project References (from agent-utilities)<a class="headerlink" href="#cross-project-references-from-agent-utilities" title="Permanent link">&para;</a></h2>
