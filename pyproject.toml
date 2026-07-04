@@ -33,6 +33,12 @@ systems-manager-helper = "systems_manager.sudo_helper:main"
 [project.entry-points."agent_utilities.skill_providers"]
 systems-manager = "systems_manager.skills"
 
+[project.entry-points."agent_utilities.ontology_providers"]
+systems-manager = "systems_manager.ontology"
+
+[project.entry-points."agent_utilities.source_connector_providers"]
+systems-manager = "systems_manager.connectors"
+
 [project.entry-points."agent_utilities.prompt_providers"]
 systems-manager = "systems_manager.prompts"
 
@@ -52,7 +58,7 @@ ignore_missing_imports = true
 check_untyped_defs = true
 
 [tool.setuptools.package-data]
-systems_manager = [ "mcp_config.json", "agent_data/**", "prompts/**", "skills/**",]
+systems_manager = [ "mcp_config.json", "agent_data/**", "prompts/**", "skills/**", "ontology/**", "connectors/**",]
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "UP", "B",]

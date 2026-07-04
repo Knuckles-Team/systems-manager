@@ -674,6 +674,60 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         except Exception as e:
             return f"Error: {str(e)}"
 
+    @mcp.tool(
+        description=(
+            "Natively ingest a host's telemetry into the epistemic-graph "
+            "knowledge graph as typed :HardwareNode + :NetworkInterface + "
+            ":DiskVolume nodes (Wire-First). Best-effort: no-ops when no engine "
+            "is reachable."
+        )
+    )
+    async def systems_ingest_host(
+        target_host: str | None = Field(
+            None, description="Optional target remote host from inventory"
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Gather OS/hardware/network/disk state over the manager seam and push it
+        into the knowledge graph via the fast engine client.
+
+        CONCEPT:AU-KG.ingest.enterprise-source-extractor.
+        """
+        from systems_manager.kg_ingest import ingest_host_inventory
+
+        manager = detect_and_create_manager(host=target_host)
+        ctx_log(
+            ctx,
+            logger,
+            "info",
+            f"systems_ingest_host: target_host={target_host}",
+        )
+
+        def _as_dict(value: Any) -> Any:
+            if hasattr(value, "model_dump"):
+                return value.model_dump()
+            return value
+
+        try:
+            os_stats = _as_dict(await run_blocking(manager.get_os_statistics))
+            hw_stats = _as_dict(await run_blocking(manager.get_hardware_statistics))
+            net = _as_dict(await run_blocking(manager.list_network_interfaces))
+            disks = _as_dict(await run_blocking(manager.list_disks))
+        except Exception as e:  # noqa: BLE001 — telemetry gather is best-effort
+            return {"error": str(e), "ingested": None}
+
+        report = {
+            "host": target_host,
+            "os": os_stats if isinstance(os_stats, dict) else {},
+            "hardware": hw_stats if isinstance(hw_stats, dict) else {},
+            "interfaces": (net or {}).get("interfaces")
+            if isinstance(net, dict)
+            else None,
+            "disks": (disks or {}).get("disks") if isinstance(disks, dict) else None,
+        }
+        result = ingest_host_inventory(report)
+        return {"host": target_host or "localhost", "ingested": result}
+
     return args, mcp, middlewares
 
 

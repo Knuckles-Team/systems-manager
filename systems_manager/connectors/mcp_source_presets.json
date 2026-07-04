@@ -1,0 +1,13 @@
+{
+  "_comment": "Tier-1 mcp_tool source preset(s) for systems-manager (AU-KG.ingest.mcp-tool-connector). Syncs host telemetry into the KG as typed :HardwareNode/:NetworkInterface/:DiskVolume nodes via the systems_ingest_host MCP tool. Contributed presets win over the central MCP_TOOL_PRESETS.",
+  "systems-hosts": {
+    "server": "systems-manager",
+    "tool": "systems_ingest_host",
+    "action": "ingest",
+    "records_path": "ingested",
+    "id_field": "host",
+    "title_field": "host",
+    "text_field": "host",
+    "doc_type": "hardware_node"
+  }
+}
