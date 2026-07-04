@@ -10,7 +10,7 @@
 - Architecture:
     - `mcp_server.py`: Main MCP server entry point and tool registration.
     - `agent.py`: Pydantic AI agent definition and logic.
-    - `storage_health.py`: Physical-disk + BMC drive-fault health (CONCEPT:SYS-1.4/1.5)
+    - `storage_health.py`: Physical-disk + BMC drive-fault health (CONCEPT:SM-OS.governance.sys-8/1.5)
       — SMART (incl. RAID `megaraid` passthrough), BMC/IPMI drive-slot faults, RAID PD
       state, correlated; runs over the manager seam (local or remote host). Reuses the
       `fan-manager` IPMI wrapper for BMC reads when present (else shells `ipmitool`).
@@ -25,7 +25,7 @@ graph TD
     Agent --> Skills[Modular Skills]
     Agent --> MCP[MCP Server / FastMCP]
     MCP --> Client[API Client / Wrapper]
-    MCP --> Storage[sm_storage_health — SYS-1.4/1.5]
+    MCP --> Storage[sm_storage_health — SM-OS.governance.sys-8/1.5]
     Storage --> Mgr[manager.run_command — local or remote]
     Storage --> SMART([smartctl / megaraid])
     Storage --> BMC([fan-manager IPMI / ipmitool])
@@ -271,7 +271,7 @@ alone).
 Working in parallel with other sessions/worktrees? **Reserve a concept id before you write its `CONCEPT:` marker** so two sessions never collide:
 
 ```bash
-agent-utilities --json concept reserve --ns KG-2   # or a package prefix, e.g. KEY
+agent-utilities --json concept reserve --ns EG-KG.compute.backend   # or a package prefix, e.g. KEY
 ```
 
 Full protocol (ledger, merge=union, reconcile, MCP/REST): <https://knuckles-team.github.io/agent-utilities/concept_coordination/>

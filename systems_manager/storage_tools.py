@@ -1,4 +1,4 @@
-"""MCP tools for physical storage + BMC drive-fault health (CONCEPT:SYS-1.4, SYS-1.5).
+"""MCP tools for physical storage + BMC drive-fault health (CONCEPT:SM-OS.governance.sys-8, CONCEPT:SM-OS.governance.bay-bmc-flags-as).
 
 Thin transport over :mod:`systems_manager.storage_health`. Runs against the local
 host or any inventory ``host`` (remote-over-SSH via the manager seam). Out-of-band
@@ -33,7 +33,7 @@ def _target_from_params(params: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def register_storage_health_tools(mcp: FastMCP) -> None:
-    """Register the storage-health tool (CONCEPT:SYS-1.4)."""
+    """Register the storage-health tool (CONCEPT:SM-OS.governance.sys-8)."""
 
     @mcp.tool(
         annotations={
@@ -64,7 +64,7 @@ def register_storage_health_tools(mcp: FastMCP) -> None:
         """Physical disk + BMC drive-fault health: SMART (incl. megaraid passthrough),
         BMC/IPMI drive-slot faults, and RAID physical-disk state — correlated so a
         BMC-flagged disk with clean SMART media reads as a link/aging fault, not media
-        wear (CONCEPT:SYS-1.4/SYS-1.5)."""
+        wear (CONCEPT:SM-OS.governance.sys-8/SYS-1.5)."""
         try:
             params = json.loads(params_json or "{}")
         except Exception as e:  # noqa: BLE001

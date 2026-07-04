@@ -14,8 +14,8 @@ class OSProvider(abc.ABC):
     """
     Abstract base class for OS-specific system operations.
 
-    CONCEPT:SYS-1.0: Abstracted OS Provider
-    CONCEPT:SYS-1.2: Deep Introspection Telemetry
+    CONCEPT:SM-OS.deployment.abstracted-os-provider: Abstracted OS Provider
+    CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
     """
 
     def get_process_details(self, pid: int | None = None) -> list[dict[str, Any]]:
@@ -121,8 +121,8 @@ class LinuxProvider(OSProvider):
     """
     Linux-specific implementation of the OSProvider.
 
-    CONCEPT:SYS-1.0: Abstracted OS Provider
-    CONCEPT:SYS-1.2: Deep Introspection Telemetry
+    CONCEPT:SM-OS.deployment.abstracted-os-provider: Abstracted OS Provider
+    CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
     """
 
     def list_services(self) -> list[dict[str, Any]]:
@@ -206,8 +206,8 @@ class WindowsProvider(OSProvider):
     """
     Windows-specific implementation of the OSProvider.
 
-    CONCEPT:SYS-1.0: Abstracted OS Provider
-    CONCEPT:SYS-1.2: Deep Introspection Telemetry
+    CONCEPT:SM-OS.deployment.abstracted-os-provider: Abstracted OS Provider
+    CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
     """
 
     def _run_powershell_json(self, command: str) -> Any:

@@ -12,7 +12,7 @@ def register_os_provider_tools(mcp: FastMCP):
     """
     Registers the OSProvider tools onto the MCP server.
 
-    CONCEPT:SYS-1.0: Abstracted OS Provider
+    CONCEPT:SM-OS.deployment.abstracted-os-provider: Abstracted OS Provider
     """
 
     @mcp.tool(
@@ -35,7 +35,7 @@ def register_os_provider_tools(mcp: FastMCP):
         """
         Retrieves deep cross-platform process details (threads, modules, memory).
 
-        CONCEPT:SYS-1.2: Deep Introspection Telemetry
+        CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
         ctx_log(ctx, logger, "debug", f"Fetching process details for PID: {pid}")
         try:
@@ -62,7 +62,7 @@ def register_os_provider_tools(mcp: FastMCP):
         """
         Maps active TCP/UDP endpoints directly to owning processes.
 
-        CONCEPT:SYS-1.2: Deep Introspection Telemetry
+        CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
         ctx_log(ctx, logger, "debug", "Fetching network connections")
         try:
@@ -91,7 +91,7 @@ def register_os_provider_tools(mcp: FastMCP):
         """
         Takes a point-in-time snapshot of the system state (CPU, RAM, Processes).
 
-        CONCEPT:SYS-1.2: Deep Introspection Telemetry
+        CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
         ctx_log(ctx, logger, "debug", "Capturing system snapshot")
         try:
@@ -118,7 +118,7 @@ def register_os_provider_tools(mcp: FastMCP):
         """
         Cross-platform service enumeration (systemctl or Get-Service).
 
-        CONCEPT:SYS-1.3: Package & Service Mutation
+        CONCEPT:SM-OS.deployment.package-service-mutation: Package & Service Mutation
         """
         ctx_log(ctx, logger, "debug", "Listing services")
         try:
@@ -149,7 +149,7 @@ def register_os_provider_tools(mcp: FastMCP):
         """
         Start/Stop/Restart/Enable/Disable services cross-platform.
 
-        CONCEPT:SYS-1.3: Package & Service Mutation
+        CONCEPT:SM-OS.deployment.package-service-mutation: Package & Service Mutation
         """
         ctx_log(ctx, logger, "debug", f"Managing service: {service_name} ({action})")
 
@@ -182,7 +182,7 @@ def register_os_provider_tools(mcp: FastMCP):
         """
         List loaded drivers/modules (lsmod or driverquery).
 
-        CONCEPT:SYS-1.2: Deep Introspection Telemetry
+        CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
         ctx_log(ctx, logger, "debug", "Listing kernel modules")
         try:
@@ -210,7 +210,7 @@ def register_os_provider_tools(mcp: FastMCP):
         """
         Cross-platform log querying (journalctl or Get-WinEvent).
 
-        CONCEPT:SYS-1.2: Deep Introspection Telemetry
+        CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
         ctx_log(ctx, logger, "debug", f"Querying system logs (limit: {limit})")
         try:

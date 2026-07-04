@@ -1,4 +1,4 @@
-"""Physical storage + BMC drive-fault health (CONCEPT:SYS-1.4, SYS-1.5).
+"""Physical storage + BMC drive-fault health (CONCEPT:SM-OS.governance.sys-8, CONCEPT:SM-OS.governance.bay-bmc-flags-as).
 
 Extends systems-manager beyond filesystem usage into PHYSICAL disk health:
 
@@ -10,7 +10,7 @@ Extends systems-manager beyond filesystem usage into PHYSICAL disk health:
   even when its SMART media is still clean.
 - **RAID physical-disk state** via an in-band PERC/LSI CLI when present.
 
-The three are **correlated** (CONCEPT:SYS-1.5): a bay the BMC flags as faulted
+The three are **correlated** (CONCEPT:SM-OS.governance.bay-bmc-flags-as): a bay the BMC flags as faulted
 whose SMART media is clean is reported as a link/aging fault (reseat / replace),
 not media wear — exactly the failure mode a plain ``smartctl PASSED`` misses.
 
@@ -233,7 +233,7 @@ def _bay_to_slot(bay: str) -> int | None:
 
 
 def report(manager: Any, target: Target = None) -> dict[str, Any]:
-    """Combined, correlated physical-storage health report (CONCEPT:SYS-1.4)."""
+    """Combined, correlated physical-storage health report (CONCEPT:SM-OS.governance.sys-8)."""
     disks = smart_disks(manager)
     faults = bmc_drive_faults(manager, target=target)
     raid = raid_pd_state(manager, target=target)
@@ -275,7 +275,7 @@ def report(manager: Any, target: Target = None) -> dict[str, Any]:
 
 
 def drive_health_summary(manager: Any) -> dict[str, Any]:
-    """Lightweight BMC drive-fault signal for ``system_health_check`` (CONCEPT:SYS-1.5)."""
+    """Lightweight BMC drive-fault signal for ``system_health_check`` (CONCEPT:SM-OS.governance.bay-bmc-flags-as)."""
     try:
         faults = bmc_drive_faults(manager)
     except Exception as e:  # noqa: BLE001

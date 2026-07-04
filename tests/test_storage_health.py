@@ -1,4 +1,4 @@
-"""Tests for physical storage + BMC drive-fault health (CONCEPT:SYS-1.4, SYS-1.5).
+"""Tests for physical storage + BMC drive-fault health (CONCEPT:SM-OS.governance.sys-8, CONCEPT:SM-OS.governance.bay-bmc-flags-as).
 
 A fake manager maps commands to canned output, so SMART parsing (megaraid
 passthrough), BMC drive-fault parsing, and the SMART<->BMC correlation are

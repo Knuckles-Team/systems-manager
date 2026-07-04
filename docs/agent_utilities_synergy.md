@@ -4,7 +4,7 @@ Because `systems-manager` acts as the physical execution layer (Agent OS Layer) 
 
 ## 1. Automated Anomaly Defense (Security Operations)
 
-The `AgentHealthTools` inside `agent-utilities` continuously monitors the environment. By leveraging `SYS-1.2` (Deep Introspection Telemetry) from `systems-manager`, the kernel can achieve EDR-like (Endpoint Detection and Response) capabilities.
+The `AgentHealthTools` inside `agent-utilities` continuously monitors the environment. By leveraging `SM-OS.deployment.deep-introspection-telemetry` (Deep Introspection Telemetry) from `systems-manager`, the kernel can achieve EDR-like (Endpoint Detection and Response) capabilities.
 
 **Workflow:**
 1. `agent-utilities` detects an unknown IP address communicating on the network.

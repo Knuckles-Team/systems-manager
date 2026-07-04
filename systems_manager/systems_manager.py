@@ -1624,7 +1624,7 @@ except Exception as e:
                 warnings.append(f"HIGH SWAP: {swap.percent}%")
             for dw in disk_warnings:
                 warnings.append(f"DISK FULL: {dw['mountpoint']} at {dw['percent']}%")
-            # Physical drive-fault signal from the BMC (CONCEPT:SYS-1.5) — best-effort,
+            # Physical drive-fault signal from the BMC (CONCEPT:SM-OS.governance.bay-bmc-flags-as) — best-effort,
             # never fatal to the health check (no BMC -> empty list).
             drive_faults: list = []
             try:

@@ -1,4 +1,4 @@
-"""Runtime BMC/iDRAC credential retrieval from OpenBao (CONCEPT:SYS-1.5).
+"""Runtime BMC/iDRAC credential retrieval from OpenBao (CONCEPT:SM-OS.governance.bay-bmc-flags-as).
 
 The BMC out-of-band path reads its credential from the standardized OpenBao KV
 layout — ``apps/idrac`` — at call time, using the service's own ``OPENBAO_TOKEN``.
