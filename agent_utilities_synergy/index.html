@@ -997,7 +997,7 @@
 <h1 id="agent-utilities-synergy">Agent-Utilities Synergy<a class="headerlink" href="#agent-utilities-synergy" title="Permanent link">&para;</a></h1>
 <p>Because <code>systems-manager</code> acts as the physical execution layer (Agent OS Layer) for the <code>agent-utilities</code> OS Kernel, their integration unlocks emergent capabilities that neither project possesses independently.</p>
 <h2 id="1-automated-anomaly-defense-security-operations">1. Automated Anomaly Defense (Security Operations)<a class="headerlink" href="#1-automated-anomaly-defense-security-operations" title="Permanent link">&para;</a></h2>
-<p>The <code>AgentHealthTools</code> inside <code>agent-utilities</code> continuously monitors the environment. By leveraging <code>SYS-1.2</code> (Deep Introspection Telemetry) from <code>systems-manager</code>, the kernel can achieve EDR-like (Endpoint Detection and Response) capabilities.</p>
+<p>The <code>AgentHealthTools</code> inside <code>agent-utilities</code> continuously monitors the environment. By leveraging <code>SM-OS.deployment.deep-introspection-telemetry</code> (Deep Introspection Telemetry) from <code>systems-manager</code>, the kernel can achieve EDR-like (Endpoint Detection and Response) capabilities.</p>
 <p><strong>Workflow:</strong>
 1. <code>agent-utilities</code> detects an unknown IP address communicating on the network.
 2. It invokes <code>systems-manager</code>'s <code>get_network_connections()</code>.

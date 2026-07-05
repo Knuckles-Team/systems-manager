@@ -998,7 +998,7 @@
 <blockquote>
 <p><strong>Prefix</strong>: <code>CONCEPT:SYS-*</code>
 <strong>Version</strong>: 1.15.0
-<strong>Bridge</strong>: <a href="https://knuckles-team.github.io/agent-utilities/concepts/"><code>CONCEPT:ECO-4.0</code></a> (Unified Toolkit Ingestion)</p>
+<strong>Bridge</strong>: <a href="https://knuckles-team.github.io/agent-utilities/concepts/"><code>CONCEPT:AU-ECO.messaging.native-backend-abstraction</code></a> (Unified Toolkit Ingestion)</p>
 </blockquote>
 <hr />
 <h2 id="project-specific-concepts">Project-Specific Concepts<a class="headerlink" href="#project-specific-concepts" title="Permanent link">&para;</a></h2>
@@ -1012,47 +1012,47 @@
 </thead>
 <tbody>
 <tr>
-<td><code>CONCEPT:SYS-001</code></td>
+<td><code>CONCEPT:SM-OS.governance.sys</code></td>
 <td>Agent Health Operations</td>
 <td>MCP tool domain <code>agent_health</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:SYS-002</code></td>
+<td><code>CONCEPT:SM-OS.governance.sys-2</code></td>
 <td>Identity Operations</td>
 <td>MCP tool domain <code>identity</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:SYS-003</code></td>
+<td><code>CONCEPT:SM-OS.governance.sys-3</code></td>
 <td>Maintenance Operations</td>
 <td>MCP tool domain <code>maintenance</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:SYS-004</code></td>
+<td><code>CONCEPT:SM-OS.governance.sys-4</code></td>
 <td>Os Provider Operations</td>
 <td>MCP tool domain <code>os_provider</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:SYS-005</code></td>
+<td><code>CONCEPT:SM-OS.governance.sys-5</code></td>
 <td>Policy Operations</td>
 <td>MCP tool domain <code>policy</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:SYS-006</code></td>
+<td><code>CONCEPT:SM-OS.governance.sys-6</code></td>
 <td>Specialist Registry Operations</td>
 <td>MCP tool domain <code>specialist_registry</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:SYS-007</code></td>
+<td><code>CONCEPT:SM-OS.governance.sys-7</code></td>
 <td>Watchdog Operations</td>
 <td>MCP tool domain <code>watchdog</code> — Action-routed dynamic tool registration</td>
 </tr>
 <tr>
-<td><code>CONCEPT:SYS-1.4</code></td>
+<td><code>CONCEPT:SM-OS.governance.sys-8</code></td>
 <td>Physical Storage Health</td>
 <td>MCP tool domain <code>storage_health</code> — SMART (incl. RAID megaraid passthrough), RAID physical-disk state, and a combined <code>report</code> correlating media health with controller state. Manager-seam (local or remote host).</td>
 </tr>
 <tr>
-<td><code>CONCEPT:SYS-1.5</code></td>
+<td><code>CONCEPT:SM-OS.governance.bay-bmc-flags-as</code></td>
 <td>BMC Drive-Fault Correlation</td>
 <td>BMC/IPMI drive-slot fault detection (reusing the <code>fan-manager</code> IPMI wrapper, in-band or OpenBao-credentialed out-of-band) wired into <code>system_health_check</code>; a BMC-flagged disk with clean SMART media is classified as a link/aging fault, not media wear.</td>
 </tr>
@@ -1069,44 +1069,44 @@
 </thead>
 <tbody>
 <tr>
-<td><code>CONCEPT:ECO-4.0</code></td>
+<td><code>CONCEPT:AU-ECO.messaging.native-backend-abstraction</code></td>
 <td>Unified Toolkit Ingestion</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:ORCH-1.2</code></td>
+<td><code>CONCEPT:AU-ORCH.adapter.hot-cache-invalidation</code></td>
 <td>Confidence-Gated Router</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:OS-5.1</code></td>
+<td><code>CONCEPT:AU-OS.config.secrets-authentication</code></td>
 <td>Prompt Injection Defense</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:OS-5.2</code></td>
+<td><code>CONCEPT:AU-OS.state.cognitive-scheduler-preemption</code></td>
 <td>Cognitive Scheduler</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:OS-5.3</code></td>
+<td><code>CONCEPT:AU-OS.governance.reactive-multi-axis-budget</code></td>
 <td>Guardrail Engine</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:OS-5.4</code></td>
+<td><code>CONCEPT:AU-OS.governance.wasm-micro-agent-sandbox</code></td>
 <td>Audit Logging</td>
 <td>agent-utilities</td>
 </tr>
 <tr>
-<td><code>CONCEPT:KG-2.0</code></td>
+<td><code>CONCEPT:AU-KG.query.object-graph-mapper</code></td>
 <td>Knowledge Graph Core</td>
 <td>agent-utilities</td>
 </tr>
 </tbody>
 </table>
 <h2 id="synergy-with-agent-utilities">Synergy with agent-utilities<a class="headerlink" href="#synergy-with-agent-utilities" title="Permanent link">&para;</a></h2>
-<p>This project integrates with <code>agent-utilities</code> via <code>CONCEPT:ECO-4.0</code> (Unified Toolkit Ingestion). The <code>systems_manager</code> MCP server registers its tools with the agent-utilities FastMCP middleware, enabling automatic discovery, telemetry, and Knowledge Graph ingestion of all SYS-* concepts.</p>
+<p>This project integrates with <code>agent-utilities</code> via <code>CONCEPT:AU-ECO.messaging.native-backend-abstraction</code> (Unified Toolkit Ingestion). The <code>systems_manager</code> MCP server registers its tools with the agent-utilities FastMCP middleware, enabling automatic discovery, telemetry, and Knowledge Graph ingestion of all SYS-* concepts.</p>
 
 
 
