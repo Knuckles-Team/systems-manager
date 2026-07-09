@@ -1,5 +1,6 @@
 ---
 name: ipmi-bmc-manager
+skill_type: skill
 description: >
   IPMI / BMC management atomic skill. Controls server power, opens Serial-over-LAN consoles,
   reads sensors and event logs, and configures the BMC LAN on out-of-band controllers

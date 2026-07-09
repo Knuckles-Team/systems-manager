@@ -1,5 +1,6 @@
 ---
 name: nic-bond-provisioner
+skill_type: skill
 description: >-
   Convert multi-NIC Linux hosts to a systemd-networkd active-backup bond on a static
   canonical IP, retiring NetworkManager, with a console-safe dead-man auto-revert. Use
