@@ -25,7 +25,7 @@ from systems_manager.models import (
     SystemStats,
 )
 
-__version__ = "1.35.3"
+__version__ = "1.36.0"
 
 
 def setup_logging(
