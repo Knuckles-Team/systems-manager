@@ -1,4 +1,6 @@
 import subprocess
+import sys
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -110,6 +112,7 @@ def test_systems_manager_base_run_command_linux():
             stderr=subprocess.DEVNULL,
             shell=False,
             check=True,
+            timeout=None,
         )
 
     # Elevated command on Linux
@@ -126,6 +129,7 @@ def test_systems_manager_base_run_command_linux():
             stderr=subprocess.DEVNULL,
             shell=False,
             check=True,
+            timeout=None,
         )
 
     # Non-silent execution
@@ -136,7 +140,12 @@ def test_systems_manager_base_run_command_linux():
         assert res.success is True
         assert res.get("stdout") == "out"
         mock_run.assert_called_with(
-            ["echo", "hello"], capture_output=True, text=True, shell=False, check=True
+            ["echo", "hello"],
+            capture_output=True,
+            text=True,
+            shell=False,
+            check=True,
+            timeout=None,
         )
 
 
@@ -173,6 +182,42 @@ def test_systems_manager_base_run_command_exceptions():
         res = mgr.run_command("ls")
         assert res.success is False
         assert res.error is not None and "Unexpected Error" in res.error
+
+    # subprocess.TimeoutExpired -> clear, non-hanging error (not a bare exception message)
+    timeout_err = subprocess.TimeoutExpired(cmd="sleep 999", timeout=1)
+    with patch("subprocess.run", side_effect=timeout_err):
+        res = mgr.run_command(["sleep", "999"], timeout=1)
+        assert res.success is False
+        assert res.error is not None and "timed out" in res.error.lower()
+
+
+def test_systems_manager_base_run_command_hung_process_is_bounded_by_timeout():
+    """Regression for the systems-manager MCP hang: a real subprocess that never
+    exits (simulating a stuck ipmitool/smartctl/ssh call) must not block
+    ``run_command`` past its bounded ``timeout`` — it must return a clear error
+    instead of hanging indefinitely."""
+    mgr = DummyManager(silent=True)
+    hang_forever = [sys.executable, "-c", "import time; time.sleep(60)"]
+
+    start = time.monotonic()
+    res = mgr.run_command(hang_forever, timeout=1)
+    elapsed = time.monotonic() - start
+
+    assert elapsed < 10, f"run_command blocked for {elapsed:.1f}s despite timeout=1"
+    assert res.success is False
+    assert res.error is not None and "timed out" in res.error.lower()
+
+    # Non-silent (capture_output) branch is bounded the same way.
+    mgr_noisy = DummyManager(silent=False)
+    start = time.monotonic()
+    res_noisy = mgr_noisy.run_command(hang_forever, timeout=1)
+    elapsed_noisy = time.monotonic() - start
+
+    assert elapsed_noisy < 10, (
+        f"run_command (non-silent) blocked for {elapsed_noisy:.1f}s despite timeout=1"
+    )
+    assert res_noisy.success is False
+    assert res_noisy.error is not None and "timed out" in res_noisy.error.lower()
 
 
 def test_systems_manager_base_install_via_snap():

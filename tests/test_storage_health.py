@@ -39,7 +39,7 @@ class _FakeManager:
     def __init__(self, host=None):
         self.host = host
 
-    def run_command(self, cmd, elevated=False, shell=False):
+    def run_command(self, cmd, elevated=False, shell=False, timeout=None):
         s = " ".join(cmd)
         out = ""
         if s.startswith("lspci"):
@@ -104,8 +104,8 @@ def test_drive_health_summary_warnings():
 def test_no_controllers_no_megaraid_probe():
     mgr = _FakeManager()
     # Override lspci to report no RAID controller -> only --scan-open probed (empty)
-    mgr.run_command = lambda cmd, elevated=False, shell=False: CommandResult(
-        success=True, stdout="", stderr=""
+    mgr.run_command = lambda cmd, elevated=False, shell=False, timeout=None: (
+        CommandResult(success=True, stdout="", stderr="")
     )
     assert storage_health.smart_disks(mgr) == []
 
@@ -113,3 +113,25 @@ def test_no_controllers_no_megaraid_probe():
 def test_get_bmc_credentials_none_without_token(monkeypatch):
     monkeypatch.setattr(bmc_credentials, "setting", lambda k, d=None: None)
     assert bmc_credentials.get_bmc_credentials() is None
+
+
+def test_probes_are_bounded_with_timeout():
+    """Regression for the systems-manager MCP hang: ``system_health_check`` (the
+    tool that reports host uptime + memory) folds in
+    ``storage_health.drive_health_summary`` -> ``bmc_drive_faults`` -> ``_run``,
+    which shells out to ``ipmitool``/``smartctl``. Every one of those probes must
+    pass a bounded ``timeout`` through the manager seam so a stuck BMC/IPMI call
+    can never block the health check indefinitely."""
+    captured_timeouts: list[float | None] = []
+
+    class _CapturingManager(_FakeManager):
+        def run_command(self, cmd, elevated=False, shell=False, timeout=None):
+            captured_timeouts.append(timeout)
+            return super().run_command(
+                cmd, elevated=elevated, shell=shell, timeout=timeout
+            )
+
+    storage_health.bmc_drive_faults(_CapturingManager(host="r820"))
+
+    assert captured_timeouts, "expected at least one run_command call"
+    assert all(t == storage_health._PROBE_TIMEOUT_SECONDS for t in captured_timeouts)

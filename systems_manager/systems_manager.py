@@ -406,6 +406,7 @@ class SystemsManagerBase(ABC):
         command: list[str] | str,
         elevated: bool = False,
         shell: bool = False,
+        timeout: float | None = None,
     ) -> CommandResult:
         if self.host:
             from tunnel_manager.tunnel_manager import HostManager
@@ -472,6 +473,7 @@ class SystemsManagerBase(ABC):
                     stderr=subprocess.DEVNULL,
                     shell=shell,
                     check=True,
+                    timeout=timeout,
                 )  # nosec
                 stdout = None
                 stderr = None
@@ -483,6 +485,7 @@ class SystemsManagerBase(ABC):
                     text=True,
                     shell=shell,
                     check=True,
+                    timeout=timeout,
                 )  # nosec
                 stdout = result_sp.stdout
                 stderr = result_sp.stderr
@@ -493,6 +496,16 @@ class SystemsManagerBase(ABC):
                     "returncode": result_sp.returncode,
                     "stdout": stdout,
                     "stderr": stderr,
+                }
+            )
+        except subprocess.TimeoutExpired as e:
+            self.log_command(command, error=e)
+            if not self.silent:
+                print(f"Error: command timed out after {timeout}s", file=sys.stderr)
+            return CommandResult(
+                **{
+                    "success": False,
+                    "error": f"Command timed out after {timeout}s: {' '.join(command) if isinstance(command, list) else command}",
                 }
             )
         except subprocess.CalledProcessError as e:

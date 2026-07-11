@@ -36,13 +36,20 @@ _INT_RE = re.compile(r"(-?\d[\d,]*)")
 # Dell drive-bay IPMI sensors are numbered from a 0xa0 base: 0xaN ≈ physical slot N.
 _BAY_BASE = 0xA0
 
+# These probes (smartctl/ipmitool/lspci/lsblk/perccli...) are meant to be quick,
+# best-effort telemetry reads (CONCEPT:SM-OS.governance.sys-8) — never a source of
+# an indefinite hang for callers like ``system_health_check``. Bound them tightly.
+_PROBE_TIMEOUT_SECONDS = 15
+
 
 def _run(
     manager: Any, cmd: list[str], *, elevated: bool = True
 ) -> tuple[bool, str, str]:
     """Run a command through the manager seam; return ``(ok, stdout, stderr)``."""
     try:
-        res = manager.run_command(cmd, elevated=elevated)
+        res = manager.run_command(
+            cmd, elevated=elevated, timeout=_PROBE_TIMEOUT_SECONDS
+        )
     except Exception as e:  # noqa: BLE001 — surface as a failed result, never raise
         return False, "", str(e)
     out = (res.get("stdout") if hasattr(res, "get") else None) or ""
