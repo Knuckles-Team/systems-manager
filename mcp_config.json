@@ -27,7 +27,11 @@
         "SPECIALIST_REGISTRYTOOL": "True",
         "SPECIALIST_REGISTRY_PATH": "",
         "STORAGE_HEALTHTOOL": "True",
+        "SYSTEMS_MANAGER_HEALTH_AGGREGATE_S": "3600",
+        "SYSTEMS_MANAGER_HEALTH_INGEST": "true",
         "SYSTEMS_MANAGER_HOST": "",
+        "SYSTEMS_MANAGER_HOSTS": "r510,r710,r820,rw710",
+        "SYSTEMS_MANAGER_NOTIFY_URL": "",
         "WATCHDOGTOOL": "True"
       }
     }

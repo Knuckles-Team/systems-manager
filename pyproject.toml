@@ -29,6 +29,8 @@ systems-manager = "systems_manager.systems_manager:main"
 systems-manager-mcp = "systems_manager.mcp_server:mcp_server"
 systems-manager-agent = "systems_manager.agent_server:agent_server"
 systems-manager-helper = "systems_manager.sudo_helper:main"
+systems-manager-health = "systems_manager.os_health:main_sample"
+systems-manager-health-derive = "systems_manager.os_health:main_derive"
 
 [project.entry-points."agent_utilities.skill_providers"]
 systems-manager = "systems_manager.skills"

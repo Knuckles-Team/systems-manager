@@ -168,7 +168,11 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
         "SPECIALIST_REGISTRYTOOL": "True",
         "SPECIALIST_REGISTRY_PATH": "",
         "STORAGE_HEALTHTOOL": "True",
+        "SYSTEMS_MANAGER_HEALTH_AGGREGATE_S": "3600",
+        "SYSTEMS_MANAGER_HEALTH_INGEST": "true",
         "SYSTEMS_MANAGER_HOST": "",
+        "SYSTEMS_MANAGER_HOSTS": "r510,r710,r820,rw710",
+        "SYSTEMS_MANAGER_NOTIFY_URL": "",
         "WATCHDOGTOOL": "True"
       }
     }
@@ -216,7 +220,11 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
         "SPECIALIST_REGISTRYTOOL": "True",
         "SPECIALIST_REGISTRY_PATH": "",
         "STORAGE_HEALTHTOOL": "True",
+        "SYSTEMS_MANAGER_HEALTH_AGGREGATE_S": "3600",
+        "SYSTEMS_MANAGER_HEALTH_INGEST": "true",
         "SYSTEMS_MANAGER_HOST": "",
+        "SYSTEMS_MANAGER_HOSTS": "r510,r710,r820,rw710",
+        "SYSTEMS_MANAGER_NOTIFY_URL": "",
         "WATCHDOGTOOL": "True"
       }
     }
@@ -265,7 +273,11 @@ docker run -d \
   -e SPECIALIST_REGISTRYTOOL=True \
   -e SPECIALIST_REGISTRY_PATH="" \
   -e STORAGE_HEALTHTOOL=True \
+  -e SYSTEMS_MANAGER_HEALTH_AGGREGATE_S=3600 \
+  -e SYSTEMS_MANAGER_HEALTH_INGEST=true \
   -e SYSTEMS_MANAGER_HOST="" \
+  -e SYSTEMS_MANAGER_HOSTS=r510,r710,r820,rw710 \
+  -e SYSTEMS_MANAGER_NOTIFY_URL="" \
   -e WATCHDOGTOOL=True \
   knucklessg1/systems-manager:mcp
 ```
@@ -321,6 +333,10 @@ consumed from a **remote deployment**. The
 | `AGENT_POLICIES_PATH` | — | path to agent authorization policies |
 | `PERMISSIONS_SIGNING_KEY` | — | signing key for elevated-permission tokens |
 | `SPECIALIST_REGISTRY_PATH` | — | path to the specialist/domain registry |
+| `SYSTEMS_MANAGER_HEALTH_INGEST` | `true` | default-on best-effort OS-signal trend ingestion |
+| `SYSTEMS_MANAGER_HEALTH_AGGREGATE_S` | `3600` | window (s) over which samples distill to ONE :HealthTrend node/signal |
+| `SYSTEMS_MANAGER_HOSTS` | `r510,r710,r820,rw710` | hosts the derivation pass (systems-manager-health-derive) learns/flags over |
+| `SYSTEMS_MANAGER_NOTIFY_URL` | — | best-effort webhook for OS-health anomaly notifications |
 | `OS_PROVIDERTOOL` | `True` | MCP tools table (condensed action-routed surface). |
 | `STORAGE_HEALTHTOOL` | `True` |  |
 | `MISCTOOL` | `True` |  |
@@ -352,7 +368,7 @@ consumed from a **remote deployment**. The
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_32 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_36 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 
