@@ -33,7 +33,9 @@ def _read_kv(url: str, token: str, path: str, mount: str) -> dict[str, Any] | No
     endpoint = f"{url.rstrip('/')}/v1/{mount}/data/{path}"
     req = urllib.request.Request(endpoint, headers={"X-Vault-Token": token})
     try:
-        with urllib.request.urlopen(req, timeout=8) as resp:  # noqa: S310 (internal URL)
+        with urllib.request.urlopen(
+            req, timeout=8
+        ) as resp:  # noqa: S310 (internal URL)
             body = json.loads(resp.read().decode("utf-8"))
     except (urllib.error.URLError, OSError, ValueError) as e:
         _log.debug("OpenBao read %s failed: %s", endpoint, e)

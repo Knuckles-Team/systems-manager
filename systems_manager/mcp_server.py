@@ -57,6 +57,7 @@ logger = get_logger("SystemsManagerServer")
 SYSTEM_ACTIONS = (
     "install_applications",
     "update",
+    "reboot",
     "clean",
     "optimize",
     "install_python_modules",
@@ -184,6 +185,14 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         target_host: str | None = Field(
             None, description="Optional target remote host from inventory"
         ),
+        allow_on_k8s: bool = Field(
+            False,
+            description=(
+                "Override: allow 'update' or 'reboot' to proceed even if this "
+                "host is detected as a live Kubernetes (RKE2) node. Prefer the "
+                "universal-skills `k8s-node-rolling-update` workflow instead."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         resolved = resolve_action(action, SYSTEM_ACTIONS, service="systems-manager")
@@ -203,6 +212,12 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             elif action == "update":
                 return await run_blocking(
                     manager.update,
+                    allow_on_k8s=allow_on_k8s,
+                )
+            elif action == "reboot":
+                return await run_blocking(
+                    manager.reboot,
+                    allow_on_k8s=allow_on_k8s,
                 )
             elif action == "clean":
                 return await run_blocking(
@@ -720,9 +735,9 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             "host": target_host,
             "os": os_stats if isinstance(os_stats, dict) else {},
             "hardware": hw_stats if isinstance(hw_stats, dict) else {},
-            "interfaces": (net or {}).get("interfaces")
-            if isinstance(net, dict)
-            else None,
+            "interfaces": (
+                (net or {}).get("interfaces") if isinstance(net, dict) else None
+            ),
             "disks": (disks or {}).get("disks") if isinstance(disks, dict) else None,
         }
         result = ingest_host_inventory(report)

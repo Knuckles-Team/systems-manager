@@ -49,6 +49,7 @@ async def test_health_check():
             {"success": True},
         ),
         ("update", "update", {}, CommandResult(success=True)),
+        ("reboot", "reboot", {}, CommandResult(success=True)),
         ("clean", "clean", {}, CommandResult(success=True)),
         ("optimize", "optimize", {}, CommandResult(success=True)),
         (
@@ -125,6 +126,24 @@ async def test_sm_system_operations(action, manager_method, arguments, expected_
         actual = parse_mcp_result(res)
         assert_result_equals(actual, expected_return)
         getattr(mgr, manager_method).assert_called_once()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "action, manager_method", [("update", "update"), ("reboot", "reboot")]
+)
+async def test_sm_system_operations_allow_on_k8s_passthrough(action, manager_method):
+    with patch("systems_manager.mcp_server.detect_and_create_manager") as mock_detect:
+        mgr = MagicMock()
+        mock_detect.return_value = mgr
+        getattr(mgr, manager_method).return_value = CommandResult(success=True)
+
+        res = await mcp_server.call_tool(
+            "sm_system_operations", arguments={"action": action, "allow_on_k8s": True}
+        )
+
+        assert_result_equals(parse_mcp_result(res), CommandResult(success=True))
+        getattr(mgr, manager_method).assert_called_once_with(allow_on_k8s=True)
 
 
 @pytest.mark.asyncio

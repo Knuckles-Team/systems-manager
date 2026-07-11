@@ -19,6 +19,7 @@ import distro
 import psutil
 import requests
 
+from systems_manager.k8s_detect import is_k8s_node
 from systems_manager.models import (
     CommandResult,
     SystemStats,
@@ -525,12 +526,60 @@ class SystemsManagerBase(ABC):
             self.log_command(command, error=e)
             return CommandResult(**{"success": False, "error": str(e)})
 
+    def _k8s_lifecycle_guard(self, allow_on_k8s: bool) -> CommandResult | None:
+        """Refuse a naive reboot/update on a live Kubernetes node.
+
+        CONCEPT:SM-OS.governance.k8s-lifecycle-guard: K8s Lifecycle Guard
+
+        Returns a failing ``CommandResult`` explaining the safe alternative if
+        this host is a Kubernetes (RKE2) node and no override was given;
+        returns ``None`` (proceed normally) otherwise.
+        """
+        if allow_on_k8s or os.environ.get("ALLOW_UPDATE_ON_K8S", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        ):
+            return None
+        is_node, reason = is_k8s_node()
+        if not is_node:
+            return None
+        return CommandResult(
+            **{
+                "success": False,
+                "error": (
+                    f"This host is a Kubernetes (RKE2) node ({reason}); a naive "
+                    "reboot/upgrade will disrupt the cluster. Use the "
+                    "universal-skills `k8s-node-rolling-update` workflow "
+                    "(cordon -> drain -> apt upgrade -> conditional reboot -> "
+                    "wait Ready -> uncordon) instead, or re-run with "
+                    "allow_on_k8s=True (MCP) / --force-k8s (CLI) / "
+                    "ALLOW_UPDATE_ON_K8S=1 (env) to proceed anyway."
+                ),
+            }
+        )
+
+    def reboot(self, allow_on_k8s: bool = False) -> CommandResult:
+        """Reboot the host.
+
+        CONCEPT:SM-OS.governance.k8s-lifecycle-guard: K8s Lifecycle Guard
+
+        Guarded by ``_k8s_lifecycle_guard`` — refuses on a live Kubernetes
+        node unless ``allow_on_k8s`` (or ``ALLOW_UPDATE_ON_K8S``) is set.
+        """
+        guard = self._k8s_lifecycle_guard(allow_on_k8s)
+        if guard is not None:
+            return guard
+        if platform.system() == "Windows":
+            return self.run_command(["shutdown.exe", "/r", "/t", "0"], elevated=True)
+        return self.run_command(["systemctl", "reboot"], elevated=True)
+
     @abstractmethod
     def install_applications(self, apps: list[str]) -> CommandResult:
         pass
 
     @abstractmethod
-    def update(self) -> CommandResult:
+    def update(self, allow_on_k8s: bool = False) -> CommandResult:
         pass
 
     @abstractmethod
@@ -2274,7 +2323,10 @@ class AptManager(SystemsManagerBase):
                     )
         return results  # type: ignore
 
-    def update(self) -> CommandResult:
+    def update(self, allow_on_k8s: bool = False) -> CommandResult:
+        guard = self._k8s_lifecycle_guard(allow_on_k8s)
+        if guard is not None:
+            return guard
         try:
             if self.host is None:
                 res = self.run_elevated_tool("package", "update")
@@ -2555,7 +2607,10 @@ class DnfManager(SystemsManagerBase):
                     results["success"] = False
         return results  # type: ignore
 
-    def update(self) -> CommandResult:
+    def update(self, allow_on_k8s: bool = False) -> CommandResult:
+        guard = self._k8s_lifecycle_guard(allow_on_k8s)
+        if guard is not None:
+            return guard
         result = self.run_command(["dnf", "update", "-y"], elevated=True)
         return CommandResult(
             **{
@@ -2726,7 +2781,10 @@ class ZypperManager(SystemsManagerBase):
                     results["success"] = False
         return results  # type: ignore
 
-    def update(self) -> CommandResult:
+    def update(self, allow_on_k8s: bool = False) -> CommandResult:
+        guard = self._k8s_lifecycle_guard(allow_on_k8s)
+        if guard is not None:
+            return guard
         result = self.run_command(["zypper", "update", "-y"], elevated=True)
         return CommandResult(
             **{
@@ -2905,7 +2963,10 @@ class PacmanManager(SystemsManagerBase):
                     results["success"] = False
         return results  # type: ignore
 
-    def update(self) -> CommandResult:
+    def update(self, allow_on_k8s: bool = False) -> CommandResult:
+        guard = self._k8s_lifecycle_guard(allow_on_k8s)
+        if guard is not None:
+            return guard
         result = self.run_command(["pacman", "-Syu", "--noconfirm"], elevated=True)
         return CommandResult(
             **{
@@ -3097,7 +3158,10 @@ class WindowsManager(SystemsManagerBase):
                 )
         return results  # type: ignore
 
-    def update(self) -> CommandResult:
+    def update(self, allow_on_k8s: bool = False) -> CommandResult:
+        guard = self._k8s_lifecycle_guard(allow_on_k8s)
+        if guard is not None:
+            return guard
         winget_result = self.run_command(
             [
                 "winget",
@@ -3743,6 +3807,15 @@ def systems_manager():
     parser.add_argument(
         "-u", "--update", action="store_true", help="Update system packages"
     )
+    parser.add_argument("--reboot", action="store_true", help="Reboot the host")
+    parser.add_argument(
+        "--force-k8s",
+        action="store_true",
+        help=(
+            "Allow --update/--reboot to proceed even if this host is detected "
+            "as a live Kubernetes (RKE2) node"
+        ),
+    )
     parser.add_argument(
         "-i",
         "--install",
@@ -3833,6 +3906,8 @@ def systems_manager():
     install = bool(args.install)
     font = bool(args.fonts)
     update = args.update
+    reboot = args.reboot
+    force_k8s = args.force_k8s
     clean = args.clean
     optimize = args.optimize
     install_python = bool(args.python)
@@ -3850,7 +3925,9 @@ def systems_manager():
     )
 
     if update:
-        manager.update()
+        manager.update(allow_on_k8s=force_k8s)
+    if reboot:
+        manager.reboot(allow_on_k8s=force_k8s)
     if install:
         manager.install_applications(apps)
     if install_python:

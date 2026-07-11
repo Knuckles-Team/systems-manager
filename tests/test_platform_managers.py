@@ -16,6 +16,20 @@ from systems_manager.systems_manager import (
     detect_and_create_manager,
 )
 
+
+@pytest.fixture(autouse=True)
+def _not_a_k8s_node():
+    """This suite exercises platform-manager plumbing, not the k8s lifecycle
+    guard (see test_k8s_lifecycle_guard.py) — pin is_k8s_node() so these tests
+    are deterministic regardless of whether they happen to run on a real
+    Kubernetes node."""
+    with patch(
+        "systems_manager.systems_manager.is_k8s_node",
+        return_value=(False, "not a k8s node"),
+    ):
+        yield
+
+
 # ----------------- detect_and_create_manager tests -----------------
 
 
@@ -213,9 +227,9 @@ def test_systems_manager_base_run_command_hung_process_is_bounded_by_timeout():
     res_noisy = mgr_noisy.run_command(hang_forever, timeout=1)
     elapsed_noisy = time.monotonic() - start
 
-    assert elapsed_noisy < 10, (
-        f"run_command (non-silent) blocked for {elapsed_noisy:.1f}s despite timeout=1"
-    )
+    assert (
+        elapsed_noisy < 10
+    ), f"run_command (non-silent) blocked for {elapsed_noisy:.1f}s despite timeout=1"
     assert res_noisy.success is False
     assert res_noisy.error is not None and "timed out" in res_noisy.error.lower()
 

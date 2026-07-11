@@ -10,6 +10,7 @@
         "MCP_TOOL_MODE": "condensed",
         "AGENT_HEALTHTOOL": "True",
         "AGENT_POLICIES_PATH": "",
+        "ALLOW_UPDATE_ON_K8S": "",
         "IDENTITYTOOL": "True",
         "MAINTENANCETOOL": "True",
         "MAINTENANCE_PRIORITY": "",

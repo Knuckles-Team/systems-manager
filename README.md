@@ -151,6 +151,7 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
         "MCP_TOOL_MODE": "condensed",
         "AGENT_HEALTHTOOL": "True",
         "AGENT_POLICIES_PATH": "",
+        "ALLOW_UPDATE_ON_K8S": "",
         "IDENTITYTOOL": "True",
         "MAINTENANCETOOL": "True",
         "MAINTENANCE_PRIORITY": "",
@@ -198,6 +199,7 @@ When query strings or parameters are supplied, an LLM-free **Knowledge Graph res
         "MCP_TOOL_MODE": "condensed",
         "AGENT_HEALTHTOOL": "True",
         "AGENT_POLICIES_PATH": "",
+        "ALLOW_UPDATE_ON_K8S": "",
         "IDENTITYTOOL": "True",
         "MAINTENANCETOOL": "True",
         "MAINTENANCE_PRIORITY": "",
@@ -246,6 +248,7 @@ docker run -d \
   -e MCP_TOOL_MODE=condensed \
   -e AGENT_HEALTHTOOL=True \
   -e AGENT_POLICIES_PATH="" \
+  -e ALLOW_UPDATE_ON_K8S="" \
   -e IDENTITYTOOL=True \
   -e MAINTENANCETOOL=True \
   -e MAINTENANCE_PRIORITY="" \
@@ -306,17 +309,18 @@ consumed from a **remote deployment**. The
 | `EUNOMIA_TYPE` | `none` | options: none, embedded, remote |
 | `EUNOMIA_POLICY_FILE` | `mcp_policies.json` |  |
 | `EUNOMIA_REMOTE_URL` | `http://eunomia-server:8000` |  |
+| `OPENBAO_URL` | `http://openbao.arpa` | OpenBao address (KV v2 'apps/' mount; apps/idrac) |
+| `OPENBAO_TOKEN` | — | token with read on apps/data/idrac (agent-apps-rw) |
 | `SYSTEMS_MANAGER_HOST` | — | target host for remote telemetry/control (defaults to local) |
 | `PROJECT_ROOT` | — | project root used to resolve config/inventory paths |
 | `MCP_CONFIG_PATH` | — | path to the MCP config (mcp_config.json) |
+| `ALLOW_UPDATE_ON_K8S` | — | true/1/yes: allow reboot/update to proceed even if this host is |
 | `MAX_CONCURRENT_AGENTS` | — | cap on concurrently dispatched sub-agents |
 | `MAINTENANCE_PRIORITY` | — | maintenance-lane scheduling priority |
 | `MAINTENANCE_TOKEN_BUDGET` | — | maintenance-lane token budget |
 | `AGENT_POLICIES_PATH` | — | path to agent authorization policies |
 | `PERMISSIONS_SIGNING_KEY` | — | signing key for elevated-permission tokens |
 | `SPECIALIST_REGISTRY_PATH` | — | path to the specialist/domain registry |
-| `OPENBAO_URL` | `http://openbao.arpa` | OpenBao address for out-of-band BMC creds (apps/idrac) |
-| `OPENBAO_TOKEN` | — | OpenBao token with read on apps/data/idrac (agent-apps-rw) |
 | `OS_PROVIDERTOOL` | `True` | MCP tools table (condensed action-routed surface). |
 | `STORAGE_HEALTHTOOL` | `True` |  |
 | `MISCTOOL` | `True` |  |
@@ -336,9 +340,11 @@ consumed from a **remote deployment**. The
 | `MCP_DISABLED_TOOLS` | — | Comma-separated tool deny-list |
 | `MCP_ENABLED_TAGS` | — | Comma-separated tag allow-list |
 | `MCP_DISABLED_TAGS` | — | Comma-separated tag deny-list |
-| `MCP_CLIENT_AUTH` | — | Outbound MCP auth (`oidc-client-credentials` for fleet calls) |
+| `MCP_CLIENT_AUTH` | — | Outbound MCP child auth: `oidc-client-credentials` | `basic` | `none` |
 | `OIDC_CLIENT_ID` | — | OIDC client id (service-account auth) |
 | `OIDC_CLIENT_SECRET` | — | OIDC client secret (service-account auth) |
+| `MCP_BASIC_AUTH_USERNAME` | — | HTTP Basic username (`MCP_CLIENT_AUTH=basic`) |
+| `MCP_BASIC_AUTH_PASSWORD` | — | HTTP Basic password (`MCP_CLIENT_AUTH=basic`) |
 | `DEBUG` | `False` | Verbose logging |
 | `PYTHONUNBUFFERED` | `1` | Unbuffered stdout (recommended in containers) |
 | `MCP_URL` | `http://localhost:8000/mcp` | URL of the MCP server the agent connects to |
@@ -346,7 +352,7 @@ consumed from a **remote deployment**. The
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_28 package + 14 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_32 package + 16 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 
