@@ -1,6 +1,6 @@
 {
   "project": "systems-manager",
-  "path": "/home/apps/workspace/agent-packages/agents/systems-manager",
+  "path": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager",
   "domain_results": [
     {
       "domain": "Project Analysis",
@@ -26,7 +26,7 @@
         {
           "criterion": "externalized_prompts",
           "points": 0,
-          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager",
+          "evidence": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager",
           "reasoning": "No prompts/ directory found. Prompts may be hardcoded in source."
         },
         {
@@ -44,25 +44,25 @@
         {
           "criterion": "agents_md",
           "points": 10,
-          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/AGENTS.md (5582 bytes)",
+          "evidence": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/AGENTS.md (5582 bytes)",
           "reasoning": "AGENTS.md exists with comprehensive content"
         },
         {
           "criterion": "pre_commit_hooks",
           "points": 10,
-          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/.pre-commit-config.yaml",
+          "evidence": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/.pre-commit-config.yaml",
           "reasoning": "Pre-commit configuration found for automated code quality checks"
         },
         {
           "criterion": "gitignore",
           "points": 10,
-          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/.gitignore",
+          "evidence": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/.gitignore",
           "reasoning": ".gitignore exists to prevent committing build artifacts and secrets"
         },
         {
           "criterion": "env_template",
           "points": 10,
-          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/.env.example",
+          "evidence": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/.env.example",
           "reasoning": "Environment template exists for onboarding and secret management"
         },
         {
@@ -95,7 +95,7 @@
         {
           "criterion": "dependency_freshness",
           "points": 91,
-          "evidence": "source=/home/apps/workspace/agent-packages/agents/systems-manager/pyproject.toml total=7 major=0 minor=3 patch=0 not_installed=2",
+          "evidence": "source=${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/pyproject.toml total=7 major=0 minor=3 patch=0 not_installed=2",
           "reasoning": "Audited 7 deps (5 installed, 2 constraint-only). 0 major, 3 minor, 0 patch updates."
         }
       ],
@@ -207,7 +207,7 @@
           "length": 398,
           "complexity": 114,
           "nesting_depth": 23,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
         },
         {
           "name": "sm_system_operations",
@@ -215,7 +215,7 @@
           "length": 100,
           "complexity": 31,
           "nesting_depth": 23,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
         },
         {
           "name": "main",
@@ -223,7 +223,7 @@
           "length": 125,
           "complexity": 23,
           "nesting_depth": 15,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/scripts/validate_a2a_agent.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/scripts/validate_a2a_agent.py"
         },
         {
           "name": "systems_manager",
@@ -231,7 +231,7 @@
           "length": 140,
           "complexity": 21,
           "nesting_depth": 2,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
         },
         {
           "name": "font",
@@ -239,7 +239,7 @@
           "length": 102,
           "complexity": 21,
           "nesting_depth": 3,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
         }
       ],
       "top_long": [
@@ -249,7 +249,7 @@
           "length": 398,
           "complexity": 114,
           "nesting_depth": 23,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py"
         },
         {
           "name": "register_os_provider_tools",
@@ -257,7 +257,7 @@
           "length": 266,
           "complexity": 12,
           "nesting_depth": 2,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py"
         },
         {
           "name": "systems_manager",
@@ -265,7 +265,7 @@
           "length": 140,
           "complexity": 21,
           "nesting_depth": 2,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py"
         },
         {
           "name": "main",
@@ -273,7 +273,7 @@
           "length": 125,
           "complexity": 23,
           "nesting_depth": 15,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/scripts/validate_a2a_agent.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/scripts/validate_a2a_agent.py"
         },
         {
           "name": "register_maintenance_tools",
@@ -281,13 +281,13 @@
           "length": 108,
           "complexity": 5,
           "nesting_depth": 1,
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py"
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py"
         }
       ],
       "structural_issues": [
         {
           "file": "systems_manager.py",
-          "path": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "path": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
           "lines": 2898,
           "issues": [
             "9 functions with high complexity (worst: systems_manager at 140L, CC=21)",
@@ -330,7 +330,7 @@
         },
         {
           "file": "agent_os_tools.py",
-          "path": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py",
+          "path": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py",
           "lines": 735,
           "issues": [
             "Low cohesion: 14 distinct concepts in one file"
@@ -394,7 +394,7 @@
       "tests": [
         {
           "name": "test_server_startup",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_startup.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_startup.py",
           "line": 1,
           "length": 12,
           "intent": "unit",
@@ -404,7 +404,7 @@
         },
         {
           "name": "test_concept_parity",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_concept_parity.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_concept_parity.py",
           "line": 58,
           "length": 30,
           "intent": "unit",
@@ -414,7 +414,7 @@
         },
         {
           "name": "test_file_system_manager_list_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 9,
           "length": 54,
           "intent": "unit",
@@ -424,7 +424,7 @@
         },
         {
           "name": "test_file_system_manager_search_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 65,
           "length": 23,
           "intent": "unit",
@@ -434,7 +434,7 @@
         },
         {
           "name": "test_file_system_manager_grep_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 90,
           "length": 34,
           "intent": "unit",
@@ -444,7 +444,7 @@
         },
         {
           "name": "test_file_system_manager_manage_file",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 126,
           "length": 48,
           "intent": "unit",
@@ -454,7 +454,7 @@
         },
         {
           "name": "test_shell_profile_manager",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 176,
           "length": 31,
           "intent": "unit",
@@ -464,7 +464,7 @@
         },
         {
           "name": "test_shell_profile_manager_windows",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 209,
           "length": 14,
           "intent": "unit",
@@ -474,7 +474,7 @@
         },
         {
           "name": "test_tools_registered",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
           "line": 7,
           "length": 10,
           "intent": "unit",
@@ -484,7 +484,7 @@
         },
         {
           "name": "test_get_mcp_instance",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
           "line": 20,
           "length": 9,
           "intent": "unit",
@@ -494,7 +494,7 @@
         },
         {
           "name": "test_version_defined",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
           "line": 32,
           "length": 5,
           "intent": "unit",
@@ -504,7 +504,7 @@
         },
         {
           "name": "test_get_process_details",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 20,
           "length": 11,
           "intent": "unit",
@@ -516,7 +516,7 @@
         },
         {
           "name": "test_get_process_details_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 34,
           "length": 10,
           "intent": "unit",
@@ -528,7 +528,7 @@
         },
         {
           "name": "test_get_network_connections",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 47,
           "length": 11,
           "intent": "unit",
@@ -540,7 +540,7 @@
         },
         {
           "name": "test_get_network_connections_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 61,
           "length": 9,
           "intent": "unit",
@@ -552,7 +552,7 @@
         },
         {
           "name": "test_capture_system_snapshot",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 73,
           "length": 10,
           "intent": "unit",
@@ -564,7 +564,7 @@
         },
         {
           "name": "test_capture_system_snapshot_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 86,
           "length": 9,
           "intent": "unit",
@@ -576,7 +576,7 @@
         },
         {
           "name": "test_list_services",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 98,
           "length": 10,
           "intent": "unit",
@@ -588,7 +588,7 @@
         },
         {
           "name": "test_list_services_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 111,
           "length": 9,
           "intent": "unit",
@@ -600,7 +600,7 @@
         },
         {
           "name": "test_manage_service",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 123,
           "length": 19,
           "intent": "unit",
@@ -612,7 +612,7 @@
         },
         {
           "name": "test_manage_service_cancelled",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 145,
           "length": 10,
           "intent": "unit",
@@ -624,7 +624,7 @@
         },
         {
           "name": "test_manage_service_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 158,
           "length": 17,
           "intent": "unit",
@@ -636,7 +636,7 @@
         },
         {
           "name": "test_list_kernel_modules",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 178,
           "length": 10,
           "intent": "unit",
@@ -648,7 +648,7 @@
         },
         {
           "name": "test_list_kernel_modules_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 191,
           "length": 9,
           "intent": "unit",
@@ -660,7 +660,7 @@
         },
         {
           "name": "test_query_system_logs",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 203,
           "length": 11,
           "intent": "unit",
@@ -672,7 +672,7 @@
         },
         {
           "name": "test_query_system_logs_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 217,
           "length": 9,
           "intent": "unit",
@@ -684,7 +684,7 @@
         },
         {
           "name": "test_system_trace",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 229,
           "length": 30,
           "intent": "unit",
@@ -696,7 +696,7 @@
         },
         {
           "name": "test_start_system_trace_cancelled",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 262,
           "length": 10,
           "intent": "unit",
@@ -708,7 +708,7 @@
         },
         {
           "name": "test_system_trace_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 275,
           "length": 24,
           "intent": "unit",
@@ -720,7 +720,7 @@
         },
         {
           "name": "test_get_process_details_all",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider.py",
           "line": 15,
           "length": 12,
           "intent": "unit",
@@ -990,19 +990,19 @@
             "detail": "4 modules exceed 500 lines (god modules)",
             "items": [
               {
-                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+                "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
                 "lines": 2898
               },
               {
-                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py",
+                "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/agent_os_tools.py",
                 "lines": 735
               },
               {
-                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_platform_managers.py",
+                "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_platform_managers.py",
                 "lines": 560
               },
               {
-                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_routing.py",
+                "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_mcp_routing.py",
                 "lines": 629
               }
             ]
@@ -1014,12 +1014,12 @@
             "items": [
               {
                 "class": "SystemsManagerBase",
-                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+                "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
                 "method_count": 56
               },
               {
                 "class": "WindowsManager",
-                "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+                "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
                 "method_count": 16
               }
             ]
@@ -1222,223 +1222,223 @@
       "tests_missing_markers": [
         {
           "test_name": "test_server_startup",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_startup.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_startup.py",
           "line": 1
         },
         {
           "test_name": "test_concept_parity",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_concept_parity.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_concept_parity.py",
           "line": 58
         },
         {
           "test_name": "test_file_system_manager_list_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 9
         },
         {
           "test_name": "test_file_system_manager_search_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 65
         },
         {
           "test_name": "test_file_system_manager_grep_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 90
         },
         {
           "test_name": "test_file_system_manager_manage_file",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 126
         },
         {
           "test_name": "test_shell_profile_manager",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 176
         },
         {
           "test_name": "test_shell_profile_manager_windows",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_file_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_file_manager.py",
           "line": 209
         },
         {
           "test_name": "test_tools_registered",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
           "line": 7
         },
         {
           "test_name": "test_get_mcp_instance",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
           "line": 20
         },
         {
           "test_name": "test_version_defined",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_mcp_server.py",
           "line": 32
         },
         {
           "test_name": "test_get_process_details",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 20
         },
         {
           "test_name": "test_get_process_details_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 34
         },
         {
           "test_name": "test_get_network_connections",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 47
         },
         {
           "test_name": "test_get_network_connections_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 61
         },
         {
           "test_name": "test_capture_system_snapshot",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 73
         },
         {
           "test_name": "test_capture_system_snapshot_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 86
         },
         {
           "test_name": "test_list_services",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 98
         },
         {
           "test_name": "test_list_services_exception",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 111
         },
         {
           "test_name": "test_manage_service",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/tests/test_os_provider_tools.py",
           "line": 123
         }
       ],
       "functions_missing_docstrings": [
         {
           "function": "get_mcp_instance",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 51,
           "length": 398
         },
         {
           "function": "mcp_server",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 451,
           "length": 16
         },
         {
           "function": "sm_system_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 90,
           "length": 100
         },
         {
           "function": "sm_service_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 192,
           "length": 32
         },
         {
           "function": "sm_process_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 226,
           "length": 28
         },
         {
           "function": "sm_network_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 256,
           "length": 21
         },
         {
           "function": "sm_disk_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 279,
           "length": 18
         },
         {
           "function": "sm_user_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 299,
           "length": 15
         },
         {
           "function": "sm_file_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 316,
           "length": 45
         },
         {
           "function": "sm_cron_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 363,
           "length": 20
         },
         {
           "function": "sm_firewall_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 385,
           "length": 20
         },
         {
           "function": "sm_advanced_operations",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/mcp_server.py",
           "line": 407,
           "length": 40
         },
         {
           "function": "start_system_trace",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py",
           "line": 234,
           "length": 19
         },
         {
           "function": "stop_system_trace",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/os_provider_tools.py",
           "line": 264,
           "length": 13
         },
         {
           "function": "setup_logging",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
           "line": 30,
           "length": 14
         },
         {
           "function": "detect_and_create_manager",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
           "line": 2729,
           "length": 24
         },
         {
           "function": "systems_manager",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
           "line": 2755,
           "length": 140
         },
         {
           "function": "list_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
           "line": 51,
           "length": 51
         },
         {
           "function": "search_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
           "line": 103,
           "length": 13
         },
         {
           "function": "grep_files",
-          "file": "/home/apps/workspace/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
+          "file": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/systems_manager/systems_manager.py",
           "line": 117,
           "length": 15
         }
@@ -1494,7 +1494,7 @@
         {
           "criterion": "bumpversion_exists",
           "points": 20,
-          "evidence": "/home/apps/workspace/agent-packages/agents/systems-manager/.bumpversion.cfg",
+          "evidence": "${WORKSPACE_ROOT}/agent-packages/agents/systems-manager/.bumpversion.cfg",
           "reasoning": ".bumpversion.cfg found"
         },
         {
