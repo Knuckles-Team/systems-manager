@@ -1,5 +1,6 @@
 ---
 name: systems-manager-operations
+skill_type: skill
 description: >-
   Operate hosts and Agent OS services through the governed systems-manager MCP provider and
   GraphOS delegation. Use for OS and package lifecycle, services, processes, network and disk
