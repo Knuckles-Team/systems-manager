@@ -1,0 +1,19 @@
+{
+  "connector": "systems-manager",
+  "fixtures": [
+    {
+      "expected": {
+        "acl_state": "quarantine",
+        "id": "fixture-record",
+        "title": "Synthetic certification record"
+      },
+      "preset": "system-services",
+      "record": {
+        "acl_public": false,
+        "description": "Synthetic content used only for contract validation.",
+        "name": "Synthetic certification record"
+      }
+    }
+  ],
+  "schema_version": "1"
+}

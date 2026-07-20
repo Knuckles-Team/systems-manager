@@ -4,17 +4,17 @@
 > in sync. Edit **this** file, not `CLAUDE.md`.
 
 ## Tech Stack & Architecture
-- Language/Version: Python 3.10+
-- Core Libraries: `agent-utilities`, `fastmcp`, `pydantic-ai`
+- Language/Version: Python 3.11–3.14
+- Core Libraries: `agent-utilities`, `fastmcp`, `pydantic-ai`, `psutil`, `distro`
 - Key principles: Functional patterns, Pydantic for data validation, asynchronous tool execution.
 - Architecture:
     - `mcp_server.py`: Main MCP server entry point and tool registration.
     - `agent.py`: Pydantic AI agent definition and logic.
     - `storage_health.py`: Physical-disk + BMC drive-fault health (CONCEPT:SM-OS.governance.sys-8/1.5)
       — SMART (incl. RAID `megaraid` passthrough), BMC/IPMI drive-slot faults, RAID PD
-      state, correlated; runs over the manager seam (local or remote host). Reuses the
-      `fan-manager` IPMI wrapper for BMC reads when present (else shells `ipmitool`).
-    - `bmc_credentials.py`: runtime OpenBao read of `apps/idrac` for out-of-band BMC.
+      state, correlated; runs over the manager seam (local or remote host).
+    - `bmc_credentials.py`: consumes an exact runtime credential projection resolved by
+      AgentConfig from an external secret reference.
     - `skills/`: Directory containing modular agent skills (if applicable).
 
 ### Architecture Diagram
@@ -22,14 +22,13 @@
 graph TD
     User([User/A2A]) --> Server[A2A Server / FastAPI]
     Server --> Agent[Pydantic AI Agent]
-    Agent --> Skills[Modular Skills]
     Agent --> MCP[MCP Server / FastMCP]
     MCP --> Client[API Client / Wrapper]
     MCP --> Storage[sm_storage_health — SM-OS.governance.sys-8/1.5]
     Storage --> Mgr[manager.run_command — local or remote]
     Storage --> SMART([smartctl / megaraid])
     Storage --> BMC([fan-manager IPMI / ipmitool])
-    Storage -.OOB creds.-> Bao([OpenBao apps/idrac])
+    Storage -.OOB credential projection.-> Config([AgentConfig secret reference])
     Client --> ExternalAPI([External Service API])
 ```
 
@@ -39,15 +38,21 @@ sequenceDiagram
     participant U as User
     participant S as Server
     participant A as Agent
-    participant T as MCP Tool
-    participant API as External API
+    participant M as MCP Tools
+    participant SM as Systems Manager
+    participant PM as Package Manager
+    participant SYS as System APIs
 
     U->>S: Request
     S->>A: Process Query
-    A->>T: Invoke Tool
-    T->>API: API Request
-    API-->>T: API Response
-    T-->>A: Tool Result
+    A->>M: Invoke Tool
+    M->>SM: Execute System Operation
+    SM->>PM: Package Management
+    SM->>SYS: System APIs
+    PM-->>SM: Package Result
+    SYS-->>SM: System Result
+    SM-->>M: Operation Result
+    M-->>A: Tool Result
     A-->>S: Final Response
     S-->>U: Output
 ```
@@ -59,14 +64,26 @@ pip install .[all]
 # Quality & Linting (run from project root)
 pre-commit run --all-files
 
+# Testing
+pytest tests/ --cov=systems_manager --cov-report=term-missing
+
 # Execution Commands
-# systems-manager\nsystems_manager.systems_manager:systems_manager\n# systems-manager-mcp\nsystems_manager.mcp:mcp_server\n# systems-manager-agent\nsystems_manager.agent:agent_server
+# systems-manager CLI
+python -m systems_manager.systems_manager
+
+# systems-manager MCP
+python -m systems_manager.mcp_server
+
+# systems-manager Agent
+python -m systems_manager.agent_server
 
 ## Project Structure Quick Reference
 - MCP Entry Point → `mcp_server.py`
-- Agent Entry Point → `agent.py`
+- Agent Entry Point → `agent_server.py`
+- Core Systems Manager → `systems_manager.py`
 - Source Code → `systems_manager/`
-- Skills → `skills/` (if exists)
+- Agent Data → `agent_data/`
+- Tests → `tests/`
 
 ### File Tree
 ```text
@@ -75,20 +92,22 @@ pre-commit run --all-files
 
 ## Code Style & Conventions
 **Always:**
-- Use `agent-utilities` for common patterns (e.g., `create_mcp_server`, `create_agent`).
+- Use current direct `agent-utilities` modules for shared patterns.
 - Define input/output models using Pydantic.
 - Include descriptive docstrings for all tools (they are used as tool descriptions for LLMs).
 - Check for optional dependencies using `try/except ImportError`.
+- Use type hints for function signatures.
 
 **Good example:**
 ```python
-from agent_utilities import create_mcp_server
-from mcp.server.fastmcp import FastMCP
+from agent_utilities.mcp.server_factory import create_mcp_server
+from fastmcp import FastMCP
+from pydantic import Field
 
 mcp = create_mcp_server("my-agent")
 
 @mcp.tool()
-async def my_tool(param: str) -> str:
+async def my_tool(param: str = Field(description="Tool parameter")) -> str:
     """Description for LLM."""
     return f"Result: {param}"
 ```
@@ -98,29 +117,54 @@ async def my_tool(param: str) -> str:
 - Run `pre-commit` before pushing changes.
 - Use existing patterns from `agent-utilities`.
 - Keep tools focused and idempotent where possible.
+- Run pytest with coverage before committing.
+- Mock platform-specific operations in tests for cross-platform compatibility.
 
 **Don't:**
 - Use `cd` commands in scripts; use absolute paths or relative to project root.
 - Add new dependencies to `dependencies` in `pyproject.toml` without checking `optional-dependencies` first.
 - Hardcode secrets; use environment variables or `.env` files.
+- Commit test coverage reports or generated HTML coverage files.
+- Modify the `agent_data/` directory structure without updating agent configuration.
 
 ## Safety & Boundaries
 **Always do:**
 - Run lint/test via `pre-commit`.
 - Use `agent-utilities` base classes.
+- Test package manager operations with mocking to avoid accidental system modifications.
+- Validate user inputs before executing system commands.
 
 **Ask first:**
-- Major refactors of `mcp_server.py` or `agent.py`.
+- Major refactors of `mcp_server.py` or `agent_server.py`.
 - Deleting or renaming public tool functions.
+- Changes to platform detection logic.
+- Modifications to the graph orchestration architecture.
 
 **Never do:**
 - Commit `.env` files or secrets.
 - Modify `agent-utilities` or `universal-skills` files from within this package.
+- Execute destructive operations (package installs, system updates) in tests without proper mocking.
+- Hardcode platform-specific paths; use cross-platform path handling.
+
+## Testing
+**Test Coverage:**
+- Overall coverage: 62% (355 tests passing)
+- Key modules with 95%+ coverage: `__init__.py` (96%), `agent_server.py` (96%)
+- Platform-specific code tested with extensive mocking
+- MCP server functionality validated through integration tests
+
+**Test Structure:**
+- `conftest.py`: Shared fixtures for platform mocking, subprocess mocking, psutil mocking
+- `test_systems_manager_base.py`: Tests for base class and helper classes (127 tests)
+- `test_linux_managers.py`: Tests for Linux package managers (93 tests)
+- `test_windows_manager.py`: Tests for Windows manager (50 tests)
+- `test_mcp_server.py`: MCP server functionality tests (52 tests)
 
 ## When Stuck
 - Propose a plan first before making large changes.
 - Check `agent-utilities` documentation for existing helpers.
-
+- Review existing test patterns for platform-specific mocking.
+- Check the `systems_manager.py` implementation for platform-specific patterns.
 
 ## Graph Architecture
 
@@ -236,23 +280,23 @@ why rather than bypassing it.
 ## Working with Git Worktrees (multi-session)
 
 Multiple agents/sessions work the `agent-packages/*` repos concurrently. **Do not
-edit the canonical checkout** (`/home/apps/workspace/agent-packages/<repo>`) — a
+edit the canonical checkout** (`${WORKSPACE_ROOT}/agent-packages/<repo>`) — a
 background `repository-manager` sync can reset its working tree and discard
 uncommitted edits. Take your own git worktree on your own branch instead:
 
 ```bash
 # preferred — repository-manager MCP:
-rm_worktree add <repo> <your-branch>      # -> /home/apps/worktrees/<repo>/<your-branch>
+rm_worktree add <repo> <your-branch>      # -> ${WORKTREE_ROOT}/<repo>/<your-branch>
 
 # raw-git fallback:
 git -C agent-packages/<repo> checkout main
-git -C agent-packages/<repo> worktree add /home/apps/worktrees/<repo>/<branch> -b <branch>
+git -C agent-packages/<repo> worktree add "${WORKTREE_ROOT}/<repo>/<branch>" -b <branch>
 ```
 
 Work in the worktree and **commit often** (commits survive a working-tree reset).
 Each session must use a **distinct branch** — git allows a branch in only one
 worktree, which is what keeps concurrent sessions from colliding. Worktrees live
-under `/home/apps/worktrees/` (outside the workspace scan, so the sync leaves them
+under `${WORKTREE_ROOT}` (outside the workspace scan, so the sync leaves them
 alone).
 
 **Finishing work in a worktree** — run this sequence before calling it done:

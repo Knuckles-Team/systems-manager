@@ -1,0 +1,20 @@
+schema_version: '1'
+connector: systems-manager
+ontology_source: systems
+sync:
+- preset: system-services
+  server: systems-manager
+  tool: sm_service_operations
+  action: list_services
+  records_path: services
+  id_field: name
+  title_field: name
+  text_field: description
+  updated_field: null
+  doc_type: system-service
+  tool_schema_sha256: d2b92e0e421b1a727c42ec0eabc99415f3f27f455073e1e2eba96ac6bcde15ac
+governance:
+  default_acl: quarantine
+  identity: opaque-reference
+  tenant: required-at-materialization
+  provenance: required-at-materialization

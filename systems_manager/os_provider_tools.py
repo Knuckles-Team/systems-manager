@@ -1,4 +1,4 @@
-from agent_utilities.mcp_utilities import ctx_confirm_destructive, ctx_log
+from agent_utilities.mcp.context_helpers import ctx_confirm_destructive, ctx_log
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field
@@ -42,9 +42,9 @@ def register_os_provider_tools(mcp: FastMCP):
             provider = get_os_provider()
             processes = provider.get_process_details(pid)
             return {"success": True, "processes": processes}
-        except Exception as e:
-            ctx_log(ctx, logger, "error", f"Error fetching processes: {str(e)}")
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "Process discovery failed")
+            return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
         annotations={
@@ -69,11 +69,9 @@ def register_os_provider_tools(mcp: FastMCP):
             provider = get_os_provider()
             connections = provider.get_network_connections()
             return {"success": True, "connections": connections}
-        except Exception as e:
-            ctx_log(
-                ctx, logger, "error", f"Error fetching network connections: {str(e)}"
-            )
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "Network discovery failed")
+            return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
         annotations={
@@ -98,9 +96,9 @@ def register_os_provider_tools(mcp: FastMCP):
             provider = get_os_provider()
             snapshot = provider.capture_system_snapshot()
             return {"success": True, "snapshot": snapshot}
-        except Exception as e:
-            ctx_log(ctx, logger, "error", f"Error capturing snapshot: {str(e)}")
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "Snapshot capture failed")
+            return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
         annotations={
@@ -125,9 +123,9 @@ def register_os_provider_tools(mcp: FastMCP):
             provider = get_os_provider()
             services = provider.list_services()
             return {"success": True, "services": services}
-        except Exception as e:
-            ctx_log(ctx, logger, "error", f"Error listing services: {str(e)}")
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "Service discovery failed")
+            return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
         annotations={
@@ -162,9 +160,9 @@ def register_os_provider_tools(mcp: FastMCP):
             provider = get_os_provider()
             result = provider.manage_service(service_name, action)
             return {"success": True, "result": result}
-        except Exception as e:
-            ctx_log(ctx, logger, "error", f"Error managing service: {str(e)}")
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "Service operation failed")
+            return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
         annotations={
@@ -189,9 +187,9 @@ def register_os_provider_tools(mcp: FastMCP):
             provider = get_os_provider()
             modules = provider.list_kernel_modules()
             return {"success": True, "modules": modules}
-        except Exception as e:
-            ctx_log(ctx, logger, "error", f"Error listing kernel modules: {str(e)}")
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "Kernel module discovery failed")
+            return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
         annotations={
@@ -217,9 +215,9 @@ def register_os_provider_tools(mcp: FastMCP):
             provider = get_os_provider()
             logs = provider.query_system_logs(limit)
             return {"success": True, "logs": logs}
-        except Exception as e:
-            ctx_log(ctx, logger, "error", f"Error querying system logs: {str(e)}")
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "System log query failed")
+            return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
         annotations={
@@ -247,9 +245,9 @@ def register_os_provider_tools(mcp: FastMCP):
             provider = get_os_provider()
             result = provider.start_system_trace(session_name)
             return {"success": True, "result": result}
-        except Exception as e:
-            ctx_log(ctx, logger, "error", f"Error starting system trace: {str(e)}")
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "Trace start failed")
+            return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
         annotations={
@@ -267,10 +265,14 @@ def register_os_provider_tools(mcp: FastMCP):
     ) -> dict:
         """Stop a kernel-level event trace."""
         ctx_log(ctx, logger, "debug", f"Stopping system trace: {session_name}")
+        if not await ctx_confirm_destructive(
+            ctx, f"STOP tracing session: {session_name}"
+        ):
+            return {"success": False, "error": "Operation approval is required"}
         try:
             provider = get_os_provider()
             result = provider.stop_system_trace(session_name)
             return {"success": True, "result": result}
-        except Exception as e:
-            ctx_log(ctx, logger, "error", f"Error stopping system trace: {str(e)}")
-            return {"success": False, "error": str(e)}
+        except Exception:
+            ctx_log(ctx, logger, "error", "Trace stop failed")
+            return {"success": False, "error": "Operation failed"}

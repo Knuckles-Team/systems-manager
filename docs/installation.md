@@ -25,7 +25,7 @@ extra for the interface you need:
 | `mcp` | `pip install "systems-manager[mcp]"` | FastMCP MCP-server runtime (`agent-utilities[mcp]`) |
 | `agent` | `pip install "systems-manager[agent]"` | Pydantic-AI agent + Logfire tracing |
 | `all` | `pip install "systems-manager[all]"` | The MCP server, the agent, and tracing |
-| `test` | `pip install "systems-manager[test]"` | `pytest`, `pytest-xdist`, `pytest-asyncio`, `pytest-cov` |
+| `test` | `pip install "systems-manager[test]"` | `pytest` and `pytest-asyncio` |
 
 ```bash
 # Typical: run the MCP server and the agent
@@ -49,14 +49,14 @@ uv run systems-manager-mcp
 
 ## Prebuilt Docker image
 
-A multi-stage, slim image is published on every release (installs
+A multi-stage runtime image is published on every release (installs
 `systems-manager[all]`):
 
 ```bash
-docker pull knucklessg1/systems-manager:latest
+docker pull "${SYSTEMS_MANAGER_AGENT_IMAGE}"
 
 docker run --rm -i \
-  knucklessg1/systems-manager:latest systems-manager-mcp   # stdio transport (default)
+  "${SYSTEMS_MANAGER_AGENT_IMAGE}" systems-manager-mcp
 ```
 
 For an HTTP server with a published port and the agent, see
@@ -67,11 +67,11 @@ For an HTTP server with a published port and the agent, see
 ```bash
 systems-manager --help
 systems-manager-mcp --help
-python -c "import systems_manager; print(systems_manager.__version__)"
+python -c "import systems_manager; print(systems_manager.__name__)"
 ```
 
 ## Next steps
 
-- **[Deployment](deployment.md)** — run it as a long-lived MCP / agent server behind Caddy + DNS.
+- **[Deployment](deployment.md)** — run local or authenticated network services.
 - **[Usage](usage.md)** — call the tools, the API, and the CLI.
-- **[Configuration](deployment.md#configuration-environment)** — every environment variable.
+- **[Configuration](configuration.md)** — trust, policy, privacy, and runtime values.

@@ -1,7 +1,7 @@
 # systems-manager
 
 A cross-platform **CLI, API, MCP Server, and Agent** for system maintenance,
-package management, and zero-script remote host orchestration in the agent-utilities
+package management, and governed fleet delegation in the agent-utilities
 ecosystem.
 
 !!! info "Official documentation"
@@ -25,19 +25,19 @@ deterministic MCP tool surface. It provides:
   service, process, network, disk, user, file, cron, and firewall operations.
 - **An integrated Pydantic AI graph agent** — reachable over the Agent Control
   Protocol (ACP) and the Agent Web UI (AG-UI).
-- **Zero-script remote orchestration** — telemetry and control across an inventory of
-  hosts over plain SSH, with no remote daemons or packages deployed on the targets.
+- **Fleet composition** — GraphOS can delegate to authenticated per-host services or
+  compose host-key-verified tunnel-manager capabilities.
 
 ## Explore the documentation
 
 <div class="grid cards" markdown>
 
 - :material-rocket-launch: **[Installation](installation.md)** — pip, source, extras, and the prebuilt Docker image.
-- :material-server-network: **[Deployment](deployment.md)** — run the MCP and agent servers, Docker Compose, Caddy + Technitium.
+- :material-server-network: **[Deployment](deployment.md)** — run authenticated MCP and agent services with verified TLS.
 - :material-console: **[Usage](usage.md)** — the MCP tools, the `SystemsManager` API, and the CLI.
 - :material-sitemap: **[Overview](overview.md)** — ecosystem role and the concept map.
 - :material-shield-lock: **[Sudo Security](sudo_security.md)** — the least-privilege elevated-execution model.
-- :material-server: **[Multi-Host](multi_host.md)** — zero-script remote telemetry and control plane.
+- :material-server: **[Multi-Host](multi_host.md)** — governed fleet delegation.
 - :material-cog-play: **[Day 0 Provisioning](day_0_provisioning.md)** — bare-metal to managed cluster node.
 
 </div>
@@ -55,6 +55,5 @@ Run the package-management CLI directly:
 systems-manager --update --install "git,curl,htop"
 ```
 
-See **[Installation](installation.md)** and **[Deployment](deployment.md)** for the
-full matrix (PyPI extras, Docker image, all transports, reverse proxy, DNS, and the
-agent server).
+See **[Installation](installation.md)** and **[Deployment](deployment.md)** for
+package extras, supported transports, container boundaries, and the agent server.

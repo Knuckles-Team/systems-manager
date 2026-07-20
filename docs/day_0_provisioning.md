@@ -1,160 +1,77 @@
-# Day-0 Host Provisioning & Infrastructure Lifecycle Sequence
+# Day-0 provisioning
 
-Day-0 provisioning establishes the foundational, zero-trust infrastructure layer required to orchestrate containerized workloads, DNS setups, and remote service monitoring across a distributed homelab or enterprise cluster.
+Day-0 provisioning establishes the security boundary before any host mutation is
+enabled. This package does not ship an environment profile, fleet inventory,
+credential, host key, endpoint, username, or sudoers rule.
 
-This guide details the exact step-by-step sequence to bring a brand-new host from bare-metal or generic VM installation to a fully-managed cluster node, integrated with `systems-manager` and the `agent-utilities` ecosystem.
+## Required outcomes
 
----
+1. Install the signed package on the target host under a dedicated,
+   least-privilege service identity.
+2. Configure an absolute managed filesystem root owned by that identity and not
+   writable by a group or other users.
+3. Keep host mutation, filesystem mutation, sensitive-read, and network-probe
+   gates disabled.
+4. Configure stdio locally, or authenticated TLS for every network listener.
+5. Configure verified certificate trust through an AgentConfig TLS profile when the
+   deployment uses a private CA.
+6. Configure observability to capture metadata only and verify that trace
+   redaction is active.
+7. If elevation is required, provision it outside the agent through a reviewed
+   service account or a narrowly scoped helper policy.
+8. Run the ecosystem doctor and capability/schema validation before exposing the
+   service to GraphOS.
 
-## 1. The Day-0 Provisioning Lifecycle
+## Elevation helper
 
-The baseline setup follows a strict, sequential pipeline where each phase establishes the prerequisites for the next. This ensures secure, zero-friction operation.
+The optional `systems-manager-helper` accepts only typed service and package
+operations. It has no built-in service or package allowlist. Deployment must set
+JSON arrays through:
+
+- `SYSTEMS_MANAGER_HELPER_ALLOWED_SERVICES_JSON`
+- `SYSTEMS_MANAGER_HELPER_ALLOWED_PACKAGES_JSON`
+
+Provision a sudoers rule only for the resolved, root-owned helper executable and
+only after reviewing the generated deployment artifact. Never grant an
+interpreter, shell, wildcard path, package-manager binary, or the systems-manager
+process blanket passwordless sudo. Do not pass an elevation password through MCP,
+CLI arguments, environment, logs, or traces.
+
+## Fleet provisioning
+
+Use GraphOS to delegate to an authenticated systems-manager service on each host,
+or use tunnel-manager's governed fleet workflows. Tunnel configuration must use
+verified host keys and secret references. There is no accept-unknown host-key mode
+and no plaintext inventory password.
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor Admin as System Administrator
-    participant Host as Target Host (e.g., r510/r710)
-    participant TM as tunnel-manager (Controller)
-    participant SM as systems-manager (Controller)
-
-    Note over Admin,Host: Phase 1: OS Installation & Key Injection
-    Admin->>Host: Install Debian/Ubuntu & create standard user (genius)
-    Admin->>Host: Copy local public SSH key for controller access
-
-    Note over Admin,TM: Phase 2: SSH Mesh Bootstrapping
-    Admin->>TM: Define node in inventory.yaml
-    Admin->>TM: Run `ssh-bootstrap` full-mesh key distribution
-    TM->>Host: Distribute SSH keys (passwordless controller-to-host mesh)
-
-    Note over Admin,SM: Phase 3: Sudo Privilege elevation (Day-0)
-    Admin->>SM: Run `systems-manager --bootstrap-cluster-sudo`
-    SM-->>Admin: Secure prompt for remote sudo password (exactly once)
-    SM->>Host: Cat helper rule to /tmp/systems-manager-sudoers
-    SM->>Host: Install policy to /etc/sudoers.d/systems-manager-genius
-    SM->>Host: Verify syntax via visudo & remove temporary rules
-    Host-->>SM: Bootstrap Success
-
-    Note over Admin,SM: Phase 4: Day-1 Management & Telemetry
-    Admin->>SM: Run `systems-manager --host r510 --os-stats`
-    SM->>Host: SSH execute systems-manager-helper (Strict Whitelist)
-    Host-->>SM: JSON formatted OS metrics & active services
-    SM-->>Admin: Render premium dashboard telemetry
+    participant Operator
+    participant Doctor
+    participant GraphOS
+    participant Host
+    Operator->>Host: Install signed package and least-privilege identity
+    Operator->>Host: Configure managed root, auth, TLS, and policy gates
+    Operator->>Doctor: Validate configuration without printing secrets
+    Doctor-->>Operator: Sanitized readiness status
+    GraphOS->>Host: Authenticated capability discovery
+    Host-->>GraphOS: Sanitized tool schemas and health
 ```
 
----
+## Acceptance checks
 
-## 2. Detailed Step-by-Step Provisioning Guide
+- The package version, ontology, source preset, mapping, skill schema, and MCP tool
+  schemas agree; any release attestations were produced by the release system.
+- A non-loopback MCP or agent listener refuses to start without authentication
+  and a verified TLS boundary.
+- The helper refuses every service or package absent from its deployment
+  allowlist.
+- Sensitive reads and mutations fail while their gates are disabled.
+- One approved typed mutation succeeds and is verified by a separate read.
+- Traces contain opaque run/tenant references and status only—no prompt, tool
+  body, command output, hostname, username, path, or credential.
+- Rollback and recovery ownership are documented before autonomous maintenance is
+  enabled.
 
-### Step 1: Base Operating System Installation
-1. Install a minimal **Debian 12** or **Ubuntu 22.04 LTS** server on the target node.
-2. Configure a static IP address or static DHCP reservation (e.g. `r510.local` at `192.168.1.150`).
-3. Ensure the standard user `genius` is created and has standard administrative privileges (`sudo` group).
-4. Inject your controller's public SSH key into `/home/genius/.ssh/authorized_keys` so the controller has basic non-interactive key-based access to the standard user account.
-
----
-
-### Step 2: Establish the SSH Key Mesh
-We leverage the **`ssh-bootstrap`** skill (backed by `tunnel-manager`) to create passwordless mesh access across our host group:
-
-1. Add the new host to the inventory config file at `~/.config/agent-utilities/inventory.yaml`:
-   ```yaml
-   hosts:
-     r510:
-       hostname: 192.168.1.150
-       user: genius
-       port: 22
-       key_path: ~/.ssh/id_ed25519
-   ```
-2. Run the SSH bootstrap utility to distribute keys and mesh connection profiles:
-   ```bash
-   # Executes a full mesh bootstrap across the inventory group
-   ssh-bootstrap --bootstrap-keys
-   ```
-3. Test standard passwordless connectivity:
-   ```bash
-   ssh -o BatchMode=yes genius@192.168.1.150 "echo connection active"
-   ```
-
----
-
-### Step 3: Configure Network DNS Baselines
-Ensure all cluster hosts point to your designated resilient DNS resolvers (such as AdGuard Home or Technitium servers configured with high-availability rewrites).
-* Update target resolver configurations under `/etc/resolv.conf` or netplan configs to route queries through your primary DNS cluster IPs.
-
----
-
-### Step 4: Multi-Host Sudoers Bootstrapping (The Security Enabler)
-With basic SSH keys distributed, the non-privileged standard user can log in passwordless, but cannot perform package updates or manage critical Docker/Nginx services without interactive password entry.
-
-To resolve this securely and scale across all cluster nodes, execute the automated cluster bootstrapping command:
-
-```bash
-systems-manager --bootstrap-cluster-sudo
-```
-
-#### What Happens Under the Hood:
-1. **Inventory Introspection**: Reads the configuration from `~/.config/agent-utilities/inventory.yaml`.
-2. **Reachability Check**: Performs a fast SSH pre-flight check using `-o ConnectTimeout=3` and `-o BatchMode=yes` to instantly skip offline nodes without hanging.
-3. **Active Verification**: Checks if passwordless sudo for the helper is already active via `sudo -n true`.
-4. **Single secure input**: Prompts the operator *exactly once* for the sudo password using secure stdin masking.
-5. **Secure Rule Writing**: Pipes the highly-restricted NOPASSWD helper rule (`genius ALL=(ALL) NOPASSWD: /usr/local/bin/systems-manager-helper, /home/genius/.local/bin/systems-manager-helper`) to `/tmp/systems-manager-sudoers` via `cat` over standard SSH.
-6. **Atomic Verification transaction**:
-   - Sudo copies the temp file to `/etc/sudoers.d/systems-manager-genius`.
-   - Modifies file ownership to `root:root` and permissions to `0440`.
-   - Executes `visudo -c -f /etc/sudoers.d/systems-manager-genius`.
-   - If syntax is invalid, atomically deletes the file and exits `1` to prevent lockout.
-7. **Cleanup**: Automatically purges `/tmp/systems-manager-sudoers` under all outcome branches.
-
----
-
-## 3. Post-Provisioning Verification & Day-1 Operations
-
-Once Day-0 bootstrapping completes successfully, the controller gains zero-friction, secure, whitelisted remote control of standard systems operations across the entire cluster.
-
-### A. Run Remote Telemetry Queries
-To verify that the wrapper is operational and can retrieve system diagnostics passwordless, query remote system telemetry from the controller:
-
-```bash
-# Query remote OS metrics on host r510
-systems-manager --host r510 --os-stats
-
-# Query remote hardware diagnostics on host r710
-systems-manager --host r710 --hw-stats
-```
-
-### B. Whitelisted Remote Package Operations
-Perform remote whitelisted package tasks cleanly:
-
-```bash
-# Run a secure apt-get update on a remote cluster node
-systems-manager --host r510 --update
-```
-
-### C. Whitelisted Remote Service Actions
-Verify that you can query whitelisted service states (such as SSH, Docker, Fail2ban, Nginx, or Caddy) over the network:
-
-* Standard non-privileged command:
-  ```bash
-  ssh -o BatchMode=yes genius@192.168.1.150 "systems-manager-helper service status ssh"
-  ```
-* Expected secure JSON response:
-  ```json
-  {
-    "success": true,
-    "returncode": 0,
-    "stdout": "● ssh.service - OpenBSD Secure Shell server\n   Loaded: loaded (/lib/systemd/system/ssh.service; enabled; vendor preset: enabled)\n   Active: active (running) since Tue 2026-05-26 08:30:15 UTC; 6h ago\n...",
-    "stderr": ""
-  }
-  ```
-
----
-
-## 4. Troubleshooting the Sequence
-
-| Issue | Probable Cause | Resolution |
-| :--- | :--- | :--- |
-| **`Host is unreachable. Skipping.`** | Target host is offline, firewall is blocking port 22, or standard public SSH key was not copied during base install. | Ensure host is powered on, verify local SSH access via `ssh genius@<ip>`, and verify keys. |
-| **`Failed to write temp sudoers file`** | Remote user session lacks permissions to write to `/tmp` or disk space is exhausted. | Verify disk space with `df -h` and ensure temporary write folders are write-enabled (`chmod 1777 /tmp`). |
-| **`Failed to configure sudo`** | The provided password was incorrect, or the user is not a member of the remote host's `sudo` group. | Double-check credentials and ensure the standard user `genius` has sudo group access by running `groups` on the remote host. |
-| **`visudo check failed`** | The path to the `systems-manager-helper` was formatted incorrectly or contains unsupported characters. | Verify that helper paths exist on the remote host (`which systems-manager-helper`). The system automatically checks standard locations. |
+See [Configuration](configuration.md), [Sudo security](sudo_security.md), and
+[Host lifecycle coverage](host-lifecycle-coverage.md).

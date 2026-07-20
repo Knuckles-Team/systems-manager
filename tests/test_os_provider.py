@@ -2,6 +2,7 @@ import subprocess
 from unittest.mock import MagicMock, patch
 
 import psutil
+import pytest
 
 from systems_manager.os_provider import (
     LinuxProvider,
@@ -412,7 +413,7 @@ def test_windows_provider_tracing():
 
 
 def test_get_os_provider():
-    """Test get_os_provider platform mapping and fallbacks."""
+    """Map only explicitly supported operating-system providers."""
     with patch("platform.system", return_value="Windows"):
         assert isinstance(get_os_provider(), WindowsProvider)
 
@@ -420,7 +421,9 @@ def test_get_os_provider():
         assert isinstance(get_os_provider(), LinuxProvider)
 
     with patch("platform.system", return_value="Darwin"):
-        assert isinstance(get_os_provider(), LinuxProvider)
+        with pytest.raises(RuntimeError, match="Unsupported"):
+            get_os_provider()
 
     with patch("platform.system", return_value="UnknownOS"):
-        assert isinstance(get_os_provider(), LinuxProvider)
+        with pytest.raises(RuntimeError, match="Unsupported"):
+            get_os_provider()

@@ -1,35 +1,44 @@
-# Agent-Utilities Synergy
+# Agent Utilities integration
 
-Because `systems-manager` acts as the physical execution layer (Agent OS Layer) for the `agent-utilities` OS Kernel, their integration unlocks emergent capabilities that neither project possesses independently.
+`systems-manager` is a typed, local host-operation provider. Agent Utilities
+supplies the MCP server, configuration, transport security, approval prompts,
+delegation, and observability boundaries. Neither component turns model output
+into a shell command.
 
-## 1. Automated Anomaly Defense (Security Operations)
+## Current integration
 
-The `AgentHealthTools` inside `agent-utilities` continuously monitors the environment. By leveraging `SM-OS.deployment.deep-introspection-telemetry` (Deep Introspection Telemetry) from `systems-manager`, the kernel can achieve EDR-like (Endpoint Detection and Response) capabilities.
+- The package uses the current Agent Utilities server factory and intent-first
+  tool surface.
+- Sensitive reads, active network probes, host mutations, and generic file
+  mutations have separate default-deny administrator gates.
+- Mutations are serialized and require request-channel approval.
+- Agent OS identity, specialist registry, scheduler, and watchdog tools call
+  only current public authorities. Results are projected to bounded status and
+  opaque references.
+- Host health can be materialized through the native knowledge-graph boundary
+  after allowlist validation and keyed pseudonymization.
+- Remote MCP and agent transports require authentication and verified TLS.
 
-**Workflow:**
-1. `agent-utilities` detects an unknown IP address communicating on the network.
-2. It invokes `systems-manager`'s `get_network_connections()`.
-3. `systems-manager` maps the unknown TCP socket to `PID 4092`.
-4. `agent-utilities` analyzes the executable path and command-line arguments using `get_process_details(pid=4092)`.
-5. If determined to be malicious, `agent-utilities` invokes a destructive action to terminate the PID and ban the IP.
+## Delegated operation
 
-## 2. Self-Healing Infrastructure
+GraphOS can delegate a typed operation to an authenticated systems-manager
+instance on the target host. Target inventory, credentials, endpoints, TLS
+profiles, and policy are deployment configuration; none is packaged here.
 
-When paired with `agent-utilities`' capability to read alerts (e.g., from Prometheus or PagerDuty), `systems-manager` provides the remediation engine.
+A safe delegated workflow is:
 
-**Workflow:**
-1. `agent-utilities` receives an alert: "Web Server 502 Bad Gateway".
-2. It uses `systems-manager`'s `query_system_logs(limit=100)` to read the `journalctl` output for the `nginx` service.
-3. The LLM diagnoses an Out-of-Memory (OOM) error.
-4. `agent-utilities` uses `manage_service(service_name="nginx", action="restart")` to perform a self-healing action securely, generating an audit trail automatically.
+1. resolve a target capability by opaque deployment alias;
+2. enable only the read or mutation gate required for the request;
+3. perform bounded discovery without persisting raw paths, hostnames, command
+   lines, logs, or content;
+4. obtain approval for a typed mutation;
+5. execute at the target host boundary; and
+6. verify with a separate read and retain sanitized status evidence.
 
-## 3. Fleet-Wide Configuration Audits
+## Explicit non-capabilities
 
-Using the Distributed Fleet Control Plane (`SYS-1.1`), `agent-utilities` can audit 10,000+ hosts simultaneously.
-
-**Workflow:**
-1. Agent intent: "Ensure all production servers are running the updated OpenSSL package."
-2. The Orchestrator calls the `systems-manager` MCP.
-3. The `systems-manager` Control Plane broadcasts the package query via NATS.
-4. `agent-utilities` receives a summarized context: "9,500 patched. 500 vulnerable."
-5. `agent-utilities` generates an automated remediation plan, utilizing Sub-Agent Dispatch to patch the 500 vulnerable hosts in parallel.
+This package is not an EDR, SIEM, remote shell, message-broker fleet control
+plane, autonomous remediation system, or Windows Update orchestrator. It does
+not promise fan-out to a fixed fleet size. Those concerns belong to reviewed
+providers and the deployment orchestration layer, with their own resource and
+security policies.

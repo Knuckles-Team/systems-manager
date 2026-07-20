@@ -88,12 +88,14 @@ nav:
   - Home: index.md
   - Overview: overview.md
   - Installation: installation.md
+  - Configuration: configuration.md
   - Deployment: deployment.md
   - Usage (API / CLI / MCP): usage.md
+  - Host Lifecycle Coverage: host-lifecycle-coverage.md
   - Sudo Security: sudo_security.md
   - Multi-Host: multi_host.md
   - Day 0 Installation: day_0_provisioning.md
   - Concepts: concepts.md
-  - Agent-Utilities Synergy: agent_utilities_synergy.md
-  - Code Coverage: code_coverage.md
+  - Agent Utilities Integration: agent_utilities_synergy.md
+  - Validation: code_coverage.md
   - Agent OS Layer: pillars/1_agent_os_layer.md

@@ -1,10 +1,10 @@
 """Action-discovery behavior for systems-manager's action-routed tools.
 
 Every action-routed tool is wired to the shared ``agent_utilities`` helper
-``resolve_action``, which provides:
+``resolve_action``, constrained by the provider's strict current contract, which
+provides:
 
-* ``list_actions`` / ``help`` / ``actions`` discovery payloads,
-* plural->singular aliasing, and
+* explicit ``list_actions`` discovery payloads, and
 * a rich "Did you mean ...? Call with action='list_actions' ..." error on
   unknown actions.
 """
@@ -46,14 +46,22 @@ async def test_mcp_tool_list_actions_returns_names():
 @pytest.mark.asyncio
 async def test_mcp_tool_bogus_action_mentions_list_actions():
     """An unknown action raises a rich error pointing at list_actions."""
-    from fastmcp.exceptions import ToolError
-
-    with pytest.raises(ToolError) as exc_info:
+    with pytest.raises(PermissionError) as exc_info:
         await mcp_server.call_tool(
             "sm_disk_operations",
             arguments={"action": "totally_bogus"},
         )
     assert "list_actions" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_historical_discovery_alias_is_rejected():
+    """Only the current explicit discovery action is accepted."""
+    with pytest.raises(PermissionError, match="list_actions"):
+        await mcp_server.call_tool(
+            "sm_disk_operations",
+            arguments={"action": "actions"},
+        )
 
 
 @pytest.mark.asyncio

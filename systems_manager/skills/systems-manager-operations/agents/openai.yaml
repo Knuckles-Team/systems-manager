@@ -1,0 +1,4 @@
+interface:
+  display_name: "Systems Manager Operations"
+  short_description: "Governed host operations and health workflows"
+  default_prompt: "Use $systems-manager-operations to inspect or change host state through typed, policy-gated GraphOS delegation and verify the result."

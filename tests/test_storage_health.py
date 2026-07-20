@@ -39,7 +39,9 @@ class _FakeManager:
     def __init__(self, host=None):
         self.host = host
 
-    def run_command(self, cmd, elevated=False, shell=False, timeout=None):
+    def run_command(
+        self, cmd, elevated=False, *, capture_output=False, timeout_seconds=None
+    ):
         s = " ".join(cmd)
         out = ""
         if s.startswith("lspci"):
@@ -69,7 +71,9 @@ def test_smart_disks_megaraid_passthrough():
     disks = storage_health.smart_disks(_FakeManager())
     assert len(disks) == 1
     d = disks[0]
-    assert d["serial"] == "140510TM85G3G800GS7S"
+    assert d["disk_ref"].startswith("disk:")
+    assert "serial" not in d
+    assert "device" not in d
     assert "HGST" in d["model"]
     assert d["health_passed"] is True
     assert d["power_on_hours"] == 27497
@@ -78,25 +82,25 @@ def test_smart_disks_megaraid_passthrough():
 
 
 def test_bmc_drive_faults_latest_state_wins():
-    # remote host -> uses the ipmitool shell fallback through the manager
-    faults = storage_health.bmc_drive_faults(_FakeManager(host="r820"))
+    # Local in-band read uses the typed manager seam without credentials.
+    faults = storage_health.bmc_drive_faults(_FakeManager())
     bays = {f["bay"] for f in faults}
     assert "0xa2" in bays  # last state Asserted
     assert "0xa0" not in bays  # last state Deasserted -> not a fault
 
 
 def test_report_correlates_clean_media_as_link_fault():
-    rep = storage_health.report(_FakeManager(host="r820"))
+    rep = storage_health.report(_FakeManager())
     assert rep["status"] == "fault"
     assert len(rep["faults"]) == 1
     f = rep["faults"][0]
     assert f["slot"] == 2
-    assert f["disk"] is not None and f["disk"]["serial"] == "140510TM85G3G800GS7S"
+    assert f["disk"] is not None and f["disk"]["disk_ref"].startswith("disk:")
     assert "link/aging" in f["classification"]
 
 
 def test_drive_health_summary_warnings():
-    summary = storage_health.drive_health_summary(_FakeManager(host="r820"))
+    summary = storage_health.drive_health_summary(_FakeManager())
     assert summary["fault_count"] == 1
     assert any("0xa2" in w for w in summary["warnings"])
 
@@ -104,14 +108,32 @@ def test_drive_health_summary_warnings():
 def test_no_controllers_no_megaraid_probe():
     mgr = _FakeManager()
     # Override lspci to report no RAID controller -> only --scan-open probed (empty)
-    mgr.run_command = lambda cmd, elevated=False, shell=False, timeout=None: (
-        CommandResult(success=True, stdout="", stderr="")
+    mgr.run_command = (
+        lambda cmd, elevated=False, capture_output=False, timeout_seconds=None: (
+            CommandResult(success=True, stdout="", stderr="")
+        )
     )
     assert storage_health.smart_disks(mgr) == []
 
 
-def test_get_bmc_credentials_none_without_token(monkeypatch):
-    monkeypatch.setattr(bmc_credentials, "setting", lambda k, d=None: None)
+def test_get_bmc_credentials_requires_projected_secret(monkeypatch):
+    monkeypatch.setattr(bmc_credentials, "setting", lambda _k, d=None: None)
+    assert bmc_credentials.get_bmc_credentials() is None
+
+
+def test_get_bmc_credentials_validates_projected_document(monkeypatch):
+    material = (
+        '{"host":"bmc.example.invalid","user":"operator","password":"runtime value"}'
+    )
+    monkeypatch.setattr(bmc_credentials, "setting", lambda _k, d=None: material)
+    assert bmc_credentials.get_bmc_credentials() == {
+        "host": "bmc.example.invalid",
+        "user": "operator",
+        "password": "runtime value",
+    }
+
+    material = '{"host":"bmc.example.invalid","user":"operator","password":"value","extra":"rejected"}'
+    monkeypatch.setattr(bmc_credentials, "setting", lambda _k, d=None: material)
     assert bmc_credentials.get_bmc_credentials() is None
 
 
@@ -125,13 +147,18 @@ def test_probes_are_bounded_with_timeout():
     captured_timeouts: list[float | None] = []
 
     class _CapturingManager(_FakeManager):
-        def run_command(self, cmd, elevated=False, shell=False, timeout=None):
-            captured_timeouts.append(timeout)
+        def run_command(
+            self, cmd, elevated=False, *, capture_output=False, timeout_seconds=None
+        ):
+            captured_timeouts.append(timeout_seconds)
             return super().run_command(
-                cmd, elevated=elevated, shell=shell, timeout=timeout
+                cmd,
+                elevated=elevated,
+                capture_output=capture_output,
+                timeout_seconds=timeout_seconds,
             )
 
-    storage_health.bmc_drive_faults(_CapturingManager(host="r820"))
+    storage_health.bmc_drive_faults(_CapturingManager())
 
     assert captured_timeouts, "expected at least one run_command call"
     assert all(t == storage_health._PROBE_TIMEOUT_SECONDS for t in captured_timeouts)

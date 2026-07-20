@@ -1,126 +1,102 @@
-# systems-manager — Concept Overview
+# Systems Manager concept overview
 
-> **Category**: Infrastructure | **Ecosystem Role**: MCP Server + A2A Agent
-> Built on [`agent-utilities`](https://github.com/Knuckles-Team/agent-utilities) — the unified AGI Harness.
+**Ecosystem role:** a typed local-host operations provider for GraphOS and
+agent-utilities.
 
-## Description
+## Capability model
 
-Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server
+`systems-manager` selects one local platform implementation at runtime:
 
-## Enterprise Readiness
+- `AptManager` for Debian-family systems;
+- `DnfManager` for supported RPM-family systems;
+- `ZypperManager` for supported SUSE systems;
+- `PacmanManager` for Arch systems;
+- `WindowsManager` for Windows.
 
-All agents in the ecosystem inherit enterprise-grade infrastructure from `agent-utilities`:
+The default MCP session presents the small intent-verb surface and loads current
+action-routed domains on demand for system, service, process, network, disk, user,
+managed-file, scheduled-task, firewall, toolchain, physical-storage, and Agent OS
+operations. Raw command execution is not part of the current API.
 
-| Feature | Status | Source |
-|:--------|:-------|:-------|
-| **JWT/OIDC Authentication** | ✅ Built-in | `agent-utilities[auth]` — Authlib JWKS + API key middleware |
-| **OpenTelemetry Instrumentation** | ✅ Built-in | `agent-utilities[logfire]` — OTLP export, FastAPI auto-instrumentation |
-| **HashiCorp Vault Integration** | ✅ Built-in | `agent-utilities[vault]` — `secret://`, `env://`, `vault://` URI schemes |
-| **Audit Logging** | ✅ Built-in | Append-only compliance trail with 30+ action types (CONCEPT:AU-OS.governance.wasm-micro-agent-sandbox) |
-| **Token Usage Analytics** | ✅ Built-in | 4-bucket tracking with budget alerting (CONCEPT:AU-OS.governance.wasm-micro-agent-sandbox) |
-| **Prompt Injection Defense** | ✅ Built-in | 25+ pattern scanner + jailbreak taxonomy (CONCEPT:AU-OS.config.secrets-authentication) |
-| **Guardrail Engine** | ✅ Built-in | Input/output interception with block/redact/warn (CONCEPT:AU-OS.governance.reactive-multi-axis-budget) |
-| **Action Execution Pipeline** | ✅ Built-in | Token, cost, duration, and node transition limits Dry-run / commit / rollback phases (CONCEPT:AU-ORCH.adapter.kg-graph-materialization) |
-| **Resource Scheduling** | ✅ Built-in | Priority queuing + preemption limits (CONCEPT:AU-OS.state.cognitive-scheduler-preemption) |
-| **Session Concurrency** | ✅ Built-in | Enqueue/reject/interrupt/rollback (CONCEPT:AU-OS.governance.reactive-multi-axis-budget) |
+## Security boundary
 
-## Concept Registry
+Every privileged class is explicit:
 
-This project implements or inherits the following ecosystem concepts:
+- host mutations require `SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS=true` and
+  request-channel approval;
+- managed-file writes also require
+  `SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS=true`;
+- sensitive inventory requires `SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS=true`;
+- active probes require `SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES=true`.
 
-| Concept ID | Description | Source |
-|:-----------|:------------|:-------|
-| SM-OS.deployment.abstracted-os-provider | Abstracted OS Provider | `systems-manager` |
-| SYS-1.1 | Distributed Fleet Control Plane | `systems-manager` |
-| SM-OS.deployment.deep-introspection-telemetry | Deep Introspection Telemetry | `systems-manager` |
-| SM-OS.deployment.package-service-mutation | Package & Service Mutation | `systems-manager` |
-| ECO-4.1 | MCP & Universal Skills | `agent-utilities` (inherited) |
-| OS-5.0 | Agent OS Kernel | `agent-utilities` (inherited) |
-| OS-5.2 | Resource Scheduling | `agent-utilities` (inherited) |
+Commands use validated argv, trusted executable resolution, bounded output,
+bounded time, and process-tree termination. Files are confined below an explicit
+managed root. Firewall changes use `FirewallRuleSpec`; scheduled-command creation,
+persistent aliases, raw shell, and model-supplied credentials are unavailable.
 
-> 📖 **Full Breakdown**: See [Pillar 1: Agent OS Layer](pillars/1_agent_os_layer.md) for deep dives into `SYS-1.X`.
+Network MCP transports refuse to start without configured authentication, and
+non-loopback listeners require a direct or trusted-proxy TLS boundary. Non-loopback
+agent listeners require the explicit allow gate, TLS boundary configuration, and JWT
+authentication. Certificate trust comes from AgentConfig TLS profiles; private CA
+bundles are never embedded.
 
-> 📖 **Full Registry**: See [`agent-utilities/docs/overview.md`](https://github.com/Knuckles-Team/agent-utilities/blob/main/docs/overview.md) for the complete 5-Pillar concept index.
+## Fleet composition
 
-## Architecture
-
-The `systems-manager` acts as the physical execution layer (Agent OS Layer) driven by the core `agent-utilities` kernel.
-
-```mermaid
-flowchart TD
-    subgraph "Agent OS Kernel (agent-utilities)"
-        Orchestrator[Graph Orchestrator]
-        Auth[Permissions Kernel]
-    end
-
-    subgraph "Agent OS Layer (systems-manager)"
-        MCP[MCP Server]
-        OSProvider[Abstracted OS Provider]
-        Linux[Linux Backend]
-        Windows[Windows Backend]
-    end
-
-    Orchestrator -->|Tool Calls| MCP
-    Auth -->|Token Validation| MCP
-    MCP --> OSProvider
-    OSProvider --> Linux
-    OSProvider --> Windows
-```
-
-### Dynamic OS Provider Subclass Selection
-
-The `systems-manager` dynamically detects the running operating system at runtime and instantiates the corresponding specialized subclass. While standard operations are composed and routed through common sub-manager components (like file systems, python packages, or node switchers), OS-specific mutations like application updates, service management, and platform packages are isolated in clean platform subclasses:
+Host operations run where the process runs. GraphOS can delegate to an
+authenticated systems-manager instance on each target or compose tunnel-manager's
+host-key-verified SSH capabilities. The package does not embed inventory profiles,
+connection endpoints, identities, or workstation paths.
 
 ```mermaid
-graph TD
-    A[detect_and_create_manager] -->|platform.system & distro.id| B{OS Subclass Selection}
-    B -->|Ubuntu / Debian| C[AptManager]
-    B -->|RHEL / CentOS| D[YumManager]
-    B -->|Arch Linux| E[PacmanManager]
-    B -->|macOS / Darwin| F[BrewManager]
-    B -->|Windows / NT| G[WindowsManager]
-
-    C & D & E & F & G -->|Inherit| H[SystemsManagerBase]
-
-    H -->|Composition| I[FileSystemManager]
-    H -->|Composition| J[ShellProfileManager]
-    H -->|Composition| K[PythonManager]
-    H -->|Composition| L[NodeManager]
+flowchart LR
+    Caller[Authenticated caller] --> GraphOS[GraphOS delegation]
+    GraphOS --> MCP[Systems Manager MCP]
+    MCP --> Policy[Policy and approval gates]
+    Policy --> Manager[Typed local platform manager]
+    Manager --> Host[Local host boundary]
+    GraphOS --> Tunnel[Governed tunnel-manager capability]
 ```
 
-This project follows the standardized agent-package pattern:
+## Knowledge-graph integration
 
-```text
-systems-manager/
-├── systems_manager/        # Source code
-│   ├── __init__.py
-│   ├── agent_server.py      # Entry point (create_graph_agent_server)
-│   ├── api_client.py        # REST/GraphQL API wrapper
-│   └── mcp_server.py        # FastMCP tool definitions
-├── tests/                   # Test suite
-├── docs/                    # Documentation
-├── pyproject.toml           # Package metadata
-├── mcp_config.json          # MCP server configuration
-├── main_agent.json          # Agent identity & system prompt
-└── Dockerfile               # Container deployment
-```
+`systems_ingest_host` collects the local typed telemetry surface and hands an
+allowlisted report to the native governed knowledge-graph ingestion seam. The provider
+ships a human-authored ontology, mapping, and source preset; deployment authority,
+tenant, ACL, provenance, retention, classification, and any release certification
+remain external. Missing authority or engine availability is an explicit failure, not
+a best-effort no-op. Raw hostnames, addresses, paths, and identities are excluded, and
+stable node references require a deployment-owned pseudonymization key.
 
-## MCP Configuration
+## Configuration
 
-### stdio Mode
+Use AgentConfig and the package's reference-only MCP catalog. Endpoints, credential
+references, model settings, managed roots, inventory, and TLS-profile catalogs are
+deployment inputs.
+Run the ecosystem doctor before enabling optional storage, observability, Agent OS,
+or ingestion capabilities.
+
+A minimal local stdio entry is:
+
 ```json
 {
   "mcpServers": {
     "systems-manager": {
-      "command": "uv",
-      "args": ["run", "--with", "systems-manager", "systems-mcp"],
-      "env": {}
+      "command": "systems-manager-mcp",
+      "args": ["--transport", "stdio"],
+      "env": {
+        "SYSTEMS_MANAGER_FILESYSTEM_ROOT": "env://SYSTEMS_MANAGER_FILESYSTEM_ROOT",
+        "SYSTEMS_MANAGER_PSEUDONYMIZATION_KEY": "env://SYSTEMS_MANAGER_PSEUDONYMIZATION_KEY",
+        "TLS_PROFILE": "env://TLS_PROFILE",
+        "TLS_PROFILES_REF": "env://TLS_PROFILES_REF",
+        "SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS": "false",
+        "SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS": "false",
+        "SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS": "false",
+        "SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES": "false"
+      }
     }
   }
 }
 ```
 
-### Streamable HTTP Mode
-```bash
-systems-mcp --transport streamable-http --port 8001
-```
+See [Configuration](configuration.md), [Usage](usage.md), and
+[Host lifecycle coverage](host-lifecycle-coverage.md) for the operator contract.

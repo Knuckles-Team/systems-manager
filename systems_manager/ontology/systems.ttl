@@ -1,29 +1,24 @@
-@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-@prefix foaf: <http://xmlns.com/foaf/0.1/> .
-@prefix dc: <http://purl.org/dc/terms/> .
 @prefix : <http://knuckles.team/kg#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-# Systems Manager infrastructure ontology — physical/virtual hosts and the OS-level
-# resources on them (network interfaces, disk volumes, services, packages). All classes
-# and properties live in the shared `:` (kg#) namespace; only the owl:Ontology node gets
-# the per-package IRI. Backs the systems-manager MCP tool surface (sm_system_operations /
-# sm_network_operations / sm_disk_operations / sm_service_operations / …) and its native
-# host-telemetry ingestion (systems_ingest_host).
+# Systems Manager infrastructure ontology — managed compute boundaries and their
+# OS-level resources. The native ingestion path stores opaque references and operational
+# attributes; it intentionally excludes hostnames, addresses, hardware addresses,
+# filesystem paths, user identity, and credential material.
 
 :HardwareNode a owl:Class ;
     rdfs:label "Hardware Node" ;
-    rdfs:comment "A managed physical or virtual host — a machine in the fleet inventory (or the local host) that systems-manager operates over its manager seam." .
+    rdfs:comment "A managed physical or virtual compute boundary identified by an opaque deployment reference." .
 
 :NetworkInterface a owl:Class ;
     rdfs:label "Network Interface" ;
-    rdfs:comment "A network interface (NIC) on a HardwareNode, with its addresses and link state (sm_network_operations list_network_interfaces)." .
+    rdfs:comment "A network interface on a HardwareNode, represented without an address, hardware address, or local interface name." .
 
 :DiskVolume a owl:Class ;
     rdfs:label "Disk Volume" ;
-    rdfs:comment "A disk partition / mounted volume on a HardwareNode with capacity and usage (sm_disk_operations list_disks)." .
+    rdfs:comment "A disk volume on a HardwareNode represented without a device name, serial number, or filesystem path." .
 
 :SystemService a owl:Class ;
     rdfs:label "System Service" ;
@@ -59,17 +54,11 @@
     rdfs:domain :HardwareNode ;
     rdfs:range :SoftwarePackage .
 
-:managedBy a owl:ObjectProperty ;
-    rdfs:label "managed by" ;
-    rdfs:comment "Links a HardwareNode to the Person responsible for it." ;
-    rdfs:domain :HardwareNode ;
-    rdfs:range :Person .
-
 # --- fields (owl:DatatypeProperty) ---
 
-:hostname a owl:DatatypeProperty ;
-    rdfs:label "hostname" ;
-    rdfs:comment "Resolvable hostname or inventory alias of a HardwareNode." ;
+:externalToolId a owl:DatatypeProperty ;
+    rdfs:label "opaque source reference" ;
+    rdfs:comment "A stable, one-way reference derived within the connector's namespace; never a raw local identifier." ;
     rdfs:range xsd:string .
 
 :osVersion a owl:DatatypeProperty ;
@@ -82,6 +71,12 @@
     rdfs:comment "CPU architecture of a HardwareNode (e.g. x86_64, aarch64)." ;
     rdfs:range xsd:string .
 
+:processor a owl:DatatypeProperty ;
+    rdfs:label "processor family" ;
+    rdfs:comment "A non-unique processor architecture or family description." ;
+    rdfs:domain :HardwareNode ;
+    rdfs:range xsd:string .
+
 :cpuCount a owl:DatatypeProperty ;
     rdfs:label "cpu count" ;
     rdfs:comment "Number of logical CPUs on a HardwareNode (from get_hardware_statistics)." ;
@@ -91,18 +86,6 @@
     rdfs:label "memory total" ;
     rdfs:comment "Total physical memory in bytes on a HardwareNode." ;
     rdfs:range xsd:integer .
-
-:ipAddress a owl:DatatypeProperty ;
-    rdfs:label "ip address" ;
-    rdfs:comment "An IP address bound to a NetworkInterface." ;
-    rdfs:domain :NetworkInterface ;
-    rdfs:range xsd:string .
-
-:macAddress a owl:DatatypeProperty ;
-    rdfs:label "mac address" ;
-    rdfs:comment "Hardware (MAC) address of a NetworkInterface." ;
-    rdfs:domain :NetworkInterface ;
-    rdfs:range xsd:string .
 
 :linkSpeed a owl:DatatypeProperty ;
     rdfs:label "link speed" ;
@@ -116,11 +99,17 @@
     rdfs:domain :NetworkInterface ;
     rdfs:range xsd:boolean .
 
-:mountpoint a owl:DatatypeProperty ;
-    rdfs:label "mountpoint" ;
-    rdfs:comment "Filesystem mountpoint of a DiskVolume." ;
-    rdfs:domain :DiskVolume ;
-    rdfs:range xsd:string .
+:mtu a owl:DatatypeProperty ;
+    rdfs:label "maximum transmission unit" ;
+    rdfs:comment "Maximum transmission unit reported for a NetworkInterface." ;
+    rdfs:domain :NetworkInterface ;
+    rdfs:range xsd:integer .
+
+:addressFamilyCount a owl:DatatypeProperty ;
+    rdfs:label "address family count" ;
+    rdfs:comment "Number of address families observed without retaining the addresses themselves." ;
+    rdfs:domain :NetworkInterface ;
+    rdfs:range xsd:integer .
 
 :fstype a owl:DatatypeProperty ;
     rdfs:label "filesystem type" ;
@@ -131,6 +120,18 @@
 :capacityBytes a owl:DatatypeProperty ;
     rdfs:label "capacity bytes" ;
     rdfs:comment "Total capacity of a DiskVolume in bytes." ;
+    rdfs:domain :DiskVolume ;
+    rdfs:range xsd:integer .
+
+:usedBytes a owl:DatatypeProperty ;
+    rdfs:label "used bytes" ;
+    rdfs:comment "Used capacity of a DiskVolume in bytes." ;
+    rdfs:domain :DiskVolume ;
+    rdfs:range xsd:integer .
+
+:freeBytes a owl:DatatypeProperty ;
+    rdfs:label "free bytes" ;
+    rdfs:comment "Available capacity of a DiskVolume in bytes." ;
     rdfs:domain :DiskVolume ;
     rdfs:range xsd:integer .
 
@@ -146,10 +147,15 @@
     rdfs:domain :SystemService ;
     rdfs:range xsd:string .
 
+:serviceDescription a owl:DatatypeProperty ;
+    rdfs:label "service description" ;
+    rdfs:comment "A non-secret operating-system description of a SystemService." ;
+    rdfs:domain :SystemService ;
+    rdfs:range xsd:string .
+
 <http://knuckles.team/kg/systems> a owl:Ontology ;
     rdfs:label "Systems Manager Ontology" ;
-    rdfs:comment """Systems Manager infrastructure model — managed hardware nodes and the
-    OS-level resources on them (network interfaces, disk volumes, services and packages),
-    with their containment relationships — federated into the agent-utilities
-    knowledge-graph hub.""" ;
+    rdfs:comment """Systems Manager infrastructure model — managed compute boundaries and
+    their OS-level resources, represented with opaque source references and operational
+    attributes through the governed knowledge-graph boundary.""" ;
     owl:imports <http://knuckles.team/kg> .

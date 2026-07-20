@@ -8,21 +8,20 @@ version = "1.36.0"
 description = "Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server"
 readme = "README.md"
 classifiers = [ "Development Status :: 5 - Production/Stable", "License :: Public Domain", "Environment :: Console", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3",]
-requires-python = ">=3.11, <3.15"
-dependencies = [ "agent-utilities>=1.0.0", "psutil>=7.0.0", "distro>=1.9.0",]
+requires-python = ">=3.11,<3.15"
+dependencies = [ "agent-utilities>=1.27.1,<2.0.0", "pydantic>=2.12.0,<3.0.0", "psutil>=7.0.0", "distro>=1.9.0",]
 [[project.authors]]
-name = "Audel Rouhi"
-email = "knucklessg1@gmail.com"
+name = "Project Maintainers"
+email = "maintainers@users.noreply.github.com"
 
 [project.license]
 text = "MIT"
 
 [project.optional-dependencies]
-mcp = [ "agent-utilities[mcp]>=1.0.0",]
-agent = [ "agent-utilities[agent,logfire]>=1.0.0",]
-all = [ "agent-utilities[mcp,agent,logfire]>=1.0.0",]
-test = [
-    "pytest-xdist>=3.6.0", "pytest", "pytest-asyncio", "pytest-cov",]
+mcp = [ "agent-utilities[mcp]>=1.27.1,<2.0.0",]
+agent = [ "agent-utilities[agent-runtime,logfire]>=1.27.1,<2.0.0",]
+all = [ "agent-utilities[mcp,agent-runtime,logfire]>=1.27.1,<2.0.0",]
+test = [ "pytest", "pytest-asyncio",]
 
 [project.scripts]
 systems-manager = "systems_manager.systems_manager:main"
@@ -52,15 +51,18 @@ ignore-words-list = "fo"
 
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py311"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 ignore_missing_imports = true
 check_untyped_defs = true
 
 [tool.setuptools.package-data]
-systems_manager = [ "mcp_config.json", "agent_data/**", "prompts/**", "skills/**", "ontology/**", "connectors/**",]
+systems_manager = [ "agent_data/**", "prompts/**", "skills/**", "ontology/**", "connectors/**",]
+
+[tool.setuptools.exclude-package-data]
+systems_manager = [ "agent_data/*.db", "agent_data/*.sqlite*", "agent_data/chats", "agent_data/CRON_LOG.md", "agent_data/MEMORY.md", "agent_data/USER.md",]
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "UP", "B",]

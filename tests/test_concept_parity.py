@@ -72,11 +72,6 @@ def test_concept_parity():
         c for c in local_codebase_concepts if c.startswith(agent_utilities_pillars)
     }
 
-    # Ignore legacy KG-00x concepts
-    local_codebase_concepts = {
-        c for c in local_codebase_concepts if not c.startswith("KG-00")
-    }
-
     # Ensure every concept used locally is registered in the master overview.md
     unregistered_concepts = local_codebase_concepts - master_concepts
 

@@ -1,38 +1,26 @@
 {
   "mcpServers": {
     "systems-manager": {
-      "command": "uv",
+      "command": "uvx",
       "args": [
-        "run",
+        "--from",
+        "systems-manager[mcp]",
         "systems-manager-mcp"
       ],
       "env": {
-        "MCP_TOOL_MODE": "condensed",
-        "AGENT_HEALTHTOOL": "True",
-        "AGENT_POLICIES_PATH": "",
-        "ALLOW_UPDATE_ON_K8S": "",
-        "IDENTITYTOOL": "True",
-        "MAINTENANCETOOL": "True",
-        "MAINTENANCE_PRIORITY": "",
-        "MAINTENANCE_TOKEN_BUDGET": "",
-        "MAX_CONCURRENT_AGENTS": "",
-        "MCP_CONFIG_PATH": "",
-        "MISCTOOL": "True",
-        "OPENBAO_TOKEN": "",
-        "OPENBAO_URL": "http://openbao.arpa",
-        "OS_PROVIDERTOOL": "True",
-        "PERMISSIONS_SIGNING_KEY": "",
-        "POLICYTOOL": "True",
-        "PROJECT_ROOT": "",
-        "SPECIALIST_REGISTRYTOOL": "True",
-        "SPECIALIST_REGISTRY_PATH": "",
-        "STORAGE_HEALTHTOOL": "True",
-        "SYSTEMS_MANAGER_HEALTH_AGGREGATE_S": "3600",
-        "SYSTEMS_MANAGER_HEALTH_INGEST": "true",
-        "SYSTEMS_MANAGER_HOST": "",
-        "SYSTEMS_MANAGER_HOSTS": "r510,r710,r820,rw710",
-        "SYSTEMS_MANAGER_NOTIFY_URL": "",
-        "WATCHDOGTOOL": "True"
+        "MCP_TOOL_MODE": "intent",
+        "SYSTEMS_MANAGER_FILESYSTEM_ROOT": "env://SYSTEMS_MANAGER_FILESYSTEM_ROOT",
+        "SYSTEMS_MANAGER_PSEUDONYMIZATION_KEY": "env://SYSTEMS_MANAGER_PSEUDONYMIZATION_KEY",
+        "SYSTEMS_MANAGER_BMC_CREDENTIALS": "env://SYSTEMS_MANAGER_BMC_CREDENTIALS",
+        "PERMISSIONS_SIGNING_KEY": "env://PERMISSIONS_SIGNING_KEY",
+        "TLS_PROFILE": "env://TLS_PROFILE",
+        "TLS_PROFILES_REF": "env://TLS_PROFILES_REF",
+        "LANGFUSE_TLS_PROFILE_REF": "env://LANGFUSE_TLS_PROFILE_REF",
+        "LANGFUSE_CAPTURE_CONTENT": "false",
+        "SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS": "false",
+        "SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS": "false",
+        "SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS": "false",
+        "SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES": "false"
       }
     }
   }

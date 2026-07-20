@@ -1,0 +1,6 @@
+{
+  "connector": "systems-manager",
+  "current_ontology_source": "systems",
+  "migrations": [],
+  "schema_version": "1"
+}

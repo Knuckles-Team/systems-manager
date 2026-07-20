@@ -6,9 +6,9 @@ management. The full ecosystem role and concept map are in [Overview](overview.m
 
 ## As an MCP server
 
-Once [deployed](deployment.md), the server registers consolidated, action-routed tool
-modules. Each module dispatches on an `action` argument, which keeps the LLM tool
-surface small while covering a broad operation set.
+Once [deployed](deployment.md), the server defaults to the compact intent surface and
+keeps consolidated action-routed modules as the governed backing capabilities. Load
+only the domain needed for the current request, then discover its exact action schema.
 
 | Tool | Operations |
 |---|---|
@@ -21,6 +21,11 @@ surface small while covering a broad operation set.
 | `sm_file_operations` | file and log management |
 | `sm_cron_operations` | manage cron jobs |
 | `sm_firewall_operations` | firewall management |
+| `sm_storage_health` | SMART, RAID, and optional BMC drive-fault diagnostics |
+| `systems_ingest_host` | privacy-safe governed host graph ingestion |
+
+Agent identity, specialist registry, scheduler, and watchdog
+domains are also registered when their current provider toggles are enabled.
 
 Example agent prompts that map onto these tools:
 
@@ -29,8 +34,9 @@ Example agent prompts that map onto these tools:
 - *"Which processes are using the most memory?"* → `sm_process_operations`
 
 Tool modules are individually togglable with environment switches (for example,
-`MISCTOOL`) and can be filtered at runtime with `--tools` / `--toolsets` or the
-`MCP_ENABLED_TOOLS` / `MCP_DISABLED_TOOLS` variables.
+`MISCTOOL`) and can be filtered through the current Agent Utilities visibility
+configuration. A denied or unavailable capability must not be translated into a raw
+command or generic file mutation.
 
 ## As a Python API
 
@@ -49,16 +55,9 @@ hw_stats = manager.get_hardware_statistics()   # hardware inventory
 logs = manager.get_system_logs(lines=100)      # recent journal / system logs
 ```
 
-Target a remote host from the inventory (over plain SSH, no remote daemon):
-
-```python
-# Reads SYSTEMS_MANAGER_HOST or an explicit host from the XDG inventory
-manager = detect_and_create_manager(host="node-02")
-remote_os_stats = manager.get_os_statistics()
-```
-
-See [Multi-Host](multi_host.md) for the zero-script remote telemetry and control
-plane.
+For fleet operations, delegate to an authenticated instance on the target host or
+compose the governed tunnel-manager capability through GraphOS. See
+[Multi-Host](multi_host.md).
 
 ## As a CLI
 
@@ -80,11 +79,6 @@ systems-manager --os-stats
 systems-manager --hw-stats
 ```
 
-Bootstrap the secure, least-privilege `sudo` wrapper (see
-[Sudo Security](sudo_security.md)):
-
-```bash
-systems-manager --setup-sudo
-```
-
-Run `systems-manager --help` for the complete flag list.
+The optional helper must be provisioned by the deployment boundary; the CLI does not
+write sudoers policy. See [Sudo Security](sudo_security.md). Run
+`systems-manager --help` for the complete flag list.

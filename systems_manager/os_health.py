@@ -14,11 +14,8 @@ existing systems-manager telemetry code (``psutil`` the same way
 ``CommandRunner`` seam mirroring ``fan_manager.fan_manager.CommandRunner`` for the
 two shell-outs (``apt``, ``journalctl``) so both are injectable/testable.
 
-**Guarded import:** systems-manager installs ``agent-utilities`` from PyPI, which
-may predate the shared ``agent_utilities.observability.health*`` modules (another
-session publishes them separately). Every entry point below degrades to a clean
-no-op when the shared kernels are absent — this package never crashes for it,
-mirroring ``fan_manager.kg_control``'s ``_HAS_SHARED_HEALTH`` guard exactly.
+The shared ``agent_utilities.observability.health*`` kernels are the required runtime
+contract and the only statistics implementation.
 
 **Report-only by design.** This producer only observes and writes typed KG nodes;
 it never mutates a host (no remediation, no config changes) — see the plan's
@@ -34,34 +31,29 @@ import shutil
 import socket
 import subprocess
 import time
-import urllib.request
 from typing import Any, Protocol, runtime_checkable
+from urllib.parse import urlsplit
 
 import psutil
+from agent_utilities.core.config import setting
+from agent_utilities.core.http_client import create_http_client
+from agent_utilities.core.transport_security import resolve_configured_tls_profile
+from agent_utilities.observability.health import (
+    HealthTrendBuffer,
+    compute_baseline,
+    correlate,
+    detect_anomaly,
+)
+from agent_utilities.observability.health_ingest import (
+    ingest_health_anomaly,
+    ingest_health_baseline,
+    ingest_health_trend,
+    read_health_trends,
+)
+
+from systems_manager.kg_ingest import _opaque_ref
 
 logger = logging.getLogger("systems_manager.os_health")
-
-try:
-    from agent_utilities.observability.health import (
-        HealthTrendBuffer,
-        compute_baseline,
-        correlate,
-        detect_anomaly,
-    )
-    from agent_utilities.observability.health_ingest import (
-        ingest_health_anomaly,
-        ingest_health_baseline,
-        ingest_health_trend,
-        read_health_trends,
-    )
-
-    _HAS_SHARED_HEALTH = True
-except Exception as _e:  # noqa: BLE001 — older/absent agent-utilities: no-op producer
-    logger.debug(
-        "shared health kernels unavailable, OS-health producer degrades to no-op: %s",
-        _e,
-    )
-    _HAS_SHARED_HEALTH = False
 
 # The named OS signals this producer samples (CONCEPT:SM-OS.observability.os-health-producer).
 OS_SIGNALS: tuple[str, ...] = (
@@ -119,9 +111,12 @@ class SubprocessCommandRunner:
 _DEFAULT_RUNNER: CommandRunner = SubprocessCommandRunner()
 
 
-def _host_slug(host: str | None) -> str:
-    """Normalize a host label to a stable node-id slug (mirrors ``kg_ingest``)."""
-    return (host or socket.gethostname() or "localhost").strip() or "localhost"
+def _host_ref(value: str | None) -> str:
+    """Create a stable opaque node reference without persisting a hostname."""
+    configured = setting("SYSTEMS_MANAGER_NODE_REF")
+    raw = value or (configured if isinstance(configured, str) else None)
+    raw = raw or socket.gethostname() or "local"
+    return _opaque_ref("host", raw)
 
 
 # --------------------------------------------------------------------------- #
@@ -140,7 +135,12 @@ def _worst_disk_pct() -> float | None:
     for part in partitions:
         try:
             usage = psutil.disk_usage(part.mountpoint)
-        except Exception:  # noqa: BLE001 — an unreadable mount just doesn't vote
+        except Exception as exc:  # noqa: BLE001 — best-effort mount sampling
+            logger.debug(
+                "disk_pct: mount sample failed for %s: %s",
+                part.mountpoint,
+                type(exc).__name__,
+            )
             continue
         if worst is None or usage.percent > worst:
             worst = float(usage.percent)
@@ -256,22 +256,21 @@ def collect_os_signals(
 _BUFFERS: dict[tuple[str, str], Any] = {}
 
 
-def _buffer_for(host_slug: str, signal: str) -> Any | None:
-    """Return the ``(host, signal)``'s rolling :class:`HealthTrendBuffer`, or
-    ``None`` when the shared kernel is unavailable."""
-    if not _HAS_SHARED_HEALTH:
-        return None
-    key = (host_slug, signal)
+def _buffer_for(node_ref: str, signal: str) -> Any:
+    """Return the node/signal rolling :class:`HealthTrendBuffer`."""
+    key = (node_ref, signal)
     buf = _BUFFERS.get(key)
     if buf is None:
-        window_s = int(os.getenv("SYSTEMS_MANAGER_HEALTH_AGGREGATE_S", "3600"))
+        window_s = int(setting("SYSTEMS_MANAGER_HEALTH_AGGREGATE_S", 3600))
         buf = HealthTrendBuffer(window_s=window_s)
         _BUFFERS[key] = buf
     return buf
 
 
 def _health_ingest_enabled() -> bool:
-    return os.getenv("SYSTEMS_MANAGER_HEALTH_INGEST", "true").strip().lower() not in {
+    return str(
+        setting("SYSTEMS_MANAGER_HEALTH_INGEST", "true")
+    ).strip().lower() not in {
         "0",
         "false",
         "no",
@@ -279,36 +278,30 @@ def _health_ingest_enabled() -> bool:
 
 
 def sample_and_ingest(
-    host: str | None = None, *, runner: CommandRunner | None = None
+    node_ref: str | None = None, *, runner: CommandRunner | None = None
 ) -> dict[str, Any]:
     """One collection pass: collect → feed the per-signal trend buffers → ingest
     any flushed trends (CONCEPT:SM-OS.observability.os-health-producer).
 
     Idempotent and best-effort: a disabled toggle
-    (``SYSTEMS_MANAGER_HEALTH_INGEST=false``) or an absent shared-health kernel
-    both degrade to collecting signals without writing to the KG — never raises.
+    (``SYSTEMS_MANAGER_HEALTH_INGEST=false``) collects signals without writing.
     Bounded by design: a ``:HealthTrend`` node is written only when a buffer's
     aggregate window elapses, never per sample.
     """
-    host_slug = _host_slug(host)
-    signals = collect_os_signals(host_slug, runner=runner)
+    opaque_ref = _host_ref(node_ref)
+    signals = collect_os_signals(opaque_ref, runner=runner)
     if not _health_ingest_enabled():
-        return {"host": host_slug, "signals": signals, "ingested": False, "flushed": []}
-    if not _HAS_SHARED_HEALTH:
         return {
-            "host": host_slug,
+            "node_ref": opaque_ref,
             "signals": signals,
             "ingested": False,
             "flushed": [],
-            "reason": "shared health kernels unavailable",
         }
 
-    entity_id = f"systems:host:{host_slug}"
+    entity_id = f"systems:host:{opaque_ref}"
     flushed: list[dict[str, Any]] = []
     for signal, value in signals.items():
-        buf = _buffer_for(host_slug, signal)
-        if buf is None:
-            continue
+        buf = _buffer_for(opaque_ref, signal)
         trend = buf.add(value)
         if trend is None:
             continue
@@ -318,49 +311,85 @@ def sample_and_ingest(
             layer="os",
             signal=signal,
             trend=trend,
-            host=host_slug,
+            host=opaque_ref,
         )
         flushed.append({"signal": signal, "trend": trend, "ingested": bool(result)})
         logger.info(
             "OS-health trend[%s]: %s avg=%s min=%s max=%s over %d samples",
-            host_slug,
+            opaque_ref,
             signal,
             trend.get("avg"),
             trend.get("min"),
             trend.get("max"),
             trend.get("samples") or 0,
         )
-    return {"host": host_slug, "signals": signals, "ingested": True, "flushed": flushed}
+    return {
+        "node_ref": opaque_ref,
+        "signals": signals,
+        "ingested": True,
+        "flushed": flushed,
+    }
 
 
 # --------------------------------------------------------------------------- #
-# orchestration — one report-only derivation pass over the fleet               #
+# orchestration — one report-only derivation pass over opaque graph nodes      #
 # --------------------------------------------------------------------------- #
-def _hosts_from_env() -> list[str]:
-    raw = os.getenv("SYSTEMS_MANAGER_HOSTS", "").strip()
-    return [h.strip() for h in raw.split(",") if h.strip()]
+def _node_refs_from_config() -> list[str]:
+    raw = setting("SYSTEMS_MANAGER_NODE_REFS")
+    if not isinstance(raw, str):
+        return []
+    return [value.strip() for value in raw.split(",") if value.strip()]
+
+
+def _validated_notify_url(value: str) -> str:
+    parsed = urlsplit(value)
+    loopback = parsed.hostname in {"127.0.0.1", "::1", "localhost"}
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+        or (parsed.scheme != "https" and not loopback)
+    ):
+        raise ValueError(
+            "Notification URL must be credential-free HTTPS or loopback HTTP"
+        )
+    return value
 
 
 def _notify(message: str) -> None:
     """Best-effort push to the intelligent alert router
     (``SYSTEMS_MANAGER_NOTIFY_URL``), mirroring ``fan_manager.kg_control._notify``."""
-    url = os.getenv("SYSTEMS_MANAGER_NOTIFY_URL")
+    raw_url = setting("SYSTEMS_MANAGER_NOTIFY_URL")
     logger.info(message)
-    if not url:
+    if not isinstance(raw_url, str) or not raw_url:
         return
+    tls_profile = None
     try:
-        req = urllib.request.Request(
-            url,
-            data=json.dumps({"source": "systems-manager-health", "message": message}).encode(),
-            headers={"Content-Type": "application/json"},
-        )
-        urllib.request.urlopen(req, timeout=5)  # noqa: S310  # nosec B310 — operator-configured URL
-    except Exception as e:  # noqa: BLE001 — notification is best-effort
-        logger.debug("notify skipped: %s", e)
+        url = _validated_notify_url(raw_url)
+        tls_profile = resolve_configured_tls_profile("systems-manager-notify")
+        with create_http_client(
+            timeout=5,
+            **tls_profile.httpx_kwargs(),
+        ) as client:
+            response = client.post(
+                url,
+                json={"source": "systems-manager-health", "message": message},
+            )
+            response.raise_for_status()
+    except Exception:  # noqa: BLE001 — notification is best-effort
+        logger.debug("Configured notification delivery failed")
+    finally:
+        if tls_profile is not None:
+            tls_profile.cleanup()
 
 
-def run_os_derivation(hosts: list[str] | None = None, *, days: int = 14) -> dict[str, Any]:
-    """One learn→flag pass over ``hosts`` (default: ``SYSTEMS_MANAGER_HOSTS``).
+def run_os_derivation(
+    node_refs: list[str] | None = None, *, days: int = 14
+) -> dict[str, Any]:
+    """One learn→flag pass over configured opaque node references.
 
     For each host×signal: reads recent ``:HealthTrend`` history, learns a
     ``:HealthBaseline``, and checks the recent tail for a ``:HealthAnomaly`` off
@@ -368,65 +397,70 @@ def run_os_derivation(hosts: list[str] | None = None, *, days: int = 14) -> dict
     signal are collapsed into one ``systemic`` OS-level cause (e.g. every host's
     disk filling together points at a shared root cause, not N independent
     faults). **Report-only** — no remediation, no host mutation; only writes
-    typed KG nodes and a best-effort notification. All KG I/O is best-effort: with
-    no reachable engine every host degrades to "no data". With no shared health
-    kernel this is a clean no-op.
+    typed KG nodes and a best-effort notification. Raw hostnames and inventory
+    aliases are one-way transformed before graph reads, writes, logs, or responses.
     """
-    if not _HAS_SHARED_HEALTH:
-        logger.info("OS-health derivation skipped: shared health kernels unavailable")
-        return {"hosts": 0, "results": {}}
-
-    hosts = hosts or _hosts_from_env() or [socket.gethostname()]
-    results: dict[str, dict[str, Any]] = {host: {} for host in hosts}
+    source_refs = node_refs or _node_refs_from_config() or [None]
+    opaque_refs = [_host_ref(value) for value in source_refs]
+    results: dict[str, dict[str, Any]] = {node_ref: {} for node_ref in opaque_refs}
     anomalies_by_signal: dict[str, dict[str, dict[str, Any] | None]] = {
         signal: {} for signal in OS_SIGNALS
     }
 
-    for host in hosts:
-        entity_id = f"systems:host:{host}"
+    for node_ref in opaque_refs:
+        entity_id = f"systems:host:{node_ref}"
         for signal in OS_SIGNALS:
             trends = read_health_trends(entity_id, signal, days=days) or []
             baseline = compute_baseline(trends, value_key="avg", peak_key="max")
             anomaly = detect_anomaly(trends[-3:], baseline, value_key="avg")
-            anomalies_by_signal[signal][host] = anomaly
-            results[host][signal] = {
+            anomalies_by_signal[signal][node_ref] = anomaly
+            results[node_ref][signal] = {
                 "trends": len(trends),
                 "baseline": baseline,
                 "anomaly": anomaly,
             }
 
-    for signal, anomalies in anomalies_by_signal.items():
-        correlate(anomalies, len(hosts), kind="above-baseline", systemic_kind="systemic")
+    for _signal, anomalies in anomalies_by_signal.items():
+        correlate(
+            anomalies,
+            len(opaque_refs),
+            kind="above-baseline",
+            systemic_kind="systemic",
+        )
 
-    for host in hosts:
-        entity_id = f"systems:host:{host}"
+    for node_ref in opaque_refs:
+        entity_id = f"systems:host:{node_ref}"
         seen_signals = 0
         for signal in OS_SIGNALS:
-            data = results[host][signal]
+            data = results[node_ref][signal]
             baseline = data["baseline"]
             if baseline:
                 ingest_health_baseline(entity_id, signal, baseline, entity_type="Host")
-            anomaly = anomalies_by_signal[signal][host]
+            anomaly = anomalies_by_signal[signal][node_ref]
             data["anomaly"] = anomaly
             if data["trends"]:
                 seen_signals += 1
             if anomaly:
                 ingest_health_anomaly(entity_id, signal, anomaly, entity_type="Host")
                 _notify(
-                    f"[systems-manager-health] {host}: {signal} {anomaly['kind']} — "
+                    f"[systems-manager-health] {node_ref}: {signal} {anomaly['kind']} — "
                     f"observed={anomaly['observed']} expected={anomaly['expected']} "
                     f"(z={anomaly['zscore']})"
                 )
         logger.info(
             "%s: %d/%d signals with history, %d anomal%s",
-            host,
+            node_ref,
             seen_signals,
             len(OS_SIGNALS),
-            sum(1 for s in OS_SIGNALS if anomalies_by_signal[s][host]),
-            "y" if sum(1 for s in OS_SIGNALS if anomalies_by_signal[s][host]) == 1 else "ies",
+            sum(1 for s in OS_SIGNALS if anomalies_by_signal[s][node_ref]),
+            (
+                "y"
+                if sum(1 for s in OS_SIGNALS if anomalies_by_signal[s][node_ref]) == 1
+                else "ies"
+            ),
         )
 
-    return {"hosts": len(hosts), "results": results}
+    return {"nodes": len(opaque_refs), "results": results}
 
 
 # --------------------------------------------------------------------------- #
@@ -450,16 +484,22 @@ def main_derive() -> None:
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    p = argparse.ArgumentParser(description="systems-manager OS-health derivation pass.")
+    p = argparse.ArgumentParser(
+        description="systems-manager OS-health derivation pass."
+    )
     p.add_argument(
         "--days", type=int, default=14, help="trend lookback window (default 14)"
     )
     p.add_argument(
-        "--hosts", default="", help="comma-separated hosts (default $SYSTEMS_MANAGER_HOSTS)"
+        "--node-refs",
+        default="",
+        help="comma-separated deployment node references",
     )
     args = p.parse_args()
-    hosts = [h.strip() for h in args.hosts.split(",") if h.strip()] or None
-    summary = run_os_derivation(hosts, days=args.days)
+    node_refs = [
+        value.strip() for value in args.node_refs.split(",") if value.strip()
+    ] or None
+    summary = run_os_derivation(node_refs, days=args.days)
     print(json.dumps(summary, default=str, indent=2))
 
 
@@ -471,10 +511,14 @@ def main() -> None:
     p = argparse.ArgumentParser(description="systems-manager OS-health producer.")
     sub = p.add_subparsers(dest="command")
     sub.add_parser("sample", help="one collect+ingest pass (default)")
-    derive_p = sub.add_parser("derive", help="learn baselines + flag anomalies (report-only)")
+    derive_p = sub.add_parser(
+        "derive", help="learn baselines + flag anomalies (report-only)"
+    )
     derive_p.add_argument("--days", type=int, default=14)
     derive_p.add_argument(
-        "--hosts", default="", help="comma-separated hosts (default $SYSTEMS_MANAGER_HOSTS)"
+        "--node-refs",
+        default="",
+        help="comma-separated deployment node references",
     )
     args = p.parse_args()
 
@@ -483,8 +527,10 @@ def main() -> None:
             level=logging.INFO,
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         )
-        hosts = [h.strip() for h in args.hosts.split(",") if h.strip()] or None
-        summary = run_os_derivation(hosts, days=args.days)
+        node_refs = [
+            value.strip() for value in args.node_refs.split(",") if value.strip()
+        ] or None
+        summary = run_os_derivation(node_refs, days=args.days)
     else:
         logging.basicConfig(
             level=logging.INFO,

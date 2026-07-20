@@ -4,6 +4,13 @@ from unittest.mock import Mock
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def deployment_pseudonymization_key(monkeypatch):
+    """Provide non-production keyed identifiers for provider tests."""
+
+    monkeypatch.setenv("SYSTEMS_MANAGER_PSEUDONYMIZATION_KEY", "test-key-" * 4)
+
+
 @pytest.fixture
 def mock_logger():
     """Mock logger fixture."""

@@ -1,0 +1,8 @@
+{
+  "algorithm": "agent-utilities:mcp-tool-schema-compat:v1",
+  "connector": "systems-manager",
+  "schema_version": "1",
+  "tools": {
+    "sm_service_operations": "d2b92e0e421b1a727c42ec0eabc99415f3f27f455073e1e2eba96ac6bcde15ac"
+  }
+}

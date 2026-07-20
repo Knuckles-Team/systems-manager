@@ -5,11 +5,30 @@ import pytest
 from fastmcp.exceptions import ToolError
 
 from systems_manager.mcp_server import get_mcp_instance
-from systems_manager.systems_manager import CommandResult, WindowsManager
+from systems_manager.models import CommandResult
+from systems_manager.systems_manager import WindowsManager
 
 # Since FastMCP tool routing can be tested directly with call_tool,
 # we initialize get_mcp_instance once at module level for speed.
 args, mcp_server, middlewares = get_mcp_instance()
+
+
+@pytest.fixture(autouse=True)
+def _enabled_test_policy(monkeypatch):
+    monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS", "true")
+    monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS", "true")
+    monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS", "true")
+    monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES", "true")
+
+    async def approved(*_args, **_kwargs):
+        return True
+
+    async def inline_run_blocking(function, *args, **kwargs):
+        return function(*args, **kwargs)
+
+    monkeypatch.setattr("systems_manager.mcp_server._mutation_approved", approved)
+    monkeypatch.setattr("systems_manager.mcp_server.run_blocking", inline_run_blocking)
+    monkeypatch.setattr("systems_manager.mcp_server.ctx_log", lambda *_args: None)
 
 
 def parse_mcp_result(res):
@@ -389,16 +408,6 @@ async def test_sm_file_operations():
         mgr = MagicMock()
         mock_detect.return_value = mgr
 
-        # run_command
-        mgr.run_command.return_value = CommandResult(success=True)
-        res = await mcp_server.call_tool(
-            "sm_file_operations",
-            arguments={"action": "run_command", "command": "whoami"},
-        )
-        actual = parse_mcp_result(res)
-        assert actual["success"] is True
-        mgr.run_command.assert_called_once_with("whoami")
-
         # get_system_logs
         mgr.get_system_logs.return_value = ["log1"]
         res = await mcp_server.call_tool(
@@ -490,18 +499,11 @@ async def test_sm_file_operations():
     [
         ("list_cron_jobs", "list_cron_jobs", {"user": "admin"}, ["job1"], ("admin",)),
         (
-            "add_cron_job",
-            "add_cron_job",
-            {"command": "echo hello", "schedule": "* * * * *", "user": "admin"},
-            "added",
-            ("echo hello", "* * * * *", "admin"),
-        ),
-        (
             "remove_cron_job",
             "remove_cron_job",
-            {"command": "echo hello", "user": "admin"},
+            {"job_ref": "cron:0123456789abcdef", "user": "admin"},
             "removed",
-            ("echo hello", "admin"),
+            ("cron:0123456789abcdef", "admin"),
         ),
     ],
 )
@@ -529,16 +531,30 @@ async def test_sm_cron_operations(
         (
             "add_firewall_rule",
             "add_firewall_rule",
-            {"rule": "allow 80/tcp"},
+            {
+                "rule": {
+                    "name": "web",
+                    "action": "allow",
+                    "protocol": "tcp",
+                    "port": 80,
+                }
+            },
             "added",
-            ("allow 80/tcp",),
+            ("structured",),
         ),
         (
             "remove_firewall_rule",
             "remove_firewall_rule",
-            {"rule": "allow 80/tcp"},
+            {
+                "rule": {
+                    "name": "web",
+                    "action": "allow",
+                    "protocol": "tcp",
+                    "port": 80,
+                }
+            },
             "removed",
-            ("allow 80/tcp",),
+            ("structured",),
         ),
     ],
 )
@@ -557,7 +573,12 @@ async def test_sm_firewall_operations(
 
         actual = parse_mcp_result(res)
         assert_result_equals(actual, expected_return)
-        getattr(mgr, manager_method).assert_called_once_with(*verify_args)
+        if verify_args == ("structured",):
+            called_rule = getattr(mgr, manager_method).call_args.args[0]
+            assert called_rule.name == "web"
+            assert called_rule.port == 80
+        else:
+            getattr(mgr, manager_method).assert_called_once_with(*verify_args)
 
 
 @pytest.mark.asyncio
@@ -575,16 +596,6 @@ async def test_sm_advanced_operations():
         actual = parse_mcp_result(res)
         assert actual["success"] is True
         mgr.add_authorized_key.assert_called_once_with("ssh-rsa aaa")
-
-        # add_alias
-        mgr.shell_manager.add_alias.return_value = CommandResult(success=True)
-        res = await mcp_server.call_tool(
-            "sm_advanced_operations",
-            arguments={"action": "add_alias", "name": "ll", "command": "ls -l"},
-        )
-        actual = parse_mcp_result(res)
-        assert actual["success"] is True
-        mgr.shell_manager.add_alias.assert_called_once_with("ll", "ls -l")
 
         # install_uv
         mgr.python_manager.install_uv.return_value = CommandResult(success=True)

@@ -14,16 +14,16 @@ The three are **correlated** (CONCEPT:SM-OS.governance.bay-bmc-flags-as): a bay 
 whose SMART media is clean is reported as a link/aging fault (reseat / replace),
 not media wear — exactly the failure mode a plain ``smartctl PASSED`` misses.
 
-Everything runs through the systems-manager manager seam (``manager.run_command``),
-so it works against the LOCAL host or any inventory REMOTE host. BMC out-of-band
-access (``target={host,user,password}``) is reused from the ``fan-manager`` IPMI
-wrapper when available, with the credential read from OpenBao at runtime
-(:mod:`systems_manager.bmc_credentials`); it degrades to a direct ``ipmitool``
-shell-out through the manager otherwise.
+Everything runs through the systems-manager manager seam (``manager.run_command``)
+on the local host. BMC out-of-band access is delegated to the ``fan-manager`` IPMI
+wrapper when available, with credentials resolved from the configured secret provider
+at runtime (:mod:`systems_manager.bmc_credentials`). The direct local fallback is
+in-band only and never places credentials in a process argument.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 from typing import Any
@@ -42,13 +42,21 @@ _BAY_BASE = 0xA0
 _PROBE_TIMEOUT_SECONDS = 15
 
 
+def _opaque_ref(namespace: str, value: str) -> str:
+    digest = hashlib.sha256(f"{namespace}\x00{value}".encode()).hexdigest()
+    return f"{namespace}:{digest[:16]}"
+
+
 def _run(
     manager: Any, cmd: list[str], *, elevated: bool = True
 ) -> tuple[bool, str, str]:
     """Run a command through the manager seam; return ``(ok, stdout, stderr)``."""
     try:
         res = manager.run_command(
-            cmd, elevated=elevated, timeout=_PROBE_TIMEOUT_SECONDS
+            cmd,
+            elevated=elevated,
+            capture_output=True,
+            timeout_seconds=_PROBE_TIMEOUT_SECONDS,
         )
     except Exception as e:  # noqa: BLE001 — surface as a failed result, never raise
         return False, "", str(e)
@@ -124,7 +132,8 @@ def _smart_one(
     _, health, _ = _run(manager, base + ["-H", dev])
     _, attrs, _ = _run(manager, base + ["-A", dev])
     d = _parse_smart(info, attrs, health)
-    d["device"] = dev
+    raw_serial = d.pop("serial", None)
+    d["disk_ref"] = _opaque_ref("disk", raw_serial or f"{dev}:{dtype or 'auto'}")
     d["transport"] = dtype or "auto"
     return d
 
@@ -153,7 +162,7 @@ def smart_disks(manager: Any) -> list[dict[str, Any]]:
     for dev, dtype in probe:
         d = _smart_one(manager, dev, None if dtype == "auto" else dtype)
         if d:
-            found[d.get("serial") or f"{dev}:{dtype}"] = d
+            found[d["disk_ref"]] = d
     return list(found.values())
 
 
@@ -175,31 +184,20 @@ def _ipmi_via_fanmanager(target: Target) -> str | None:
 
 def bmc_drive_faults(manager: Any, target: Target = None) -> list[dict[str, Any]]:
     """Return asserted BMC drive-slot faults ``[{bay, state, source}]``."""
-    remote = getattr(manager, "host", None)
     text: str | None = None
-    # Prefer the fan-manager wrapper where it can run in the right place:
-    #  - OOB target -> dials the BMC over LAN from wherever we are
-    #  - local host -> in-band against /dev/ipmi0
-    if target is not None or remote is None:
+    # Out-of-band targets use the governed fan-manager wrapper. Local reads use
+    # the in-band /dev/ipmi0 fallback below and need no credential.
+    if target is not None:
         text = _ipmi_via_fanmanager(target)
+    if text is None and target is not None:
+        _log.warning("Out-of-band BMC wrapper unavailable")
+        return []
     if text is None:
-        # Fallback: shell ipmitool through the manager (in-band on the target host
-        # when remote, or OOB lanplus) — reused, not a second wrapper.
+        # Local in-band fallback through /dev/ipmi0; no network credential is needed.
         args = ["ipmitool"]
-        if target and target.get("host"):
-            args += [
-                "-I",
-                "lanplus",
-                "-H",
-                target["host"],
-                "-U",
-                target.get("user", "root"),
-                "-P",
-                target.get("password", ""),
-            ]
-        _, sel, _ = _run(manager, args + ["sel", "elist"], elevated=target is None)
+        _, sel, _ = _run(manager, args + ["sel", "elist"], elevated=True)
         _, sensors, _ = _run(
-            manager, args + ["sdr", "type", "Drive Slot"], elevated=target is None
+            manager, args + ["sdr", "type", "Drive Slot"], elevated=True
         )
         text = f"{sel}\n{sensors}"
 
@@ -285,8 +283,8 @@ def drive_health_summary(manager: Any) -> dict[str, Any]:
     """Lightweight BMC drive-fault signal for ``system_health_check`` (CONCEPT:SM-OS.governance.bay-bmc-flags-as)."""
     try:
         faults = bmc_drive_faults(manager)
-    except Exception as e:  # noqa: BLE001
-        return {"warnings": [], "faults": [], "error": str(e)}
+    except Exception:  # noqa: BLE001
+        return {"warnings": [], "faults": [], "error": "Storage probe failed"}
     return {
         "warnings": [f"DRIVE FAULT: bay #{f['bay']}" for f in faults],
         "faults": faults,

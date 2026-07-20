@@ -1,35 +1,21 @@
 """MCP tools for physical storage + BMC drive-fault health (CONCEPT:SM-OS.governance.sys-8, CONCEPT:SM-OS.governance.bay-bmc-flags-as).
 
 Thin transport over :mod:`systems_manager.storage_health`. Runs against the local
-host or any inventory ``host`` (remote-over-SSH via the manager seam). Out-of-band
-BMC access reads the iDRAC credential from OpenBao at runtime when ``{'oob':true}``
-is passed (or an explicit ``{'host','user','password'}`` target).
+host. Out-of-band BMC access reads credentials from the configured secret provider at runtime
+when ``{'oob':true}`` is passed. Secrets are never accepted as tool arguments.
 """
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
-from agent_utilities.mcp_utilities import run_blocking
+from agent_utilities.mcp.concurrency import run_blocking
 from fastmcp import Context, FastMCP
 from pydantic import Field
 
 from systems_manager import storage_health
 from systems_manager.bmc_credentials import get_bmc_credentials
 from systems_manager.systems_manager import detect_and_create_manager
-
-
-def _target_from_params(params: dict[str, Any]) -> dict[str, Any] | None:
-    if params.get("host") and params.get("password"):
-        return {
-            "host": params["host"],
-            "user": params.get("user", "root"),
-            "password": params["password"],
-        }
-    if params.get("oob"):
-        return get_bmc_credentials(host=params.get("host"))
-    return None
 
 
 def register_storage_health_tools(mcp: FastMCP) -> None:
@@ -49,15 +35,13 @@ def register_storage_health_tools(mcp: FastMCP) -> None:
         action: str = Field(
             default="report", description="report | smart | faults | raid"
         ),
-        host: str | None = Field(
-            default=None,
-            description="Inventory host key for a REMOTE target (defaults to local).",
+        out_of_band: bool = Field(
+            default=False,
+            description="Resolve BMC credentials from the configured secret provider.",
         ),
-        params_json: str = Field(
-            default="{}",
-            description="Optional JSON for out-of-band BMC: {'oob':true} reads the "
-            "iDRAC credential from OpenBao apps/idrac, or pass an explicit "
-            "{'host','user','password'} target.",
+        bmc_host: str | None = Field(
+            default=None,
+            description="Optional configured BMC host override; never a credential.",
         ),
         ctx: Context | None = Field(default=None, description="MCP context"),
     ) -> Any:
@@ -66,14 +50,10 @@ def register_storage_health_tools(mcp: FastMCP) -> None:
         BMC-flagged disk with clean SMART media reads as a link/aging fault, not media
         wear (CONCEPT:SM-OS.governance.sys-8/SYS-1.5)."""
         try:
-            params = json.loads(params_json or "{}")
-        except Exception as e:  # noqa: BLE001
-            return {"success": False, "error": f"Invalid params_json: {e}"}
-        try:
-            manager = detect_and_create_manager(host=host)
-        except Exception as e:  # noqa: BLE001
-            return {"success": False, "error": str(e)}
-        target = _target_from_params(params)
+            manager = detect_and_create_manager()
+        except Exception:  # noqa: BLE001
+            return {"success": False, "error": "Operation failed"}
+        target = get_bmc_credentials(host=bmc_host) if out_of_band else None
 
         if action == "smart":
             return await run_blocking(

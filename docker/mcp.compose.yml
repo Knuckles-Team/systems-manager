@@ -1,24 +1,43 @@
-version: '3.8'
-
 services:
   systems-manager-mcp:
-    image: knucklessg1/systems-manager:mcp
-    container_name: systems-manager-mcp
-    hostname: systems-manager-mcp
-    restart: always
-    env_file:
-      - ../.env
+    image: "${SYSTEMS_MANAGER_MCP_IMAGE_DIGEST:?configure the immutable MCP image digest}"
+    init: true
+    user: "10001:10001"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 1.0
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=128m
+    volumes:
+      - systems-manager-mcp-state:/workspace
     environment:
-      - PYTHONUNBUFFERED=1
-      - HOST=0.0.0.0
-      - PORT=8000
-      - TRANSPORT=streamable-http
+      PYTHONUNBUFFERED: "1"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      TRANSPORT: "streamable-http"
+      AUTH_TYPE: "${AUTH_TYPE:?authenticated MCP transport required}"
+      MCP_TLS_TERMINATED: "${MCP_TLS_TERMINATED:?verified TLS boundary required}"
+      MCP_TRUSTED_PROXY_CIDRS: "${MCP_TRUSTED_PROXY_CIDRS:?trusted ingress CIDRs required}"
+      MCP_ALLOWED_HOSTS: "${MCP_ALLOWED_HOSTS:?MCP Host allowlist required}"
+      FASTMCP_SERVER_AUTH_STATIC_TOKENS_REF: "${FASTMCP_SERVER_AUTH_STATIC_TOKENS_REF:-}"
+      FASTMCP_SERVER_AUTH_JWT_JWKS_URI: "${FASTMCP_SERVER_AUTH_JWT_JWKS_URI:-}"
+      FASTMCP_SERVER_AUTH_JWT_ISSUER: "${FASTMCP_SERVER_AUTH_JWT_ISSUER:-}"
+      FASTMCP_SERVER_AUTH_JWT_AUDIENCE: "${FASTMCP_SERVER_AUTH_JWT_AUDIENCE:-}"
+      SYSTEMS_MANAGER_FILESYSTEM_ROOT: /workspace
+      SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS: "${SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS:-false}"
+      SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS: "${SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS:-false}"
+      SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS: "${SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS:-false}"
+      SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES: "${SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES:-false}"
     ports:
-      - "8000:8000"
+      - "${SYSTEMS_MANAGER_MCP_BIND_ADDRESS:-127.0.0.1}:${SYSTEMS_MANAGER_MCP_PORT:-8000}:8000"
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 10s
     logging:
@@ -26,3 +45,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+volumes:
+  systems-manager-mcp-state: {}

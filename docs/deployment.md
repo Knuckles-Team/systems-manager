@@ -1,354 +1,117 @@
 # Deployment
 
-<!-- BEGIN GENERATED: deployment-options -->
-## Deployment Options
+`systems-manager` exposes a local stdio MCP server, an authenticated network MCP
+server, and an optional agent server. Network transports fail closed unless their
+authentication boundary is configured.
 
-`systems-manager` exposes its MCP server (console script `systems-manager-mcp`) four ways. Pick the row that
-matches where the server runs relative to your MCP client, then copy the matching
-`mcp_config.json` below. Replace the `<your-…>` placeholders with the values from the **Configuration / Environment Variables** section.
+## Local stdio
 
-| # | Option | Transport | Where it runs | `mcp_config.json` key |
-|---|--------|-----------|---------------|------------------------|
-| 1 | stdio | `stdio` | client launches a subprocess | `command` |
-| 2 | Streamable-HTTP (local) | `streamable-http` | a local network port | `command` or `url` |
-| 3 | Local container / uv | `stdio` or `streamable-http` | Docker / Podman / uv on this host | `command` or `url` |
-| 4 | Remote URL | `streamable-http` | a remote host behind Caddy | `url` |
-
-### 1. stdio (local subprocess)
-
-The client launches the server over stdio via `uvx` — best for local IDEs
-(Cursor, Claude Desktop, VS Code):
-
-```json
-{
-  "mcpServers": {
-    "systems-manager-mcp": {
-      "command": "uvx",
-      "args": ["--from", "systems-manager", "systems-manager-mcp"],
-      "env": {
-        "SYSTEMS_API_KEY": "<your-systems_api_key>"
-      }
-    }
-  }
-}
-```
-
-### 2. Streamable-HTTP (local process)
-
-Run the server as a long-lived HTTP process:
+Install the MCP extra and launch the entry point:
 
 ```bash
-uvx --from systems-manager systems-manager-mcp --transport streamable-http --host 0.0.0.0 --port 8000
-curl -s http://localhost:8000/health        # {"status":"OK"}
+uvx --from "systems-manager[mcp]" systems-manager-mcp --transport stdio
 ```
 
-Then either let the client launch it:
+A client configuration can use the repository's reference-only catalog. Keep runtime
+values in AgentConfig rather than editing the catalog with deployment endpoints,
+secrets, trust paths, or host identities.
 
-```json
-{
-  "mcpServers": {
-    "systems-manager-mcp": {
-      "command": "uvx",
-      "args": ["--from", "systems-manager", "systems-manager-mcp", "--transport", "streamable-http", "--port", "8000"],
-      "env": {
-        "TRANSPORT": "streamable-http",
-        "HOST": "0.0.0.0",
-        "PORT": "8000",
-        "SYSTEMS_API_KEY": "<your-systems_api_key>"
-      }
-    }
-  }
-}
-```
+## Network MCP
 
-…or connect to the already-running process by URL:
+For `streamable-http` or `sse`, configure:
 
-```json
-{
-  "mcpServers": {
-    "systems-manager-mcp": { "url": "http://localhost:8000/mcp" }
-  }
-}
-```
+- an authentication provider through the current Agent Utilities MCP settings;
+- direct TLS certificate/key settings, or a verified TLS-terminating proxy and
+  trusted proxy CIDRs;
+- an explicit host allowlist;
+- a deliberate bind address.
 
-### 3. Local container / uv
-
-**(a) Launch a container directly from `mcp_config.json`** (stdio over the container —
-no ports to manage). Swap `docker` for `podman` for a daemonless runtime:
-
-```json
-{
-  "mcpServers": {
-    "systems-manager-mcp": {
-      "command": "docker",
-      "args": [
-        "run", "-i", "--rm",
-        "-e", "TRANSPORT=stdio",
-        "-e", "SYSTEMS_API_KEY=<your-systems_api_key>",
-        "knucklessg1/systems-manager:latest"
-      ]
-    }
-  }
-}
-```
-
-**(b) Run a local streamable-http container, then connect by URL:**
-
-```bash
-docker run -d --name systems-manager-mcp -p 8000:8000 \
-  -e TRANSPORT=streamable-http \
-  -e PORT=8000 \
-  -e SYSTEMS_API_KEY="<your-systems_api_key>" \
-  knucklessg1/systems-manager:latest
-# or, from a clone of this repo:
-docker compose -f docker/mcp.compose.yml up -d
-```
-
-```json
-{
-  "mcpServers": {
-    "systems-manager-mcp": { "url": "http://localhost:8000/mcp" }
-  }
-}
-```
-
-**(c) From a local checkout with `uv`:**
-
-```bash
-uv run systems-manager-mcp --transport streamable-http --port 8000
-```
-
-### 4. Remote URL (deployed behind Caddy)
-
-When the server is deployed remotely (e.g. as a Docker service) and published through
-Caddy on the internal `*.arpa` zone, connect with the `"url"` key — no local process or
-image required:
-
-```json
-{
-  "mcpServers": {
-    "systems-manager-mcp": { "url": "http://systems-manager-mcp.arpa/mcp" }
-  }
-}
-```
-
-Caddy reverse-proxies `http://systems-manager-mcp.arpa` to the container's `:8000`
-streamable-http listener; `http://systems-manager-mcp.arpa/health` returns
-`{"status":"OK"}` when the service is live.
-<!-- END GENERATED: deployment-options -->
-
-This page covers running `systems-manager` as a long-lived server: the transports, a
-Docker Compose stack, putting it behind a Caddy reverse proxy, giving it a DNS name
-with Technitium, and running the integrated agent server.
-
-> `systems-manager` ships both an **MCP server** (console script `systems-manager-mcp`)
-> and an **A2A agent server** (console script `systems-manager-agent`). The MCP server
-> is a typed, deterministic tool surface a policy router / agent calls; the agent
-> server wraps it in a Pydantic AI graph reachable over ACP and the Agent Web UI.
-
-## Run the MCP server
-
-The transport is selected with `--transport` (or the `TRANSPORT` env var):
-
-=== "stdio (default)"
-
-    ```bash
-    systems-manager-mcp
-    ```
-    For IDE / desktop MCP clients that launch the server as a subprocess.
-
-=== "streamable-http"
-
-    ```bash
-    systems-manager-mcp --transport streamable-http --host 0.0.0.0 --port 8000
-    ```
-    A network server with a `/health` endpoint and `/mcp` route.
-
-=== "sse"
-
-    ```bash
-    systems-manager-mcp --transport sse --host 0.0.0.0 --port 8000
-    ```
-
-Health check (HTTP transports):
-
-```bash
-curl -s http://localhost:8000/health        # {"status":"OK"}
-```
-
-## Configuration (environment)
-
-`systems-manager` is configured entirely from the environment. The **required** set:
-
-| Var | Default | Meaning |
-|---|---|---|
-| `HOST` | `0.0.0.0` | Bind address for HTTP transports |
-| `PORT` | `8000` | Bind port for HTTP transports |
-| `TRANSPORT` | `stdio` | Transport: `stdio`, `streamable-http`, or `sse` |
-| `MISCTOOL` | `True` | Register the miscellaneous tool module |
-| `ENABLE_OTEL` | `True` | Export OpenTelemetry traces |
-| `EUNOMIA_TYPE` | `none` | Authorization mode: `none`, `embedded`, or `remote` |
-| `EUNOMIA_POLICY_FILE` | `mcp_policies.json` | Embedded policy file path |
-
-Optional observability and authorization settings (`OTEL_EXPORTER_OTLP_ENDPOINT`,
-`EUNOMIA_REMOTE_URL`, and connector credentials) are documented in
-[`.env.example`](https://github.com/Knuckles-Team/systems-manager/blob/main/.env.example).
-Copy it to `.env` and fill in only what you use.
-
-## Docker Compose
-
-The repo ships [`docker/mcp.compose.yml`](https://github.com/Knuckles-Team/systems-manager/blob/main/docker/mcp.compose.yml).
-It reads a sibling `.env` and publishes the HTTP server on `:8000`:
-
-```yaml
-services:
-  systems-manager-mcp:
-    image: knucklessg1/systems-manager:latest
-    container_name: systems-manager-mcp
-    hostname: systems-manager-mcp
-    restart: always
-    env_file:
-      - ../.env
-    environment:
-      - PYTHONUNBUFFERED=1
-      - HOST=0.0.0.0
-      - PORT=8000
-      - TRANSPORT=streamable-http
-    ports:
-      - "8000:8000"
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
-
-```bash
-cp .env.example .env          # then edit values
-docker compose -f docker/mcp.compose.yml up -d
-docker compose -f docker/mcp.compose.yml logs -f
-```
-
-## Agent server
-
-`systems-manager` includes an integrated Pydantic AI graph agent (console script
-`systems-manager-agent`). It connects to the MCP server over `MCP_URL`, communicates
-over the Agent Control Protocol (ACP), and serves the Agent Web UI (AG-UI) on its own
-port (default `9009`).
-
-```bash
-export MCP_URL=http://localhost:8000/mcp
-systems-manager-agent --provider openai --model-id gpt-4o
-```
-
-The repo ships [`docker/agent.compose.yml`](https://github.com/Knuckles-Team/systems-manager/blob/main/docker/agent.compose.yml),
-which runs the MCP server and the agent together; the agent reaches the MCP server by
-container name:
-
-```yaml
-services:
-  systems-manager-mcp:
-    image: knucklessg1/systems-manager:latest
-    container_name: systems-manager-mcp
-    hostname: systems-manager-mcp
-    restart: always
-    env_file:
-      - ../.env
-    environment:
-      - PYTHONUNBUFFERED=1
-      - HOST=0.0.0.0
-      - PORT=8000
-      - TRANSPORT=streamable-http
-    ports:
-      - "8000:8000"
-
-  systems-manager-agent:
-    image: knucklessg1/systems-manager:latest
-    container_name: systems-manager-agent
-    hostname: systems-manager-agent
-    restart: always
-    depends_on:
-      - systems-manager-mcp
-    env_file:
-      - ../.env
-    command: ["systems-manager-agent"]
-    environment:
-      - PYTHONUNBUFFERED=1
-      - HOST=0.0.0.0
-      - PORT=9009
-      - MCP_URL=http://systems-manager-mcp:8000/mcp
-      - PROVIDER=${PROVIDER:-openai}
-      - MODEL_ID=${MODEL_ID:-gpt-4o}
-      - ENABLE_WEB_UI=True
-    ports:
-      - "9009:9009"
-```
-
-```bash
-docker compose -f docker/agent.compose.yml up -d
-```
-
-## Behind a Caddy reverse proxy
-
-Expose the HTTP server on a hostname with automatic TLS. Add to your `Caddyfile`:
-
-```caddy
-# Internal (self-signed) — homelab .arpa zone
-systems-manager.arpa {
-    tls internal
-    reverse_proxy systems-manager-mcp:8000
-}
-```
-
-```caddy
-# Public — automatic Let's Encrypt
-systems-manager.example.com {
-    reverse_proxy systems-manager-mcp:8000
-}
-```
-
-Reload Caddy:
-
-```bash
-docker compose -f services/caddy/compose.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
-```
-
-## DNS with Technitium
-
-Point the hostname at the host running Caddy. Via the Technitium API:
-
-```bash
-curl -s "http://technitium.arpa:5380/api/zones/records/add" \
-  --data-urlencode "token=$TECHNITIUM_DNS_TOKEN" \
-  --data-urlencode "domain=systems-manager.arpa" \
-  --data-urlencode "zone=arpa" \
-  --data-urlencode "type=A" \
-  --data-urlencode "ipAddress=10.0.0.10" \
-  --data-urlencode "ttl=3600"
-```
-
-…or add an **A record** `systems-manager.arpa → <caddy-host-ip>` in the Technitium web
-console (`http://technitium.arpa:5380`). The ecosystem
-[`technitium-dns-mcp`](https://knuckles-team.github.io/technitium-dns-mcp/) automates
-this as a tool.
-
-## Register with an MCP client
-
-Add to your client's `mcp_config.json`:
+The server refuses a network transport when authentication is absent. Use HTTPS for
+every non-loopback client. A replaceable client entry is:
 
 ```json
 {
   "mcpServers": {
     "systems-manager": {
-      "command": "uvx",
-      "args": ["--from", "systems-manager", "systems-manager-mcp"],
-      "env": {
-        "MISCTOOL": "True"
-      }
+      "url": "https://mcp.example.invalid/mcp"
     }
   }
 }
 ```
 
-For a remote HTTP server, point the client at `http://systems-manager.arpa/mcp`
-instead.
+Do not place credentials in the URL. Configure outbound OIDC or another supported
+service identity through the client boundary.
+
+## Containers
+
+The repository ships two hardened Compose definitions:
+
+- `docker/mcp.compose.yml` for the MCP server;
+- `docker/agent.compose.yml` for an agent plus MCP sidecar.
+
+Both require operator-selected image variables, bind published ports to loopback by
+default, run as UID/GID 10001, drop all Linux capabilities, enable
+`no-new-privileges`, use read-only filesystems, bound memory/CPU/PIDs, and use a
+bounded `tmpfs`. Network authentication and TLS boundary inputs are required.
+
+Build the two image targets with explicit registry tags:
+
+```bash
+docker build --target mcp -t "${SYSTEMS_MANAGER_MCP_IMAGE}" -f docker/Dockerfile .
+docker build --target agent -t "${SYSTEMS_MANAGER_AGENT_IMAGE}" -f docker/Dockerfile .
+```
+
+The Dockerfile pins base and uv images by digest and installs into a multi-stage,
+non-root runtime. Deployment pipelines should additionally sign the resulting image,
+produce an SBOM/provenance attestation, scan it, and enforce the approved digest at
+admission.
+
+## Agent server
+
+A non-loopback agent listener requires all of:
+
+- `SYSTEMS_MANAGER_ALLOW_REMOTE_AGENT_SERVER=true`;
+- direct TLS or an explicitly trusted TLS proxy boundary;
+- JWT authentication through `AUTH_JWT_JWKS_URI`, `AUTH_JWT_ISSUER`, and
+  `AUTH_JWT_AUDIENCE`;
+- debug mode disabled.
+
+Remote MCP children require an outbound service identity. Model, MCP, and OTLP
+endpoints must be credential-free HTTPS or loopback HTTP. Certificate verification
+is mandatory; private trust is selected from the AgentConfig TLS-profile catalog,
+not a source-code switch.
+
+## Host permissions
+
+Run under a dedicated service identity. Configure
+`SYSTEMS_MANAGER_FILESYSTEM_ROOT` to a non-volume, trusted-owner directory.
+Privilege gates default to false. The optional elevation helper uses empty-by-default
+deployment allowlists; see [Sudo security](sudo_security.md).
+
+Containers operate on their container boundary unless a separately reviewed host
+broker is provided. They do not implicitly manage the container host, Windows host,
+or WSL host.
+
+## Observability and privacy
+
+OTLP/Langfuse settings are deployment inputs. Default to metadata-only telemetry.
+Before enabling content capture, approve retention, access control, tenant isolation,
+and redaction. Never store prompts, tool bodies/results, hostnames, usernames, local
+paths, certificate paths, or credentials in traces.
+
+## Release and readiness gates
+
+1. Verify the package, image digest, SBOM, signature, and provenance. Generate a
+   neutral dependency lock only after every declared release is available; reject
+   editable local sources and stale locks.
+2. Run the ecosystem doctor without printing values.
+3. Validate the current ontology, source preset, mapping, MCP schemas, packaged skill,
+   and signed offline source bundle. Generate external-live certification only in the
+   authorized release environment; never infer it from offline evidence.
+4. Prove unauthenticated network startup/calls fail.
+5. Prove each privilege gate fails closed.
+6. Exercise one approved typed operation and independent read-back.
+7. Confirm sanitized traces arrive under opaque run and tenant identifiers.
+8. Keep rollback artifacts and recovery ownership available before hot swapping.
+
+See [Configuration](configuration.md) for the complete trust and privacy contract.

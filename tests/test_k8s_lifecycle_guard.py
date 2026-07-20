@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-from systems_manager.models import CommandResult
 from systems_manager.systems_manager import AptManager, WindowsManager
 
 
@@ -19,14 +18,12 @@ def test_update_refuses_on_k8s_node_without_override():
     with (
         _patch_k8s_node(True, "systemd unit 'rke2-agent' is active"),
         patch.object(mgr, "run_command") as mock_run,
-        patch.object(mgr, "run_elevated_tool") as mock_helper,
     ):
         res = mgr.update()
-        assert res.success is False
-        assert "Kubernetes" in res.error
-        assert "k8s-node-rolling-update" in res.error
+        assert res["success"] is False
+        assert "Kubernetes" in res["error"]
+        assert "governed rolling update workflow" in res["error"]
         mock_run.assert_not_called()
-        mock_helper.assert_not_called()
 
 
 def test_update_proceeds_on_k8s_node_with_override():
@@ -35,12 +32,12 @@ def test_update_proceeds_on_k8s_node_with_override():
         _patch_k8s_node(True, "systemd unit 'rke2-agent' is active"),
         patch.object(
             mgr,
-            "run_elevated_tool",
-            return_value={"success": True, "stdout": "", "stderr": ""},
+            "run_command",
+            return_value={"success": True},
         ),
     ):
         res = mgr.update(allow_on_k8s=True)
-        assert res.success is True
+        assert res["success"] is True
 
 
 def test_update_proceeds_on_k8s_node_with_env_override(monkeypatch):
@@ -50,12 +47,12 @@ def test_update_proceeds_on_k8s_node_with_env_override(monkeypatch):
         _patch_k8s_node(True, "systemd unit 'rke2-agent' is active"),
         patch.object(
             mgr,
-            "run_elevated_tool",
-            return_value={"success": True, "stdout": "", "stderr": ""},
+            "run_command",
+            return_value={"success": True},
         ),
     ):
         res = mgr.update()
-        assert res.success is True
+        assert res["success"] is True
 
 
 def test_update_proceeds_normally_on_non_k8s_host():
@@ -64,12 +61,12 @@ def test_update_proceeds_normally_on_non_k8s_host():
         _patch_k8s_node(False, "no Kubernetes signals detected"),
         patch.object(
             mgr,
-            "run_elevated_tool",
-            return_value={"success": True, "stdout": "", "stderr": ""},
+            "run_command",
+            return_value={"success": True},
         ),
     ):
         res = mgr.update()
-        assert res.success is True
+        assert res["success"] is True
 
 
 def test_windows_manager_update_refuses_on_k8s_node_without_override():
@@ -80,8 +77,8 @@ def test_windows_manager_update_refuses_on_k8s_node_without_override():
         patch.object(mgr, "run_command") as mock_run,
     ):
         res = mgr.update()
-        assert res.success is False
-        assert "Kubernetes" in res.error
+        assert res["success"] is False
+        assert "Kubernetes" in res["error"]
         mock_run.assert_not_called()
 
 
@@ -95,10 +92,9 @@ def test_reboot_refuses_on_k8s_node_without_override():
         patch.object(mgr, "run_command") as mock_run,
     ):
         res = mgr.reboot()
-        assert isinstance(res, CommandResult)
-        assert res.success is False
-        assert "Kubernetes" in res.error
-        assert "k8s-node-rolling-update" in res.error
+        assert res["success"] is False
+        assert "Kubernetes" in res["error"]
+        assert "governed rolling update workflow" in res["error"]
         mock_run.assert_not_called()
 
 
@@ -106,20 +102,20 @@ def test_reboot_proceeds_on_k8s_node_with_override():
     mgr = AptManager(silent=True)
     with (
         _patch_k8s_node(True, "systemd unit 'rke2-server' is active"),
-        patch.object(mgr, "run_command", return_value=CommandResult(success=True)),
+        patch.object(mgr, "run_command", return_value={"success": True}),
     ):
         res = mgr.reboot(allow_on_k8s=True)
-        assert res.success is True
+        assert res["success"] is True
 
 
 def test_reboot_proceeds_normally_on_non_k8s_host():
     mgr = AptManager(silent=True)
     with (
         _patch_k8s_node(False, "no Kubernetes signals detected"),
-        patch.object(mgr, "run_command", return_value=CommandResult(success=True)),
+        patch.object(mgr, "run_command", return_value={"success": True}),
     ):
         res = mgr.reboot()
-        assert res.success is True
+        assert res["success"] is True
         mgr.run_command.assert_called_once_with(["systemctl", "reboot"], elevated=True)
 
 
@@ -129,10 +125,10 @@ def test_windows_manager_reboot_uses_windows_command():
     with (
         _patch_k8s_node(False, "no Kubernetes signals detected"),
         patch("platform.system", return_value="Windows"),
-        patch.object(mgr, "run_command", return_value=CommandResult(success=True)),
+        patch.object(mgr, "run_command", return_value={"success": True}),
     ):
         res = mgr.reboot()
-        assert res.success is True
+        assert res["success"] is True
         mgr.run_command.assert_called_once_with(
             ["shutdown.exe", "/r", "/t", "0"], elevated=True
         )

@@ -8,6 +8,13 @@ from systems_manager.mcp_server import get_mcp_instance
 args, mcp_server, middlewares = get_mcp_instance()
 
 
+@pytest.fixture(autouse=True)
+def authorize_provider_tool_contract(monkeypatch):
+    """Exercise provider behavior only after explicit deployment authorization."""
+    monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS", "true")
+    monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS", "true")
+
+
 def parse_mcp_result(res):
     text = getattr(res.content[0], "text", "")
     try:

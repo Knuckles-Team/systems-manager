@@ -316,7 +316,6 @@ def get_os_provider() -> OSProvider:
     system = platform.system().lower()
     if system == "windows":
         return WindowsProvider()
-    elif system in ["linux", "darwin"]:  # fallback mac to linux for now
+    if system == "linux":
         return LinuxProvider()
-    else:
-        return LinuxProvider()
+    raise RuntimeError("Unsupported operating-system provider")

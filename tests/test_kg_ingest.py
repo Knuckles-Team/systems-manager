@@ -1,97 +1,74 @@
-"""Native epistemic-graph typed-node ingestion — Wire-First coverage.
-
-Exercises the real ``ingest_entities`` / ``ingest_host_inventory`` seam with a fake engine
-client (no engine required), asserting the txn add_node/commit + edge calls and the host
-telemetry → :HardwareNode / :NetworkInterface / :DiskVolume mapping.
-CONCEPT:AU-KG.ingest.enterprise-source-extractor.
-"""
+"""Governed, privacy-preserving host telemetry ingestion coverage."""
 
 from __future__ import annotations
 
-from systems_manager.kg_ingest import ingest_entities, ingest_host_inventory
+import pytest
+
+import systems_manager.kg_ingest as kg
 
 
-class _FakeTxn:
-    def __init__(self):
-        self.nodes = {}
-        self.committed = False
+def _capture_native(monkeypatch):
+    captured: dict = {}
 
-    def begin(self, graph=None):
-        self.graph = graph
-        return "txn-1"
+    def ingest(entities, relationships, **kwargs):
+        captured.update(
+            entities=entities,
+            relationships=relationships,
+            kwargs=kwargs,
+        )
+        return {"nodes": len(entities), "edges": len(relationships or [])}
 
-    def add_node(self, txn, node_id, props):
-        self.nodes[node_id] = props
-
-    def commit(self, txn):
-        self.committed = True
-        return True
+    monkeypatch.setattr(kg, "_native_ingest", ingest)
+    return captured
 
 
-class _FakeEdges:
-    def __init__(self):
-        self.edges = []
-
-    def add(self, src, dst, props):
-        self.edges.append((src, dst, props))
-
-
-class _FakeClient:
-    def __init__(self):
-        self.txn = _FakeTxn()
-        self.edges = _FakeEdges()
-
-
-def test_ingest_entities_writes_nodes_and_edges():
-    c = _FakeClient()
-    res = ingest_entities(
+def test_ingest_entities_uses_canonical_native_boundary(monkeypatch):
+    captured = _capture_native(monkeypatch)
+    result = kg.ingest_entities(
         [
-            {"id": "a", "type": "HardwareNode", "name": "rw710"},
-            {"id": "b", "type": "NetworkInterface"},
+            {"id": "systems:host:host:example", "node_type": "HardwareNode"},
+            {"id": "systems:nic:interface:example", "node_type": "NetworkInterface"},
         ],
-        [{"source": "a", "target": "b", "type": "hasInterface"}],
-        client=c,
-        graph="__commons__",
+        [
+            {
+                "source": "systems:host:host:example",
+                "target": "systems:nic:interface:example",
+                "relationship": "hasInterface",
+            }
+        ],
     )
-    assert res == {"nodes": 2, "edges": 1}
-    assert c.txn.committed is True
-    assert set(c.txn.nodes) == {"a", "b"}
-    # provenance is stamped
-    assert c.txn.nodes["a"]["source"] == "systems-manager"
-    assert c.txn.nodes["a"]["domain"] == "systems"
-    assert c.edges.edges == [("a", "b", {"type": "hasInterface"})]
+
+    assert result == {"nodes": 2, "edges": 1}
+    assert captured["kwargs"]["source"] == "systems-manager"
+    assert captured["kwargs"]["domain"] == "systems"
+    assert captured["entities"][0]["node_type"] == "HardwareNode"
+    assert captured["relationships"][0]["relationship"] == "hasInterface"
 
 
-def test_ingest_host_inventory_maps_node_nics_and_disks():
-    c = _FakeClient()
+def test_ingest_host_inventory_maps_only_opaque_identifiers(monkeypatch):
+    captured = _capture_native(monkeypatch)
     report = {
-        "host": "rw710",
+        "host": "deployment-local-name",
         "os": {
             "system": "Linux",
             "release": "6.0.0",
-            "version": "#1 SMP",
+            "version": "generic-build",
             "machine": "x86_64",
-            "processor": "AMD",
+            "processor": "generic-processor",
         },
         "hardware": {"cpu_count": 16, "memory": {"total": 34359738368}},
-        "interfaces": {
-            "eth0": {
+        "interfaces": [
+            {
+                "interface_ref": "interface:source-ref",
                 "is_up": True,
                 "speed": 1000,
                 "mtu": 1500,
-                "addresses": [
-                    {"family": "AddressFamily.AF_INET", "address": "10.0.0.13"},
-                    {
-                        "family": "AddressFamily.AF_PACKET",
-                        "address": "aa:bb:cc:dd:ee:ff",
-                    },
-                ],
+                "address_families": ["AddressFamily.AF_INET"],
             }
-        },
+        ],
         "disks": [
             {
-                "device": "/dev/sda1",
-                "mountpoint": "/",
+                "disk_ref": "disk:source-ref",
                 "fstype": "ext4",
                 "total": 500107862016,
                 "used": 100000000000,
@@ -100,56 +77,61 @@ def test_ingest_host_inventory_maps_node_nics_and_disks():
             }
         ],
     }
-    res = ingest_host_inventory(report, client=c, graph="__commons__")
-    assert res == {"nodes": 3, "edges": 2}
 
-    host = c.txn.nodes["systems:host:rw710"]
-    assert host["type"] == "HardwareNode"
-    assert host["osVersion"] == "Linux 6.0.0 #1 SMP"
-    assert host["machineArch"] == "x86_64"
-    assert host["cpuCount"] == 16
-    assert host["memoryTotal"] == 34359738368
-    assert host["externalToolId"] == "rw710"
+    result = kg.ingest_host_inventory(report)
 
-    nic = c.txn.nodes["systems:nic:rw710:eth0"]
-    assert nic["type"] == "NetworkInterface"
-    assert nic["ipAddress"] == "10.0.0.13"
-    assert nic["macAddress"] == "aa:bb:cc:dd:ee:ff"
-    assert nic["linkSpeed"] == 1000
-    assert nic["isUp"] is True
+    assert result == {"nodes": 3, "edges": 2}
+    entities = captured["entities"]
+    relationships = captured["relationships"]
+    host = next(entity for entity in entities if entity["node_type"] == "HardwareNode")
+    nic = next(
+        entity for entity in entities if entity["node_type"] == "NetworkInterface"
+    )
+    disk = next(entity for entity in entities if entity["node_type"] == "DiskVolume")
+    assert host["externalToolId"].startswith("host:")
+    assert nic["externalToolId"].startswith("interface:")
+    assert disk["externalToolId"].startswith("disk:")
+    assert all("relationship" in relationship for relationship in relationships)
 
-    disk = c.txn.nodes["systems:disk:rw710:/dev/sda1"]
-    assert disk["type"] == "DiskVolume"
-    assert disk["mountpoint"] == "/"
-    assert disk["fstype"] == "ext4"
-    assert disk["capacityBytes"] == 500107862016
-    assert disk["percentUsed"] == 20.0
-
-    assert (
-        "systems:host:rw710",
-        "systems:nic:rw710:eth0",
-        {"type": "hasInterface"},
-    ) in c.edges.edges
-    assert (
-        "systems:host:rw710",
-        "systems:disk:rw710:/dev/sda1",
-        {"type": "hasVolume"},
-    ) in c.edges.edges
+    rendered = repr(captured)
+    for sensitive in (
+        "deployment-local-name",
+        "hostname",
+        "ipAddress",
+        "macAddress",
+        "mountpoint",
+    ):
+        assert sensitive not in rendered
 
 
-def test_ingest_host_inventory_defaults_to_localhost():
-    c = _FakeClient()
-    res = ingest_host_inventory({"host": None}, client=c, graph="__commons__")
-    assert res == {"nodes": 1, "edges": 0}
-    assert "systems:host:localhost" in c.txn.nodes
+def test_ingest_host_inventory_defaults_to_opaque_local_ref(monkeypatch):
+    captured = _capture_native(monkeypatch)
+    result = kg.ingest_host_inventory({"host": None})
+
+    assert result == {"nodes": 1, "edges": 0}
+    host = captured["entities"][0]
+    assert host["id"].startswith("systems:host:host:")
+    assert "localhost" not in repr(host)
 
 
-def test_ingest_noops_without_engine():
-    # No injected client + no reachable engine -> clean no-op.
-    assert ingest_entities([{"id": "a", "type": "HardwareNode"}]) is None
+def test_empty_projection_is_an_explicit_zero_write(monkeypatch):
+    captured = _capture_native(monkeypatch)
+    assert kg.ingest_entities([]) == {"nodes": 0, "edges": 0}
+    assert captured == {}
+    with pytest.raises(ValueError, match="report must be an object"):
+        kg.ingest_host_inventory("not-a-dict")
 
 
-def test_ingest_empty_is_noop():
-    assert ingest_entities([], client=_FakeClient()) is None
-    # A non-dict report is a clean no-op (never raises).
-    assert ingest_host_inventory("not-a-dict", client=_FakeClient()) is None
+def test_native_boundary_rejects_unclassified_content(monkeypatch):
+    captured = _capture_native(monkeypatch)
+    with pytest.raises(ValueError, match="invalid node"):
+        kg.ingest_entities(
+            [
+                {
+                    "id": "systems:host:opaque",
+                    "node_type": "HardwareNode",
+                    "hostname": "must-not-persist",
+                }
+            ]
+        )
+    assert captured == {}

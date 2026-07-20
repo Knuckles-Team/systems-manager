@@ -134,7 +134,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-
 # Graph Database
 knowledge_graph.db*
 .repo_graph/
@@ -155,3 +154,12 @@ knowledge_graph.db*
 *errors*.txt
 failed_tests.txt
 trace.txt
+
+**/agent_data/chats/
+**/agent_data/chats
+**/agent_data/*.db
+**/agent_data/*.sqlite*
+**/agent_data/CRON_LOG.md
+**/agent_data/MEMORY.md
+**/agent_data/USER.md
+/*.zip

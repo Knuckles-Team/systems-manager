@@ -1,24 +1,43 @@
-version: '3.8'
-
 services:
   systems-manager-mcp:
-    image: knucklessg1/systems-manager:mcp
-    container_name: systems-manager-mcp
-    hostname: systems-manager-mcp
-    restart: always
-    env_file:
-      - ../.env
+    image: "${SYSTEMS_MANAGER_MCP_IMAGE_DIGEST:?configure the immutable MCP image digest}"
+    init: true
+    user: "10001:10001"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 1.0
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=128m
+    volumes:
+      - systems-manager-mcp-state:/workspace
     environment:
-      - PYTHONUNBUFFERED=1
-      - HOST=0.0.0.0
-      - PORT=8000
-      - TRANSPORT=streamable-http
+      PYTHONUNBUFFERED: "1"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      TRANSPORT: "streamable-http"
+      AUTH_TYPE: "${AUTH_TYPE:?authenticated MCP transport required}"
+      MCP_TLS_TERMINATED: "${MCP_TLS_TERMINATED:?verified TLS boundary required}"
+      MCP_TRUSTED_PROXY_CIDRS: "${MCP_TRUSTED_PROXY_CIDRS:?trusted ingress CIDRs required}"
+      MCP_ALLOWED_HOSTS: "${MCP_ALLOWED_HOSTS:?MCP Host allowlist required}"
+      FASTMCP_SERVER_AUTH_STATIC_TOKENS_REF: "${FASTMCP_SERVER_AUTH_STATIC_TOKENS_REF:-}"
+      FASTMCP_SERVER_AUTH_JWT_JWKS_URI: "${FASTMCP_SERVER_AUTH_JWT_JWKS_URI:-}"
+      FASTMCP_SERVER_AUTH_JWT_ISSUER: "${FASTMCP_SERVER_AUTH_JWT_ISSUER:-}"
+      FASTMCP_SERVER_AUTH_JWT_AUDIENCE: "${FASTMCP_SERVER_AUTH_JWT_AUDIENCE:-}"
+      SYSTEMS_MANAGER_FILESYSTEM_ROOT: /workspace
+      SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS: "${SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS:-false}"
+      SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS: "${SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS:-false}"
+      SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS: "${SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS:-false}"
+      SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES: "${SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES:-false}"
     ports:
-      - "8000:8000"
+      - "${SYSTEMS_MANAGER_MCP_BIND_ADDRESS:-127.0.0.1}:${SYSTEMS_MANAGER_MCP_PORT:-8000}:8000"
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 10s
     logging:
@@ -28,30 +47,56 @@ services:
         max-file: "3"
 
   systems-manager-agent:
-    image: knucklessg1/systems-manager:latest
-    container_name: systems-manager-agent
-    hostname: systems-manager-agent
-    restart: always
+    image: "${SYSTEMS_MANAGER_AGENT_IMAGE_DIGEST:?configure the immutable agent image digest}"
+    init: true
+    user: "10001:10001"
+    restart: unless-stopped
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: 2.0
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=128m
+    volumes:
+      - systems-manager-agent-state:/workspace
     depends_on:
-      - systems-manager-mcp
-    env_file:
-      - ../.env
-    command: [ "systems-manager-agent" ]
+      systems-manager-mcp:
+        condition: service_healthy
+    command: ["systems-manager-agent"]
     environment:
-      - PYTHONUNBUFFERED=1
-      - HOST=0.0.0.0
-      - PORT=9009
-      - MCP_URL=http://systems-manager-mcp:8000/mcp
-      - PROVIDER=${PROVIDER:-openai}
-      - MODEL_ID=${MODEL_ID:-gpt-4o}
-      - ENABLE_WEB_UI=True
-      - ENABLE_OTEL=True
+      PYTHONUNBUFFERED: "1"
+      HOST: "0.0.0.0"
+      PORT: "9009"
+      MCP_URL: "${SYSTEMS_MANAGER_MCP_URL:?configure the authenticated MCP URL}"
+      PROVIDER: "${PROVIDER:?configure an LLM provider}"
+      MODEL_ID: "${MODEL_ID:?configure a model identifier}"
+      LLM_BASE_URL: "${LLM_BASE_URL:-}"
+      LLM_API_KEY: "${LLM_API_KEY:-}"
+      ENABLE_WEB_UI: "${ENABLE_WEB_UI:-false}"
+      ENABLE_OTEL: "${ENABLE_OTEL:-true}"
+      WORKSPACE_PATH: /workspace
+      SYSTEMS_MANAGER_FILESYSTEM_ROOT: /workspace
+      SYSTEMS_MANAGER_ALLOW_REMOTE_AGENT_SERVER: "${SYSTEMS_MANAGER_ALLOW_REMOTE_AGENT_SERVER:?explicit remote-agent policy required}"
+      AUTH_JWT_JWKS_URI: "${AUTH_JWT_JWKS_URI:-}"
+      AUTH_JWT_ISSUER: "${AUTH_JWT_ISSUER:-}"
+      AUTH_JWT_AUDIENCE: "${AUTH_JWT_AUDIENCE:-}"
+      SERVER_TLS_TERMINATED: "${SERVER_TLS_TERMINATED:?verified TLS boundary required}"
+      SERVER_TRUSTED_PROXY_CIDRS: "${SERVER_TRUSTED_PROXY_CIDRS:?trusted ingress CIDRs required}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS:?agent Host allowlist required}"
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-}"
+      MCP_CLIENT_AUTH: "${MCP_CLIENT_AUTH:?outbound MCP service identity required}"
+      OIDC_CLIENT_ID: "${OIDC_CLIENT_ID:-}"
+      OIDC_CLIENT_SECRET_REF: "${OIDC_CLIENT_SECRET_REF:-}"
+      OIDC_AUDIENCE: "${OIDC_AUDIENCE:-}"
+      OIDC_TOKEN_URL: "${OIDC_TOKEN_URL:-}"
     ports:
-      - "9009:9009"
+      - "${SYSTEMS_MANAGER_AGENT_BIND_ADDRESS:-127.0.0.1}:${SYSTEMS_MANAGER_AGENT_PORT:-9009}:9009"
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9009/health')"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9009/health', timeout=3)"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 10s
     logging:
@@ -59,3 +104,7 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+volumes:
+  systems-manager-mcp-state: {}
+  systems-manager-agent-state: {}
