@@ -1,4 +1,4 @@
-agent-utilities[mcp,agent-runtime,logfire]>=1.27.1,<2.0.0
+agent-utilities[mcp,agent-runtime,logfire]>=2.0.0,<3.0.0
 pydantic>=2.12.0,<3.0.0
 psutil>=7.0.0
 distro>=1.9.0

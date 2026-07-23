@@ -8,7 +8,7 @@ managed-file, firewall, physical-storage, Agent OS, and privacy-safe host-ingest
 capabilities without exposing a raw command tool.
 
 The current package requires Python 3.11–3.14 and
-`agent-utilities>=1.27.1,<2.0.0`.
+`agent-utilities>=2.0.0,<3.0.0`.
 
 ## Install and run
 
@@ -261,7 +261,7 @@ pre-commit run --all-files
 
 Run host operations only through mocks during tests. Do not run native builds or live
 host mutations as a validation shortcut. The source dependency floor is intentionally
-`agent-utilities>=1.27.1`; regenerate and commit a neutral lock only after that release
+`agent-utilities>=2.0.0`; regenerate and commit a neutral lock only after that release
 is available from the configured package index. Never commit an editable local source
 or a stale dependency resolution.
 
