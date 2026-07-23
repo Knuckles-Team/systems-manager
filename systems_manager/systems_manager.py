@@ -32,7 +32,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from systems_manager.k8s_detect import is_k8s_node
 
-__version__ = "1.36.0"
+__version__ = "2.0.0"
 
 _MAX_MANAGED_FILE_BYTES = 8 * 1024 * 1024
 _MAX_LOCAL_PACKAGE_BYTES = 2 * 1024 * 1024 * 1024

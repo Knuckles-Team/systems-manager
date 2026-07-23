@@ -1,6 +1,6 @@
 # systems-manager
 
-Version: 1.36.0
+Version: 2.0.0
 
 `systems-manager` is the typed host-operations provider for Agent Utilities and
 GraphOS. It exposes cross-platform package, service, process, network, disk,
