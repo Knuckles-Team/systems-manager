@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://knuckles-team.github.io/systems-manager/deployment/">
       
       
-        <link rel="prev" href="../installation/">
+        <link rel="prev" href="../configuration/">
       
       
         <link rel="next" href="../usage/">
@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="https://raw.githubusercontent.com/squidfunk/mkdocs-material/master/material/templates/assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -291,6 +291,25 @@
   
   
   
+  
+    <li class="md-tabs__item">
+      <a href="../configuration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
     
   
   
@@ -321,6 +340,25 @@
     
   
   Usage (API / CLI / MCP)
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../host-lifecycle-coverage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Host Lifecycle Coverage
 
       </a>
     </li>
@@ -415,7 +453,7 @@
   
     
   
-  Agent-Utilities Synergy
+  Agent Utilities Integration
 
       </a>
     </li>
@@ -434,7 +472,7 @@
   
     
   
-  Code Coverage
+  Validation
 
       </a>
     </li>
@@ -596,6 +634,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -659,71 +724,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#deployment-options" class="md-nav__link">
+  <a href="#local-stdio" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deployment Options
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Deployment Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-stdio-local-subprocess" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. stdio (local subprocess)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-streamable-http-local-process" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Streamable-HTTP (local process)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-local-container-uv" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Local container / uv
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-remote-url-deployed-behind-caddy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Remote URL (deployed behind Caddy)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#run-the-mcp-server" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Run the MCP server
+        Local stdio
       
     </span>
   </a>
@@ -731,10 +735,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-environment" class="md-nav__link">
+  <a href="#network-mcp" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration (environment)
+        Network MCP
       
     </span>
   </a>
@@ -742,10 +746,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#docker-compose" class="md-nav__link">
+  <a href="#containers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Docker Compose
+        Containers
       
     </span>
   </a>
@@ -764,10 +768,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#behind-a-caddy-reverse-proxy" class="md-nav__link">
+  <a href="#host-permissions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Behind a Caddy reverse proxy
+        Host permissions
       
     </span>
   </a>
@@ -775,10 +779,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dns-with-technitium" class="md-nav__link">
+  <a href="#observability-and-privacy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DNS with Technitium
+        Observability and privacy
       
     </span>
   </a>
@@ -786,10 +790,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#register-with-an-mcp-client" class="md-nav__link">
+  <a href="#release-and-readiness-gates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Register with an MCP client
+        Release and readiness gates
       
     </span>
   </a>
@@ -819,6 +823,33 @@
     
   
     Usage (API / CLI / MCP)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../host-lifecycle-coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host Lifecycle Coverage
   
 
     
@@ -953,7 +984,7 @@
   <span class="md-ellipsis">
     
   
-    Agent-Utilities Synergy
+    Agent Utilities Integration
   
 
     
@@ -980,7 +1011,7 @@
   <span class="md-ellipsis">
     
   
-    Code Coverage
+    Validation
   
 
     
@@ -1047,71 +1078,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#deployment-options" class="md-nav__link">
+  <a href="#local-stdio" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deployment Options
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Deployment Options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#1-stdio-local-subprocess" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. stdio (local subprocess)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#2-streamable-http-local-process" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Streamable-HTTP (local process)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#3-local-container-uv" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Local container / uv
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#4-remote-url-deployed-behind-caddy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        4. Remote URL (deployed behind Caddy)
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#run-the-mcp-server" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Run the MCP server
+        Local stdio
       
     </span>
   </a>
@@ -1119,10 +1089,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration-environment" class="md-nav__link">
+  <a href="#network-mcp" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Configuration (environment)
+        Network MCP
       
     </span>
   </a>
@@ -1130,10 +1100,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#docker-compose" class="md-nav__link">
+  <a href="#containers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Docker Compose
+        Containers
       
     </span>
   </a>
@@ -1152,10 +1122,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#behind-a-caddy-reverse-proxy" class="md-nav__link">
+  <a href="#host-permissions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Behind a Caddy reverse proxy
+        Host permissions
       
     </span>
   </a>
@@ -1163,10 +1133,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dns-with-technitium" class="md-nav__link">
+  <a href="#observability-and-privacy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DNS with Technitium
+        Observability and privacy
       
     </span>
   </a>
@@ -1174,10 +1144,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#register-with-an-mcp-client" class="md-nav__link">
+  <a href="#release-and-readiness-gates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Register with an MCP client
+        Release and readiness gates
       
     </span>
   </a>
@@ -1205,353 +1175,97 @@
 
 
 <h1 id="deployment">Deployment<a class="headerlink" href="#deployment" title="Permanent link">&para;</a></h1>
-<!-- BEGIN GENERATED: deployment-options -->
-<h2 id="deployment-options">Deployment Options<a class="headerlink" href="#deployment-options" title="Permanent link">&para;</a></h2>
-<p><code>systems-manager</code> exposes its MCP server (console script <code>systems-manager-mcp</code>) four ways. Pick the row that
-matches where the server runs relative to your MCP client, then copy the matching
-<code>mcp_config.json</code> below. Replace the <code>&lt;your-…&gt;</code> placeholders with the values from the <strong>Configuration / Environment Variables</strong> section.</p>
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>Option</th>
-<th>Transport</th>
-<th>Where it runs</th>
-<th><code>mcp_config.json</code> key</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>stdio</td>
-<td><code>stdio</code></td>
-<td>client launches a subprocess</td>
-<td><code>command</code></td>
-</tr>
-<tr>
-<td>2</td>
-<td>Streamable-HTTP (local)</td>
-<td><code>streamable-http</code></td>
-<td>a local network port</td>
-<td><code>command</code> or <code>url</code></td>
-</tr>
-<tr>
-<td>3</td>
-<td>Local container / uv</td>
-<td><code>stdio</code> or <code>streamable-http</code></td>
-<td>Docker / Podman / uv on this host</td>
-<td><code>command</code> or <code>url</code></td>
-</tr>
-<tr>
-<td>4</td>
-<td>Remote URL</td>
-<td><code>streamable-http</code></td>
-<td>a remote host behind Caddy</td>
-<td><code>url</code></td>
-</tr>
-</tbody>
-</table>
-<h3 id="1-stdio-local-subprocess">1. stdio (local subprocess)<a class="headerlink" href="#1-stdio-local-subprocess" title="Permanent link">&para;</a></h3>
-<p>The client launches the server over stdio via <code>uvx</code> — best for local IDEs
-(Cursor, Claude Desktop, VS Code):</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager-mcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uvx&quot;</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--from&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;systems-manager&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;systems-manager-mcp&quot;</span><span class="p">],</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="nt">&quot;SYSTEMS_API_KEY&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;your-systems_api_key&gt;&quot;</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="p">}</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">}</span>
+<p><code>systems-manager</code> exposes a local stdio MCP server, an authenticated network MCP
+server, and an optional agent server. Network transports fail closed unless their
+authentication boundary is configured.</p>
+<h2 id="local-stdio">Local stdio<a class="headerlink" href="#local-stdio" title="Permanent link">&para;</a></h2>
+<p>Install the MCP extra and launch the entry point:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uvx<span class="w"> </span>--from<span class="w"> </span><span class="s2">&quot;systems-manager[mcp]&quot;</span><span class="w"> </span>systems-manager-mcp<span class="w"> </span>--transport<span class="w"> </span>stdio
 </span></code></pre></div>
-<h3 id="2-streamable-http-local-process">2. Streamable-HTTP (local process)<a class="headerlink" href="#2-streamable-http-local-process" title="Permanent link">&para;</a></h3>
-<p>Run the server as a long-lived HTTP process:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>uvx<span class="w"> </span>--from<span class="w"> </span>systems-manager<span class="w"> </span>systems-manager-mcp<span class="w"> </span>--transport<span class="w"> </span>streamable-http<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8000/health<span class="w">        </span><span class="c1"># {&quot;status&quot;:&quot;OK&quot;}</span>
+<p>A client configuration can use the repository's reference-only catalog. Keep runtime
+values in AgentConfig rather than editing the catalog with deployment endpoints,
+secrets, trust paths, or host identities.</p>
+<h2 id="network-mcp">Network MCP<a class="headerlink" href="#network-mcp" title="Permanent link">&para;</a></h2>
+<p>For <code>streamable-http</code> or <code>sse</code>, configure:</p>
+<ul>
+<li>an authentication provider through the current Agent Utilities MCP settings;</li>
+<li>direct TLS certificate/key settings, or a verified TLS-terminating proxy and
+  trusted proxy CIDRs;</li>
+<li>an explicit host allowlist;</li>
+<li>a deliberate bind address.</li>
+</ul>
+<p>The server refuses a network transport when authentication is absent. Use HTTPS for
+every non-loopback client. A replaceable client entry is:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">      </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://mcp.example.invalid/mcp&quot;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Then either let the client launch it:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager-mcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uvx&quot;</span><span class="p">,</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--from&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;systems-manager&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;systems-manager-mcp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--transport&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;streamable-http&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--port&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;8000&quot;</span><span class="p">],</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="nt">&quot;TRANSPORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;streamable-http&quot;</span><span class="p">,</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="nt">&quot;HOST&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="nt">&quot;PORT&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;8000&quot;</span><span class="p">,</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">        </span><span class="nt">&quot;SYSTEMS_API_KEY&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;your-systems_api_key&gt;&quot;</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">      </span><span class="p">}</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="p">}</span>
+<p>Do not place credentials in the URL. Configure outbound OIDC or another supported
+service identity through the client boundary.</p>
+<h2 id="containers">Containers<a class="headerlink" href="#containers" title="Permanent link">&para;</a></h2>
+<p>The repository ships two hardened Compose definitions:</p>
+<ul>
+<li><code>docker/mcp.compose.yml</code> for the MCP server;</li>
+<li><code>docker/agent.compose.yml</code> for an agent plus MCP sidecar.</li>
+</ul>
+<p>Both require operator-selected image variables, bind published ports to loopback by
+default, run as UID/GID 10001, drop all Linux capabilities, enable
+<code>no-new-privileges</code>, use read-only filesystems, bound memory/CPU/PIDs, and use a
+bounded <code>tmpfs</code>. Network authentication and TLS boundary inputs are required.</p>
+<p>Build the two image targets with explicit registry tags:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>mcp<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">SYSTEMS_MANAGER_MCP_IMAGE</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>agent<span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">SYSTEMS_MANAGER_AGENT_IMAGE</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
 </span></code></pre></div>
-<p>…or connect to the already-running process by URL:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager-mcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:8000/mcp&quot;</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">}</span>
-</span></code></pre></div>
-<h3 id="3-local-container-uv">3. Local container / uv<a class="headerlink" href="#3-local-container-uv" title="Permanent link">&para;</a></h3>
-<p><strong>(a) Launch a container directly from <code>mcp_config.json</code></strong> (stdio over the container —
-no ports to manage). Swap <code>docker</code> for <code>podman</code> for a daemonless runtime:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager-mcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;docker&quot;</span><span class="p">,</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="s2">&quot;run&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;-i&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;--rm&quot;</span><span class="p">,</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="s2">&quot;-e&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;TRANSPORT=stdio&quot;</span><span class="p">,</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">        </span><span class="s2">&quot;-e&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;SYSTEMS_API_KEY=&lt;your-systems_api_key&gt;&quot;</span><span class="p">,</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">        </span><span class="s2">&quot;knucklessg1/systems-manager:latest&quot;</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">      </span><span class="p">]</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="p">}</span>
-</span></code></pre></div>
-<p><strong>(b) Run a local streamable-http container, then connect by URL:</strong></p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>run<span class="w"> </span>-d<span class="w"> </span>--name<span class="w"> </span>systems-manager-mcp<span class="w"> </span>-p<span class="w"> </span><span class="m">8000</span>:8000<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">TRANSPORT</span><span class="o">=</span>streamable-http<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">PORT</span><span class="o">=</span><span class="m">8000</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">SYSTEMS_API_KEY</span><span class="o">=</span><span class="s2">&quot;&lt;your-systems_api_key&gt;&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span>knucklessg1/systems-manager:latest
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># or, from a clone of this repo:</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/mcp.compose.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span></code></pre></div>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager-mcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://localhost:8000/mcp&quot;</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
-</span></code></pre></div>
-<p><strong>(c) From a local checkout with <code>uv</code>:</strong></p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>uv<span class="w"> </span>run<span class="w"> </span>systems-manager-mcp<span class="w"> </span>--transport<span class="w"> </span>streamable-http<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
-</span></code></pre></div>
-<h3 id="4-remote-url-deployed-behind-caddy">4. Remote URL (deployed behind Caddy)<a class="headerlink" href="#4-remote-url-deployed-behind-caddy" title="Permanent link">&para;</a></h3>
-<p>When the server is deployed remotely (e.g. as a Docker service) and published through
-Caddy on the internal <code>*.arpa</code> zone, connect with the <code>"url"</code> key — no local process or
-image required:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager-mcp&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;http://systems-manager-mcp.arpa/mcp&quot;</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">}</span>
-</span></code></pre></div>
-<p>Caddy reverse-proxies <code>http://systems-manager-mcp.arpa</code> to the container's <code>:8000</code>
-streamable-http listener; <code>http://systems-manager-mcp.arpa/health</code> returns
-<code>{"status":"OK"}</code> when the service is live.</p>
-<!-- END GENERATED: deployment-options -->
-
-<p>This page covers running <code>systems-manager</code> as a long-lived server: the transports, a
-Docker Compose stack, putting it behind a Caddy reverse proxy, giving it a DNS name
-with Technitium, and running the integrated agent server.</p>
-<blockquote>
-<p><code>systems-manager</code> ships both an <strong>MCP server</strong> (console script <code>systems-manager-mcp</code>)
-and an <strong>A2A agent server</strong> (console script <code>systems-manager-agent</code>). The MCP server
-is a typed, deterministic tool surface a policy router / agent calls; the agent
-server wraps it in a Pydantic AI graph reachable over ACP and the Agent Web UI.</p>
-</blockquote>
-<h2 id="run-the-mcp-server">Run the MCP server<a class="headerlink" href="#run-the-mcp-server" title="Permanent link">&para;</a></h2>
-<p>The transport is selected with <code>--transport</code> (or the <code>TRANSPORT</code> env var):</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">stdio (default)</label><label for="__tabbed_1_2">streamable-http</label><label for="__tabbed_1_3">sse</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>systems-manager-mcp
-</span></code></pre></div>
-For IDE / desktop MCP clients that launch the server as a subprocess.</p>
-</div>
-<div class="tabbed-block">
-<p><div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>systems-manager-mcp<span class="w"> </span>--transport<span class="w"> </span>streamable-http<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
-</span></code></pre></div>
-A network server with a <code>/health</code> endpoint and <code>/mcp</code> route.</p>
-</div>
-<div class="tabbed-block">
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>systems-manager-mcp<span class="w"> </span>--transport<span class="w"> </span>sse<span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span>
-</span></code></pre></div>
-</div>
-</div>
-</div>
-<p>Health check (HTTP transports):</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://localhost:8000/health<span class="w">        </span><span class="c1"># {&quot;status&quot;:&quot;OK&quot;}</span>
-</span></code></pre></div>
-<h2 id="configuration-environment">Configuration (environment)<a class="headerlink" href="#configuration-environment" title="Permanent link">&para;</a></h2>
-<p><code>systems-manager</code> is configured entirely from the environment. The <strong>required</strong> set:</p>
-<table>
-<thead>
-<tr>
-<th>Var</th>
-<th>Default</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>HOST</code></td>
-<td><code>0.0.0.0</code></td>
-<td>Bind address for HTTP transports</td>
-</tr>
-<tr>
-<td><code>PORT</code></td>
-<td><code>8000</code></td>
-<td>Bind port for HTTP transports</td>
-</tr>
-<tr>
-<td><code>TRANSPORT</code></td>
-<td><code>stdio</code></td>
-<td>Transport: <code>stdio</code>, <code>streamable-http</code>, or <code>sse</code></td>
-</tr>
-<tr>
-<td><code>MISCTOOL</code></td>
-<td><code>True</code></td>
-<td>Register the miscellaneous tool module</td>
-</tr>
-<tr>
-<td><code>ENABLE_OTEL</code></td>
-<td><code>True</code></td>
-<td>Export OpenTelemetry traces</td>
-</tr>
-<tr>
-<td><code>EUNOMIA_TYPE</code></td>
-<td><code>none</code></td>
-<td>Authorization mode: <code>none</code>, <code>embedded</code>, or <code>remote</code></td>
-</tr>
-<tr>
-<td><code>EUNOMIA_POLICY_FILE</code></td>
-<td><code>mcp_policies.json</code></td>
-<td>Embedded policy file path</td>
-</tr>
-</tbody>
-</table>
-<p>Optional observability and authorization settings (<code>OTEL_EXPORTER_OTLP_ENDPOINT</code>,
-<code>EUNOMIA_REMOTE_URL</code>, and connector credentials) are documented in
-<a href="https://github.com/Knuckles-Team/systems-manager/blob/main/.env.example"><code>.env.example</code></a>.
-Copy it to <code>.env</code> and fill in only what you use.</p>
-<h2 id="docker-compose">Docker Compose<a class="headerlink" href="#docker-compose" title="Permanent link">&para;</a></h2>
-<p>The repo ships <a href="https://github.com/Knuckles-Team/systems-manager/blob/main/docker/mcp.compose.yml"><code>docker/mcp.compose.yml</code></a>.
-It reads a sibling <code>.env</code> and publishes the HTTP server on <code>:8000</code>:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nt">services</span><span class="p">:</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">systems-manager-mcp</span><span class="p">:</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">knucklessg1/systems-manager:latest</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">systems-manager-mcp</span>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">systems-manager-mcp</span>
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="nt">env_file</span><span class="p">:</span>
-</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../.env</span>
-</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHONUNBUFFERED=1</span>
-</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HOST=0.0.0.0</span>
-</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PORT=8000</span>
-</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TRANSPORT=streamable-http</span>
-</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8000:8000&quot;</span>
-</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="w">    </span><span class="nt">healthcheck</span><span class="p">:</span>
-</span><span id="__span-13-17"><a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a><span class="w">      </span><span class="nt">test</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;CMD&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;python3&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;-c&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;import</span><span class="nv"> </span><span class="s">urllib.request;</span><span class="nv"> </span><span class="s">urllib.request.urlopen(&#39;http://localhost:8000/health&#39;)&quot;</span><span class="p p-Indicator">]</span>
-</span><span id="__span-13-18"><a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="w">      </span><span class="nt">interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30s</span>
-</span><span id="__span-13-19"><a id="__codelineno-13-19" name="__codelineno-13-19" href="#__codelineno-13-19"></a><span class="w">      </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10s</span>
-</span><span id="__span-13-20"><a id="__codelineno-13-20" name="__codelineno-13-20" href="#__codelineno-13-20"></a><span class="w">      </span><span class="nt">retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
-</span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>cp<span class="w"> </span>.env.example<span class="w"> </span>.env<span class="w">          </span><span class="c1"># then edit values</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/mcp.compose.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/mcp.compose.yml<span class="w"> </span>logs<span class="w"> </span>-f
-</span></code></pre></div>
+<p>The Dockerfile pins base and uv images by digest and installs into a multi-stage,
+non-root runtime. Deployment pipelines should additionally sign the resulting image,
+produce an SBOM/provenance attestation, scan it, and enforce the approved digest at
+admission.</p>
 <h2 id="agent-server">Agent server<a class="headerlink" href="#agent-server" title="Permanent link">&para;</a></h2>
-<p><code>systems-manager</code> includes an integrated Pydantic AI graph agent (console script
-<code>systems-manager-agent</code>). It connects to the MCP server over <code>MCP_URL</code>, communicates
-over the Agent Control Protocol (ACP), and serves the Agent Web UI (AG-UI) on its own
-port (default <code>9009</code>).</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">MCP_URL</span><span class="o">=</span>http://localhost:8000/mcp
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>systems-manager-agent<span class="w"> </span>--provider<span class="w"> </span>openai<span class="w"> </span>--model-id<span class="w"> </span>gpt-4o
-</span></code></pre></div>
-<p>The repo ships <a href="https://github.com/Knuckles-Team/systems-manager/blob/main/docker/agent.compose.yml"><code>docker/agent.compose.yml</code></a>,
-which runs the MCP server and the agent together; the agent reaches the MCP server by
-container name:</p>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">services</span><span class="p">:</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="nt">systems-manager-mcp</span><span class="p">:</span>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">knucklessg1/systems-manager:latest</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">systems-manager-mcp</span>
-</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">systems-manager-mcp</span>
-</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">    </span><span class="nt">env_file</span><span class="p">:</span>
-</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../.env</span>
-</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHONUNBUFFERED=1</span>
-</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HOST=0.0.0.0</span>
-</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PORT=8000</span>
-</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TRANSPORT=streamable-http</span>
-</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;8000:8000&quot;</span>
-</span><span id="__span-16-16"><a id="__codelineno-16-16" name="__codelineno-16-16" href="#__codelineno-16-16"></a>
-</span><span id="__span-16-17"><a id="__codelineno-16-17" name="__codelineno-16-17" href="#__codelineno-16-17"></a><span class="w">  </span><span class="nt">systems-manager-agent</span><span class="p">:</span>
-</span><span id="__span-16-18"><a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">knucklessg1/systems-manager:latest</span>
-</span><span id="__span-16-19"><a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a><span class="w">    </span><span class="nt">container_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">systems-manager-agent</span>
-</span><span id="__span-16-20"><a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a><span class="w">    </span><span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">systems-manager-agent</span>
-</span><span id="__span-16-21"><a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">always</span>
-</span><span id="__span-16-22"><a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a><span class="w">    </span><span class="nt">depends_on</span><span class="p">:</span>
-</span><span id="__span-16-23"><a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">systems-manager-mcp</span>
-</span><span id="__span-16-24"><a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a><span class="w">    </span><span class="nt">env_file</span><span class="p">:</span>
-</span><span id="__span-16-25"><a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">../.env</span>
-</span><span id="__span-16-26"><a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;systems-manager-agent&quot;</span><span class="p p-Indicator">]</span>
-</span><span id="__span-16-27"><a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a><span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
-</span><span id="__span-16-28"><a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PYTHONUNBUFFERED=1</span>
-</span><span id="__span-16-29"><a id="__codelineno-16-29" name="__codelineno-16-29" href="#__codelineno-16-29"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HOST=0.0.0.0</span>
-</span><span id="__span-16-30"><a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PORT=9009</span>
-</span><span id="__span-16-31"><a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MCP_URL=http://systems-manager-mcp:8000/mcp</span>
-</span><span id="__span-16-32"><a id="__codelineno-16-32" name="__codelineno-16-32" href="#__codelineno-16-32"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PROVIDER=${PROVIDER:-openai}</span>
-</span><span id="__span-16-33"><a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MODEL_ID=${MODEL_ID:-gpt-4o}</span>
-</span><span id="__span-16-34"><a id="__codelineno-16-34" name="__codelineno-16-34" href="#__codelineno-16-34"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ENABLE_WEB_UI=True</span>
-</span><span id="__span-16-35"><a id="__codelineno-16-35" name="__codelineno-16-35" href="#__codelineno-16-35"></a><span class="w">    </span><span class="nt">ports</span><span class="p">:</span>
-</span><span id="__span-16-36"><a id="__codelineno-16-36" name="__codelineno-16-36" href="#__codelineno-16-36"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;9009:9009&quot;</span>
-</span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker/agent.compose.yml<span class="w"> </span>up<span class="w"> </span>-d
-</span></code></pre></div>
-<h2 id="behind-a-caddy-reverse-proxy">Behind a Caddy reverse proxy<a class="headerlink" href="#behind-a-caddy-reverse-proxy" title="Permanent link">&para;</a></h2>
-<p>Expose the HTTP server on a hostname with automatic TLS. Add to your <code>Caddyfile</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a># Internal (self-signed) — homelab .arpa zone
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>systems-manager.arpa {
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>    tls internal
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>    reverse_proxy systems-manager-mcp:8000
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>}
-</span></code></pre></div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a># Public — automatic Let&#39;s Encrypt
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>systems-manager.example.com {
-</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    reverse_proxy systems-manager-mcp:8000
-</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>}
-</span></code></pre></div>
-<p>Reload Caddy:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>services/caddy/compose.yml<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>caddy<span class="w"> </span>caddy<span class="w"> </span>reload<span class="w"> </span>--config<span class="w"> </span>/etc/caddy/Caddyfile
-</span></code></pre></div>
-<h2 id="dns-with-technitium">DNS with Technitium<a class="headerlink" href="#dns-with-technitium" title="Permanent link">&para;</a></h2>
-<p>Point the hostname at the host running Caddy. Via the Technitium API:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>curl<span class="w"> </span>-s<span class="w"> </span><span class="s2">&quot;http://technitium.arpa:5380/api/zones/records/add&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s2">&quot;token=</span><span class="nv">$TECHNITIUM_DNS_TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s2">&quot;domain=systems-manager.arpa&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s2">&quot;zone=arpa&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s2">&quot;type=A&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s2">&quot;ipAddress=10.0.0.10&quot;</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s2">&quot;ttl=3600&quot;</span>
-</span></code></pre></div>
-<p>…or add an <strong>A record</strong> <code>systems-manager.arpa → &lt;caddy-host-ip&gt;</code> in the Technitium web
-console (<code>http://technitium.arpa:5380</code>). The ecosystem
-<a href="https://knuckles-team.github.io/technitium-dns-mcp/"><code>technitium-dns-mcp</code></a> automates
-this as a tool.</p>
-<h2 id="register-with-an-mcp-client">Register with an MCP client<a class="headerlink" href="#register-with-an-mcp-client" title="Permanent link">&para;</a></h2>
-<p>Add to your client's <code>mcp_config.json</code>:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="p">{</span>
-</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">    </span><span class="nt">&quot;systems-manager&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;uvx&quot;</span><span class="p">,</span>
-</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;--from&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;systems-manager&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;systems-manager-mcp&quot;</span><span class="p">],</span>
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">        </span><span class="nt">&quot;MISCTOOL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;True&quot;</span>
-</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="w">      </span><span class="p">}</span>
-</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="p">}</span>
-</span></code></pre></div>
-<p>For a remote HTTP server, point the client at <code>http://systems-manager.arpa/mcp</code>
-instead.</p>
+<p>A non-loopback agent listener requires all of:</p>
+<ul>
+<li><code>SYSTEMS_MANAGER_ALLOW_REMOTE_AGENT_SERVER=true</code>;</li>
+<li>direct TLS or an explicitly trusted TLS proxy boundary;</li>
+<li>JWT authentication through <code>AUTH_JWT_JWKS_URI</code>, <code>AUTH_JWT_ISSUER</code>, and
+  <code>AUTH_JWT_AUDIENCE</code>;</li>
+<li>debug mode disabled.</li>
+</ul>
+<p>Remote MCP children require an outbound service identity. Model, MCP, and OTLP
+endpoints must be credential-free HTTPS or loopback HTTP. Certificate verification
+is mandatory; private trust is selected from the AgentConfig TLS-profile catalog,
+not a source-code switch.</p>
+<h2 id="host-permissions">Host permissions<a class="headerlink" href="#host-permissions" title="Permanent link">&para;</a></h2>
+<p>Run under a dedicated service identity. Configure
+<code>SYSTEMS_MANAGER_FILESYSTEM_ROOT</code> to a non-volume, trusted-owner directory.
+Privilege gates default to false. The optional elevation helper uses empty-by-default
+deployment allowlists; see <a href="../sudo_security/">Sudo security</a>.</p>
+<p>Containers operate on their container boundary unless a separately reviewed host
+broker is provided. They do not implicitly manage the container host, Windows host,
+or WSL host.</p>
+<h2 id="observability-and-privacy">Observability and privacy<a class="headerlink" href="#observability-and-privacy" title="Permanent link">&para;</a></h2>
+<p>OTLP/Langfuse settings are deployment inputs. Default to metadata-only telemetry.
+Before enabling content capture, approve retention, access control, tenant isolation,
+and redaction. Never store prompts, tool bodies/results, hostnames, usernames, local
+paths, certificate paths, or credentials in traces.</p>
+<h2 id="release-and-readiness-gates">Release and readiness gates<a class="headerlink" href="#release-and-readiness-gates" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Verify the package, image digest, SBOM, signature, and provenance. Generate a
+   neutral dependency lock only after every declared release is available; reject
+   editable local sources and stale locks.</li>
+<li>Run the ecosystem doctor without printing values.</li>
+<li>Validate the current ontology, source preset, mapping, MCP schemas, packaged skill,
+   and signed offline source bundle. Generate external-live certification only in the
+   authorized release environment; never infer it from offline evidence.</li>
+<li>Prove unauthenticated network startup/calls fail.</li>
+<li>Prove each privilege gate fails closed.</li>
+<li>Exercise one approved typed operation and independent read-back.</li>
+<li>Confirm sanitized traces arrive under opaque run and tenant identifiers.</li>
+<li>Keep rollback artifacts and recovery ownership available before hot swapping.</li>
+</ol>
+<p>See <a href="../configuration/">Configuration</a> for the complete trust and privacy contract.</p>
 
 
 
@@ -1589,7 +1303,7 @@ instead.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../installation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Installation">
+          <a href="../configuration/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Configuration">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1599,7 +1313,7 @@ instead.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Installation
+                Configuration
               </div>
             </div>
           </a>
@@ -1685,7 +1399,7 @@ instead.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.instant", "navigation.instant.progress", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

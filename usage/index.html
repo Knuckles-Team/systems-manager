@@ -16,14 +16,14 @@
         <link rel="prev" href="../deployment/">
       
       
-        <link rel="next" href="../sudo_security/">
+        <link rel="next" href="../host-lifecycle-coverage/">
       
       
         
       
       
       <link rel="icon" href="https://raw.githubusercontent.com/squidfunk/mkdocs-material/master/material/templates/assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -293,6 +293,25 @@
   
   
     <li class="md-tabs__item">
+      <a href="../configuration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
       <a href="../deployment/" class="md-tabs__link">
         
   
@@ -321,6 +340,25 @@
     
   
   Usage (API / CLI / MCP)
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../host-lifecycle-coverage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Host Lifecycle Coverage
 
       </a>
     </li>
@@ -415,7 +453,7 @@
   
     
   
-  Agent-Utilities Synergy
+  Agent Utilities Integration
 
       </a>
     </li>
@@ -434,7 +472,7 @@
   
     
   
-  Code Coverage
+  Validation
 
       </a>
     </li>
@@ -599,6 +637,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../deployment/" class="md-nav__link">
         
   
@@ -733,6 +798,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../host-lifecycle-coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host Lifecycle Coverage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../sudo_security/" class="md-nav__link">
         
   
@@ -848,7 +940,7 @@
   <span class="md-ellipsis">
     
   
-    Agent-Utilities Synergy
+    Agent Utilities Integration
   
 
     
@@ -875,7 +967,7 @@
   <span class="md-ellipsis">
     
   
-    Code Coverage
+    Validation
   
 
     
@@ -999,9 +1091,9 @@
 calls, as a <strong>Python API</strong> you import, and as a <strong>CLI</strong> for direct package
 management. The full ecosystem role and concept map are in <a href="../overview/">Overview</a>.</p>
 <h2 id="as-an-mcp-server">As an MCP server<a class="headerlink" href="#as-an-mcp-server" title="Permanent link">&para;</a></h2>
-<p>Once <a href="../deployment/">deployed</a>, the server registers consolidated, action-routed tool
-modules. Each module dispatches on an <code>action</code> argument, which keeps the LLM tool
-surface small while covering a broad operation set.</p>
+<p>Once <a href="../deployment/">deployed</a>, the server defaults to the compact intent surface and
+keeps consolidated action-routed modules as the governed backing capabilities. Load
+only the domain needed for the current request, then discover its exact action schema.</p>
 <table>
 <thead>
 <tr>
@@ -1046,8 +1138,18 @@ surface small while covering a broad operation set.</p>
 <td><code>sm_firewall_operations</code></td>
 <td>firewall management</td>
 </tr>
+<tr>
+<td><code>sm_storage_health</code></td>
+<td>SMART, RAID, and optional BMC drive-fault diagnostics</td>
+</tr>
+<tr>
+<td><code>systems_ingest_host</code></td>
+<td>privacy-safe governed host graph ingestion</td>
+</tr>
 </tbody>
 </table>
+<p>Agent identity, specialist registry, scheduler, and watchdog
+domains are also registered when their current provider toggles are enabled.</p>
 <p>Example agent prompts that map onto these tools:</p>
 <ul>
 <li><em>"Update the system and install git and htop"</em> → <code>sm_system_operations</code></li>
@@ -1055,8 +1157,9 @@ surface small while covering a broad operation set.</p>
 <li><em>"Which processes are using the most memory?"</em> → <code>sm_process_operations</code></li>
 </ul>
 <p>Tool modules are individually togglable with environment switches (for example,
-<code>MISCTOOL</code>) and can be filtered at runtime with <code>--tools</code> / <code>--toolsets</code> or the
-<code>MCP_ENABLED_TOOLS</code> / <code>MCP_DISABLED_TOOLS</code> variables.</p>
+<code>MISCTOOL</code>) and can be filtered through the current Agent Utilities visibility
+configuration. A denied or unavailable capability must not be translated into a raw
+command or generic file mutation.</p>
 <h2 id="as-a-python-api">As a Python API<a class="headerlink" href="#as-a-python-api" title="Permanent link">&para;</a></h2>
 <p><code>detect_and_create_manager()</code> returns the appropriate <code>SystemsManagerBase</code>
 implementation for the current operating system (<code>apt</code>, <code>dnf</code>, <code>zypper</code>, <code>pacman</code>, or
@@ -1070,34 +1173,28 @@ Windows), so the same calls work across distributions.</p>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">hw_stats</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_hardware_statistics</span><span class="p">()</span>   <span class="c1"># hardware inventory</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">logs</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_system_logs</span><span class="p">(</span><span class="n">lines</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>      <span class="c1"># recent journal / system logs</span>
 </span></code></pre></div>
-<p>Target a remote host from the inventory (over plain SSH, no remote daemon):</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Reads SYSTEMS_MANAGER_HOST or an explicit host from the XDG inventory</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">manager</span> <span class="o">=</span> <span class="n">detect_and_create_manager</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;node-02&quot;</span><span class="p">)</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">remote_os_stats</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_os_statistics</span><span class="p">()</span>
-</span></code></pre></div>
-<p>See <a href="../multi_host/">Multi-Host</a> for the zero-script remote telemetry and control
-plane.</p>
+<p>For fleet operations, delegate to an authenticated instance on the target host or
+compose the governed tunnel-manager capability through GraphOS. See
+<a href="../multi_host/">Multi-Host</a>.</p>
 <h2 id="as-a-cli">As a CLI<a class="headerlink" href="#as-a-cli" title="Permanent link">&para;</a></h2>
 <p>The <code>systems-manager</code> console script drives package management and host maintenance
 directly:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Update packages and install applications</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>systems-manager<span class="w"> </span>--update<span class="w"> </span>--install<span class="w"> </span><span class="s2">&quot;git,curl,htop&quot;</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Install Python modules</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>systems-manager<span class="w"> </span>--python<span class="w"> </span><span class="s2">&quot;ruff,pytest&quot;</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Clean and optimize the system</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>systems-manager<span class="w"> </span>--clean<span class="w"> </span>--optimize
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># Display telemetry</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>systems-manager<span class="w"> </span>--os-stats
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>systems-manager<span class="w"> </span>--hw-stats
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Update packages and install applications</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>systems-manager<span class="w"> </span>--update<span class="w"> </span>--install<span class="w"> </span><span class="s2">&quot;git,curl,htop&quot;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Install Python modules</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>systems-manager<span class="w"> </span>--python<span class="w"> </span><span class="s2">&quot;ruff,pytest&quot;</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Clean and optimize the system</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>systems-manager<span class="w"> </span>--clean<span class="w"> </span>--optimize
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Display telemetry</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>systems-manager<span class="w"> </span>--os-stats
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>systems-manager<span class="w"> </span>--hw-stats
 </span></code></pre></div>
-<p>Bootstrap the secure, least-privilege <code>sudo</code> wrapper (see
-<a href="../sudo_security/">Sudo Security</a>):</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>systems-manager<span class="w"> </span>--setup-sudo
-</span></code></pre></div>
-<p>Run <code>systems-manager --help</code> for the complete flag list.</p>
+<p>The optional helper must be provisioned by the deployment boundary; the CLI does not
+write sudoers policy. See <a href="../sudo_security/">Sudo Security</a>. Run
+<code>systems-manager --help</code> for the complete flag list.</p>
 
 
 
@@ -1152,13 +1249,13 @@ directly:</p>
         
         
           
-          <a href="../sudo_security/" class="md-footer__link md-footer__link--next" aria-label="Next: Sudo Security">
+          <a href="../host-lifecycle-coverage/" class="md-footer__link md-footer__link--next" aria-label="Next: Host Lifecycle Coverage">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Sudo Security
+                Host Lifecycle Coverage
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1231,7 +1328,7 @@ directly:</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.instant", "navigation.instant.progress", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

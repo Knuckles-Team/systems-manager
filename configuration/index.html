@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://knuckles-team.github.io/systems-manager/multi_host/">
+        <link rel="canonical" href="https://knuckles-team.github.io/systems-manager/configuration/">
       
       
-        <link rel="prev" href="../sudo_security/">
+        <link rel="prev" href="../installation/">
       
       
-        <link rel="next" href="../day_0_provisioning/">
+        <link rel="next" href="../deployment/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Multi-Host - systems-manager</title>
+        <title>Configuration - systems-manager</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#multi-host-orchestration" class="md-skip">
+        <a href="#configuration-trust-and-privacy" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Multi-Host
+              Configuration
             
           </span>
         </div>
@@ -291,9 +291,11 @@
   
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../configuration/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
   
@@ -386,11 +388,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../multi_host/" class="md-tabs__link">
         
   
   
@@ -634,10 +634,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -653,6 +680,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#capability-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Capability configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-values-and-secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime values and secrets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#host-capability-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Host capability policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tls-trust" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TLS trust
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#privacy-and-data-governance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Privacy and data governance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -769,37 +882,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Multi-Host
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../multi_host/" class="md-nav__link">
         
   
   
@@ -815,59 +901,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#fleet-pattern" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Fleet pattern
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#security-requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Security requirements
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#delegation-workflow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Delegation workflow
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1034,10 +1067,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#fleet-pattern" class="md-nav__link">
+  <a href="#capability-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fleet pattern
+        Capability configuration
       
     </span>
   </a>
@@ -1045,10 +1078,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#security-requirements" class="md-nav__link">
+  <a href="#runtime-values-and-secrets" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Security requirements
+        Runtime values and secrets
       
     </span>
   </a>
@@ -1056,10 +1089,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#delegation-workflow" class="md-nav__link">
+  <a href="#host-capability-policy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Delegation workflow
+        Host capability policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tls-trust" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TLS trust
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#privacy-and-data-governance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Privacy and data governance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment verification
       
     </span>
   </a>
@@ -1086,52 +1152,107 @@
   
 
 
-<h1 id="multi-host-orchestration">Multi-host orchestration<a class="headerlink" href="#multi-host-orchestration" title="Permanent link">&para;</a></h1>
-<p><code>systems-manager</code> intentionally does not build SSH command strings or disable host-key
-verification. Its typed host operations execute on the host where the process runs.
-This keeps operating-system detection, executable trust, elevation, filesystem
-confinement, and process-tree termination inside one local security boundary.</p>
-<h2 id="fleet-pattern">Fleet pattern<a class="headerlink" href="#fleet-pattern" title="Permanent link">&para;</a></h2>
-<p>Use GraphOS delegation to compose the ecosystem services:</p>
-<pre class="mermaid"><code>flowchart LR
-    Client[MCP client] --&gt; GraphOS[GraphOS delegation]
-    GraphOS --&gt; LocalSM[Authenticated systems-manager on target]
-    GraphOS --&gt; Tunnel[tunnel-manager]
-    Tunnel --&gt; SSH[Host-key-verified SSH]
-    LocalSM --&gt; Host[Local typed host operations]</code></pre>
-<p>Choose one of two reviewed deployment patterns:</p>
-<ol>
-<li>Run an authenticated <code>systems-manager</code> service on each managed host and delegate
-   to that service through GraphOS.</li>
-<li>Use <code>tunnel-manager</code> for its governed, host-key-verified remote capabilities.
-   Do not translate arbitrary model text into a remote shell command.</li>
-</ol>
-<p>The inventory, credentials, verified <code>known_hosts</code> file, proxy policy, and endpoints
-are deployment configuration. They are not packaged in this repository. Inventory
-aliases should be opaque and non-personal.</p>
-<h2 id="security-requirements">Security requirements<a class="headerlink" href="#security-requirements" title="Permanent link">&para;</a></h2>
+<h1 id="configuration-trust-and-privacy">Configuration, trust, and privacy<a class="headerlink" href="#configuration-trust-and-privacy" title="Permanent link">&para;</a></h1>
+<p>This page is the operator contract for <code>systems-manager</code>. Package-specific endpoint,
+authentication, tool-toggle, and model settings remain documented in the
+repository README and the installed command's <code>--help</code> output. Runtime values
+must be injected by the launcher; they do not belong in source, packaged skill
+content, traces, or generated reports.</p>
+<h2 id="capability-configuration">Capability configuration<a class="headerlink" href="#capability-configuration" title="Permanent link">&para;</a></h2>
+<p>The current capability source is defined by three versioned artifact groups:</p>
 <ul>
-<li>Require verified SSH host keys; host-key verification cannot be disabled and
-  trust-on-first-use is not accepted.</li>
-<li>Resolve credentials through configured secret references or SSH agent identity.
-  Never pass a password or private key through a tool argument.</li>
-<li>Keep systems-manager host mutations default-deny and require request approval.</li>
-<li>Keep remote transport authentication and TLS verification enabled.</li>
-<li>Return opaque host references in evidence and traces; do not persist hostnames,
-  usernames, local paths, commands, or command output.</li>
-<li>Bound connection time, operation time, output size, concurrency, and retries.</li>
+<li>the action-routed MCP tools described in the README and <code>docs/usage.md</code>;</li>
+<li>the single canonical <code>systems-manager-operations</code> skill and its focused catalog;</li>
+<li>the human-authored ontology, source preset, and source mapping shipped by the
+  provider.</li>
 </ul>
-<h2 id="delegation-workflow">Delegation workflow<a class="headerlink" href="#delegation-workflow" title="Permanent link">&para;</a></h2>
+<p>Release automation derives and commits the exact local schema fingerprint, signed
+manifest, SHACL shapes, neutral mapping and fixture, migration ledger, and offline
+source attestation from those sources. These artifacts contain no environment-bound
+values and do not claim external-live certification. Use the compact intent-oriented
+surface for delegated agents and load current typed actions on demand. Raw-command
+surfaces are not part of the API.</p>
+<h2 id="runtime-values-and-secrets">Runtime values and secrets<a class="headerlink" href="#runtime-values-and-secrets" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Supply service endpoints, tenant identifiers, credentials, and model keys through
+  AgentConfig references resolved by the launcher.</li>
+<li>Use non-personal agent aliases and opaque tenant/correlation identifiers.</li>
+<li>Keep developer directories, workstation names, and deployment hostnames out
+  of checked-in configuration.</li>
+<li>Bind network transports to an explicitly chosen interface and require the
+  deployment's MCP authentication policy before accepting remote traffic.</li>
+<li>Enable optional agent, embedding, evolution, or observability features only
+  when their dependencies and backends are configured and healthy.</li>
+</ul>
+<p>The checked-in examples use <code>localhost</code> for loopback-only development and
+<code>example.invalid</code> for replaceable network endpoints. Neither value is a
+production default.</p>
+<h2 id="host-capability-policy">Host capability policy<a class="headerlink" href="#host-capability-policy" title="Permanent link">&para;</a></h2>
+<p>All host mutations are denied unless the deployment sets
+<code>SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS=true</code>. Generic file edits have a second,
+independent <code>SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS=true</code> gate. Sensitive
+inventory and active network probes have independent
+<code>SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS</code> and
+<code>SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES</code> gates. A mutating MCP operation also
+requires request-channel elicitation. Elicitation confirms intent in that MCP
+session; it is not a substitute for transport authentication, operating-system
+authorization, or an independent human approval broker.</p>
+<p>Raw command execution, shell programs, model-authored cron entries, persistent
+shell aliases, and unsigned remote font archives are not part of the API.
+Managed child processes
+use fixed argv vectors, an executable/interpreter allowlist, a minimal
+environment, bounded output, and a bounded timeout. Configure the default timeout with
+<code>SYSTEMS_MANAGER_COMMAND_TIMEOUT_SECONDS</code> (1 through 3,600 seconds). Package
+operations default to 1,800 seconds; other operations default to 120 seconds.</p>
+<p>Repository addition is disabled unless the exact credential-free HTTPS URL is
+present in the launcher-controlled JSON array
+<code>SYSTEMS_MANAGER_REPOSITORY_ALLOWLIST_JSON</code>. Local package installation is
+disabled unless <code>SYSTEMS_MANAGER_LOCAL_PACKAGE_SHA256_MAP</code> is a JSON object
+mapping the package's managed-root-relative path to its release SHA-256 digest.
+These policies must come from the deployment boundary, not model arguments or
+a sidecar file writable by the agent.</p>
+<p>Filesystem tools are confined beneath an explicit
+<code>SYSTEMS_MANAGER_FILESYSTEM_ROOT</code>; there is no current-directory or workspace
+fallback. A volume root is never accepted. Temporary
+cleanup is similarly limited to <code>SYSTEMS_MANAGER_TEMP_ROOT</code>, which must resolve
+beneath the managed root. Runtime logs contain metadata only and go to stderr.</p>
+<p>Windows elevation is not synthesized with PowerShell. Run the service under a
+pre-authorized, least-privilege service account or use an external elevation
+broker. Secret-bearing SSH key generation likewise requires an external secret
+broker; never pass a plaintext passphrase as a tool argument.</p>
+<h2 id="tls-trust">TLS trust<a class="headerlink" href="#tls-trust" title="Permanent link">&para;</a></h2>
+<p>Certificate verification is required. Define private trust in the shared AgentConfig
+TLS catalog and select it with <code>TLS_PROFILE</code> / <code>TLS_PROFILE_REF</code> and
+<code>TLS_PROFILES_REF</code>. A profile may reference a mounted PEM bundle containing the
+required intermediate and root certificates. Service-specific selectors such as
+<code>OIDC_TLS_PROFILE_REF</code>, <code>MODEL_TLS_PROFILE_REF</code>, and <code>LANGFUSE_TLS_PROFILE_REF</code> use
+the same resolver. <code>UV_NATIVE_TLS=true</code> is an installer setting for <code>uv</code> package
+resolution; it is not application TLS policy.</p>
+<p>Do not disable verification to work around an incomplete server chain. Keep trust
+references external and stable for the runtime; never embed a workstation path,
+certificate material, or a hardcoded verification argument in provider code.</p>
+<h2 id="privacy-and-data-governance">Privacy and data governance<a class="headerlink" href="#privacy-and-data-governance" title="Permanent link">&para;</a></h2>
+<p>The default observability posture is metadata-only. Do not persist prompts,
+message bodies, tool inputs/results, document content, raw traces, credentials,
+local paths, hostnames, or personal identity unless an approved data contract
+explicitly requires it. Keep Langfuse or OTLP content capture disabled unless a
+reviewed retention and access policy authorizes it.</p>
+<p>When host ingestion is enabled, the native governed boundary supplies tenant, ACL,
+classification, retention, provenance, and ChangeEnvelope authority. Reject records
+that cannot satisfy that contract; never silently widen a tenant scope. The provider's
+allowlist rejects arbitrary node fields, relationship types, and endpoints. Logs and
+reports should contain counts, status, and opaque references only.</p>
+<h2 id="deployment-verification">Deployment verification<a class="headerlink" href="#deployment-verification" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Discover the target service or governed tunnel capability through GraphOS.</li>
-<li>Confirm the target by opaque inventory alias without logging its connection data.</li>
-<li>Run read-only discovery under the sensitive-read gate.</li>
-<li>For a mutation, obtain the deployment-policy gate and request-channel approval.</li>
-<li>Execute the typed operation locally on the target security boundary.</li>
-<li>Verify through a separate read and record only sanitized status evidence.</li>
+<li>Validate the capability bundle and skill metadata against the installed tool
+   schemas.</li>
+<li>Confirm required secrets are present without printing their values.</li>
+<li>Verify the complete TLS chain with certificate verification enabled.</li>
+<li>Exercise health/readiness and one least-privilege read operation.</li>
+<li>Confirm traces arrive under the expected opaque tenant/run identifiers and
+   contain no captured content.</li>
+<li>Record only sanitized pass/fail evidence and version identifiers.</li>
 </ol>
-<p>The MCP tools in this package expose no remote-host selector. Remote behavior
-remains explicit at the delegation layer.</p>
 
 
 
@@ -1169,7 +1290,7 @@ remains explicit at the delegation layer.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../sudo_security/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Sudo Security">
+          <a href="../installation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Installation">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1179,20 +1300,20 @@ remains explicit at the delegation layer.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Sudo Security
+                Installation
               </div>
             </div>
           </a>
         
         
           
-          <a href="../day_0_provisioning/" class="md-footer__link md-footer__link--next" aria-label="Next: Day 0 Installation">
+          <a href="../deployment/" class="md-footer__link md-footer__link--next" aria-label="Next: Deployment">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Day 0 Installation
+                Deployment
               </div>
             </div>
             <div class="md-footer__button md-icon">

@@ -16,14 +16,14 @@
         <link rel="prev" href="../overview/">
       
       
-        <link rel="next" href="../deployment/">
+        <link rel="next" href="../configuration/">
       
       
         
       
       
       <link rel="icon" href="https://raw.githubusercontent.com/squidfunk/mkdocs-material/master/material/templates/assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -295,6 +295,25 @@
   
   
     <li class="md-tabs__item">
+      <a href="../configuration/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Configuration
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
       <a href="../deployment/" class="md-tabs__link">
         
   
@@ -321,6 +340,25 @@
     
   
   Usage (API / CLI / MCP)
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../host-lifecycle-coverage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Host Lifecycle Coverage
 
       </a>
     </li>
@@ -415,7 +453,7 @@
   
     
   
-  Agent-Utilities Synergy
+  Agent Utilities Integration
 
       </a>
     </li>
@@ -434,7 +472,7 @@
   
     
   
-  Code Coverage
+  Validation
 
       </a>
     </li>
@@ -729,6 +767,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../deployment/" class="md-nav__link">
         
   
@@ -764,6 +829,33 @@
     
   
     Usage (API / CLI / MCP)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../host-lifecycle-coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Host Lifecycle Coverage
   
 
     
@@ -898,7 +990,7 @@
   <span class="md-ellipsis">
     
   
-    Agent-Utilities Synergy
+    Agent Utilities Integration
   
 
     
@@ -925,7 +1017,7 @@
   <span class="md-ellipsis">
     
   
-    Code Coverage
+    Validation
   
 
     
@@ -1136,7 +1228,7 @@ extra for the interface you need:</p>
 <tr>
 <td><code>test</code></td>
 <td><code>pip install "systems-manager[test]"</code></td>
-<td><code>pytest</code>, <code>pytest-xdist</code>, <code>pytest-asyncio</code>, <code>pytest-cov</code></td>
+<td><code>pytest</code> and <code>pytest-asyncio</code></td>
 </tr>
 </tbody>
 </table>
@@ -1153,25 +1245,25 @@ extra for the interface you need:</p>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>uv<span class="w"> </span>run<span class="w"> </span>systems-manager-mcp
 </span></code></pre></div>
 <h2 id="prebuilt-docker-image">Prebuilt Docker image<a class="headerlink" href="#prebuilt-docker-image" title="Permanent link">&para;</a></h2>
-<p>A multi-stage, slim image is published on every release (installs
+<p>A multi-stage runtime image is published on every release (installs
 <code>systems-manager[all]</code>):</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>knucklessg1/systems-manager:latest
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>docker<span class="w"> </span>pull<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">SYSTEMS_MANAGER_AGENT_IMAGE</span><span class="si">}</span><span class="s2">&quot;</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-i<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>knucklessg1/systems-manager:latest<span class="w"> </span>systems-manager-mcp<span class="w">   </span><span class="c1"># stdio transport (default)</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">SYSTEMS_MANAGER_AGENT_IMAGE</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span>systems-manager-mcp
 </span></code></pre></div>
 <p>For an HTTP server with a published port and the agent, see
 <a href="../deployment/">Deployment</a>.</p>
 <h2 id="verify-the-install">Verify the install<a class="headerlink" href="#verify-the-install" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>systems-manager<span class="w"> </span>--help
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>systems-manager-mcp<span class="w"> </span>--help
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import systems_manager; print(systems_manager.__version__)&quot;</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import systems_manager; print(systems_manager.__name__)&quot;</span>
 </span></code></pre></div>
 <h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong><a href="../deployment/">Deployment</a></strong> — run it as a long-lived MCP / agent server behind Caddy + DNS.</li>
+<li><strong><a href="../deployment/">Deployment</a></strong> — run local or authenticated network services.</li>
 <li><strong><a href="../usage/">Usage</a></strong> — call the tools, the API, and the CLI.</li>
-<li><strong><a href="../deployment/#configuration-environment">Configuration</a></strong> — every environment variable.</li>
+<li><strong><a href="../configuration/">Configuration</a></strong> — trust, policy, privacy, and runtime values.</li>
 </ul>
 
 
@@ -1227,13 +1319,13 @@ extra for the interface you need:</p>
         
         
           
-          <a href="../deployment/" class="md-footer__link md-footer__link--next" aria-label="Next: Deployment">
+          <a href="../configuration/" class="md-footer__link md-footer__link--next" aria-label="Next: Configuration">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Deployment
+                Configuration
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -1306,7 +1398,7 @@ extra for the interface you need:</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.tracking", "navigation.instant", "navigation.instant.progress", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
