@@ -1,7 +1,7 @@
 {
   "_comment": "Tier-1 mcp_tool source preset for systems-manager (AU-KG.ingest.mcp-tool-connector). This secondary declarative path snapshots the current service inventory through the action-routed MCP surface. Full typed host, interface, and volume ingestion uses systems_ingest_host and the governed native ingestion boundary.",
   "system-services": {
-    "server": "systems-manager",
+    "server": "systems-manager-mcp",
     "tool": "sm_service_operations",
     "params_style": "args",
     "action": "list_services",

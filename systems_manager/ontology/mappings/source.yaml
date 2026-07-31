@@ -3,7 +3,7 @@ connector: systems-manager
 ontology_source: systems
 sync:
 - preset: system-services
-  server: systems-manager
+  server: systems-manager-mcp
   tool: sm_service_operations
   action: list_services
   records_path: services
