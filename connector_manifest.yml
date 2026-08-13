@@ -181,7 +181,7 @@ sync:
     doc_type: system-service
 provenance:
   generated_by: scripts/generate_connector_manifests.py
-  generated_at: '2026-07-18T14:21:05Z'
+  generated_at: '2026-07-28T10:14:00Z'
   source_artifacts:
   - a2a.json
   - systems_manager/connectors/mcp_source_presets.json
@@ -193,8 +193,8 @@ provenance:
     triple_count: 87
   signer: ontology-manifest-generator
   signature_algorithm: ed25519
-  signing_public_key: q0Cp7bmQMqJhbofGKKw8xXC6KbFzukBDDke0UYVi8y4
-  signature: vysk5_lLUBZUN1XVc4giiM91cDilOTnYfYMKSKUTXnSs5F8BMMGZMXOpfBdOnTj413fZK9AK_C7V6qohekEhAg
+  signing_public_key: QkigdPNpcUU7x7NcSkwCsUXIQpaFncMQbYSoiSgI2SY
+  signature: Yu3UcOwOHPlYiId1TiTbP2kVF8CugzlzScRVO_0apiTZzcOnGMTkXdGD2-oIcYoVXelxRQcqo_vP0FA5x5bnBw
 policy:
   pii_fields: {}
   tenant_boundary: null
