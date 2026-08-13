@@ -290,3 +290,19 @@ environment-specific endpoint. Supply those at runtime through `AgentConfig` and
 configured secret provider.
 
 <!-- END agent-utilities-deployment -->
+
+<!-- GOVERNED-CAPABILITY:START -->
+## Governed capability contract
+
+This package ships a compact canonical skill surface with specialist procedures
+kept as referenced workflows. The current MCP tools, skill metadata,
+`connector_manifest.yml`, ontology, mappings, shapes, fixtures, migrations,
+tool-schema fingerprints, and certification metadata form one versioned
+capability contract. Validate them together; do not rely on stale tool names or
+historical per-task skill wrappers.
+
+Runtime endpoints, credentials, certificate trust, tenant identity, retention,
+and observability policy are deployment inputs and are never packaged values.
+See [Configuration, trust, and privacy](docs/configuration.md) before enabling a
+network transport, connector ingestion, GraphOS delegation, or trace export.
+<!-- GOVERNED-CAPABILITY:END -->
