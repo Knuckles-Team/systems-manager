@@ -66,6 +66,13 @@ repos:
   - id: nbqa-ruff
 - repo: local
   hooks:
+  - id: dependency-readiness
+    name: Dependency readiness — every declared intra-fleet constraint is installable
+    entry: bash -c 'uv run --with repository-manager python -m repository_manager.dependency_readiness .'
+    language: system
+    pass_filenames: false
+    always_run: true
+    stages: [manual, pre-push]
   - id: check-mermaid
     name: Check Mermaid syntax
     entry: bash -c 'python3 "${AGENT_UTILITIES_REPO:?configure agent-utilities repository}/scripts/mermaid_linter.py" "$@"' --
