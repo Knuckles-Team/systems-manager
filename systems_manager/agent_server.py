@@ -14,7 +14,7 @@ from agent_utilities.prompting.builder import (
 )
 from agent_utilities.server import create_agent_server
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 logging.basicConfig(
     level=logging.INFO,
