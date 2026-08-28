@@ -668,15 +668,18 @@ def _validated_search_query(value: str) -> str:
     return candidate
 
 
-def _validated_local_package(path: str, suffixes: tuple[str, ...]) -> Path:
-    candidate = resolve_managed_path(path, must_exist=True)
-    if (
-        not candidate.is_file()
-        or candidate.is_symlink()
-        or candidate.stat().st_size > _MAX_LOCAL_PACKAGE_BYTES
-        or not candidate.name.casefold().endswith(suffixes)
-    ):
-        raise ValueError("Invalid local package artifact")
+def _is_permitted_package_artifact(candidate: Path, suffixes: tuple[str, ...]) -> bool:
+    """True for a real, non-symlink, size-bounded file with an allowed suffix."""
+    return (
+        candidate.is_file()
+        and not candidate.is_symlink()
+        and candidate.stat().st_size <= _MAX_LOCAL_PACKAGE_BYTES
+        and candidate.name.casefold().endswith(suffixes)
+    )
+
+
+def _local_package_digest_map() -> dict[str, Any]:
+    """The deployment-controlled artifact-name to sha256 policy map."""
     raw_digests = str(setting("SYSTEMS_MANAGER_LOCAL_PACKAGE_SHA256_MAP", "")).strip()
     if not raw_digests or len(raw_digests) > 64 * 1024:
         raise PermissionError("A deployment-controlled package digest is required")
@@ -686,15 +689,26 @@ def _validated_local_package(path: str, suffixes: tuple[str, ...]) -> Path:
         raise ValueError("Local package digest policy is invalid") from exc
     if not isinstance(digest_map, dict) or len(digest_map) > 256:
         raise ValueError("Local package digest policy is invalid")
-    artifact_name = managed_display_path(candidate)
-    expected = digest_map.get(artifact_name)
-    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", expected):
-        raise PermissionError("The local package is not digest-allowlisted")
+    return digest_map
+
+
+def _file_sha256(path: Path) -> str:
+    """Streaming SHA-256 of a file, read in 1 MiB chunks."""
     digest = hashlib.sha256()
-    with candidate.open("rb") as package_file:
+    with path.open("rb") as package_file:
         for chunk in iter(lambda: package_file.read(1024 * 1024), b""):
             digest.update(chunk)
-    if digest.hexdigest().casefold() != expected.casefold():
+    return digest.hexdigest()
+
+
+def _validated_local_package(path: str, suffixes: tuple[str, ...]) -> Path:
+    candidate = resolve_managed_path(path, must_exist=True)
+    if not _is_permitted_package_artifact(candidate, suffixes):
+        raise ValueError("Invalid local package artifact")
+    expected = _local_package_digest_map().get(managed_display_path(candidate))
+    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", expected):
+        raise PermissionError("The local package is not digest-allowlisted")
+    if _file_sha256(candidate).casefold() != expected.casefold():
         raise ValueError("Local package digest verification failed")
     return candidate
 
@@ -718,24 +732,20 @@ def _validated_python_requirement(value: str) -> str:
     return candidate
 
 
-def _validated_repository_url(value: str) -> str:
-    candidate = value.strip()
-    if len(candidate) > 2_048:
-        raise ValueError("Repository URL is too long")
-    parsed = urlsplit(candidate)
-    if (
-        parsed.scheme != "https"
-        or not parsed.hostname
-        or parsed.username
-        or parsed.password
-        or parsed.query
-        or parsed.fragment
-    ):
-        raise ValueError("Repository URL must be credential-free HTTPS")
-    try:
-        parsed.hostname.encode("idna")
-    except UnicodeError as exc:
-        raise ValueError("Invalid repository hostname") from exc
+def _is_credential_free_https(parsed: Any) -> bool:
+    """True for an https URL with a hostname and no credentials, query or fragment."""
+    return bool(
+        parsed.scheme == "https"
+        and parsed.hostname
+        and not parsed.username
+        and not parsed.password
+        and not parsed.query
+        and not parsed.fragment
+    )
+
+
+def _repository_allowlist() -> list[str]:
+    """The deployment-controlled list of permitted repository URLs."""
     raw_allowlist = str(
         setting("SYSTEMS_MANAGER_REPOSITORY_ALLOWLIST_JSON", "")
     ).strip()
@@ -753,7 +763,21 @@ def _validated_repository_url(value: str) -> str:
         or not all(isinstance(item, str) for item in allowed)
     ):
         raise ValueError("Repository allowlist is invalid")
-    if candidate not in allowed:
+    return allowed
+
+
+def _validated_repository_url(value: str) -> str:
+    candidate = value.strip()
+    if len(candidate) > 2_048:
+        raise ValueError("Repository URL is too long")
+    parsed = urlsplit(candidate)
+    if not _is_credential_free_https(parsed):
+        raise ValueError("Repository URL must be credential-free HTTPS")
+    try:
+        parsed.hostname.encode("idna")
+    except UnicodeError as exc:
+        raise ValueError("Invalid repository hostname") from exc
+    if candidate not in _repository_allowlist():
         raise PermissionError("Repository URL is not allowlisted")
     return candidate
 
@@ -1308,6 +1332,47 @@ def _parse_package_metadata(output: str) -> dict[str, str]:
         if separator and normalized in allowed and normalized not in metadata:
             metadata[normalized] = value.strip()[:2_048]
     return metadata
+
+
+def _parse_dnf_installed(stdout: str) -> list[str]:
+    """Package names from `dnf list installed`, minus its header lines."""
+    packages: list[str] = []
+    for line in stdout.strip().splitlines():
+        if line.startswith("Installed") or line.startswith("Last"):
+            continue
+        parts = line.split()
+        if not parts:
+            continue
+        packages.append(parts[0].split(".")[0])
+        if len(packages) >= _MAX_FILESYSTEM_RESULTS:
+            break
+    return packages
+
+
+def _parse_zypper_search(stdout: str) -> list[dict[str, str]]:
+    """Name/description rows from a `zypper search` table."""
+    packages: list[dict[str, str]] = []
+    for line in stdout.strip().splitlines():
+        parts = line.split("|")
+        if len(parts) < 3 or parts[0].strip() in ("S", "-", ""):
+            continue
+        packages.append({"name": parts[1].strip(), "description": parts[2].strip()})
+        if len(packages) >= 1_000:
+            break
+    return packages
+
+
+def _parse_zypper_updates(stdout: str) -> list[str]:
+    """Package names from a `zypper list-updates` table."""
+    packages: list[str] = []
+    for line in stdout.strip().splitlines():
+        parts = line.split("|")
+        if len(parts) < 3 or parts[0].strip() in ("S", "-", "", "v"):
+            continue
+        packages.append(parts[2].strip())
+        if len(packages) >= _MAX_FILESYSTEM_RESULTS:
+            break
+    return packages
 
 
 def _parse_package_table(output: str) -> list[dict[str, str]]:
@@ -3641,15 +3706,11 @@ class DnfManager(SystemsManagerBase):
 
     def list_installed_packages(self):
         result = self.run_command(["dnf", "list", "installed"], capture_output=True)
-        packages = []
-        if result["success"]:
-            for line in (result.get("stdout") or "").strip().splitlines():
-                if not line.startswith("Installed") and not line.startswith("Last"):
-                    parts = line.split()
-                    if parts:
-                        packages.append(parts[0].split(".")[0])
-                        if len(packages) >= _MAX_FILESYSTEM_RESULTS:
-                            break
+        packages = (
+            _parse_dnf_installed(result.get("stdout") or "")
+            if result["success"]
+            else []
+        )
         return {
             "success": result["success"],
             "packages": packages,
@@ -3771,19 +3832,11 @@ class ZypperManager(SystemsManagerBase):
     def search_package(self, query: str):
         query = _validated_search_query(query)
         result = self.run_command(["zypper", "search", query], capture_output=True)
-        packages = []
-        if result["success"]:
-            for line in (result.get("stdout") or "").strip().splitlines():
-                parts = line.split("|")
-                if len(parts) >= 3 and parts[0].strip() not in ("S", "-", ""):
-                    packages.append(
-                        {
-                            "name": parts[1].strip(),
-                            "description": parts[2].strip() if len(parts) > 2 else "",
-                        }
-                    )
-                    if len(packages) >= 1_000:
-                        break
+        packages = (
+            _parse_zypper_search(result.get("stdout") or "")
+            if result["success"]
+            else []
+        )
         return {
             "success": result["success"],
             "packages": packages,
@@ -3818,16 +3871,11 @@ class ZypperManager(SystemsManagerBase):
 
     def list_upgradable_packages(self):
         result = self.run_command(["zypper", "list-updates"], capture_output=True)
-        packages = []
-        if result["success"]:
-            for line in (result.get("stdout") or "").strip().splitlines():
-                parts = line.split("|")
-                if len(parts) >= 3 and parts[0].strip() not in ("S", "-", "", "v"):
-                    packages.append(
-                        parts[2].strip() if len(parts) > 2 else parts[1].strip()
-                    )
-                    if len(packages) >= _MAX_FILESYSTEM_RESULTS:
-                        break
+        packages = (
+            _parse_zypper_updates(result.get("stdout") or "")
+            if result["success"]
+            else []
+        )
         return {
             "success": result["success"],
             "packages": packages,
