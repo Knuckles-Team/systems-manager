@@ -412,6 +412,161 @@ def _terminate_process_tree(
         return process.wait(timeout=grace_seconds)
 
 
+def _windows_process_is_admin() -> bool:
+    """True when the hosting Windows process already holds an administrator token."""
+    try:
+        import ctypes
+
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except (AttributeError, OSError):
+        return False
+
+
+def _elevate_argv(argv: list[str]) -> list[str]:
+    """Prefix sudo unless the process is already root."""
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        return argv
+    return [_resolve_trusted_executable("sudo"), "--non-interactive", "--", *argv]
+
+
+def _managed_executable_name(
+    argv: list[str], command: list[str] | tuple[str, ...], elevated: bool
+) -> str:
+    """Name of the executable actually being run, seeing through a sudo prefix."""
+    if elevated and argv[0] == "sudo":
+        return Path(argv[-len(command)]).name
+    return Path(argv[0]).name
+
+
+def _spawn_managed_process(
+    argv: list[str], env_overrides: dict[str, str] | None
+) -> subprocess.Popen:
+    """Start an allowlisted argv in its own process group with no inherited stdin."""
+    return subprocess.Popen(
+        argv,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False,
+        env=_minimal_child_environment(env_overrides),
+        start_new_session=os.name != "nt",
+        creationflags=(
+            getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if os.name == "nt" else 0
+        ),
+    )
+
+
+def _start_output_readers(
+    process: subprocess.Popen,
+) -> tuple[list[threading.Thread], bytearray, bytearray]:
+    """Start the two bounded reader threads and return them with their buffers."""
+    assert process.stdout is not None
+    assert process.stderr is not None
+    stdout_buffer = bytearray()
+    stderr_buffer = bytearray()
+    readers = [
+        threading.Thread(
+            target=_bounded_stream_reader,
+            args=(process.stdout, stdout_buffer, _MAX_COMMAND_OUTPUT_BYTES),
+            daemon=True,
+        ),
+        threading.Thread(
+            target=_bounded_stream_reader,
+            args=(process.stderr, stderr_buffer, _MAX_COMMAND_OUTPUT_BYTES),
+            daemon=True,
+        ),
+    ]
+    for reader in readers:
+        reader.start()
+    return readers, stdout_buffer, stderr_buffer
+
+
+def _terminate_after_timeout(process: subprocess.Popen) -> int:
+    """Kill a timed-out child, falling back to a direct kill if the tree walk fails."""
+    try:
+        return _terminate_process_tree(process)
+    except (OSError, psutil.Error, subprocess.TimeoutExpired):
+        process.kill()
+        return process.wait(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
+
+
+def _join_output_readers(
+    process: subprocess.Popen, readers: list[threading.Thread]
+) -> bool:
+    """Join the reader threads; True when a stream had to be force-closed."""
+    cleanup_failed = False
+    for reader in readers:
+        reader.join(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
+    for reader, stream in zip(readers, (process.stdout, process.stderr), strict=True):
+        if reader.is_alive():
+            cleanup_failed = True
+            stream.close()
+            reader.join(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
+    return cleanup_failed
+
+
+class _CommandRun(NamedTuple):
+    """Outcome of waiting on one managed child process."""
+
+    returncode: int
+    timed_out: bool
+    reader_cleanup_failed: bool
+
+
+def _await_managed_process(
+    process: subprocess.Popen, readers: list[threading.Thread], timeout_seconds: int
+) -> _CommandRun:
+    """Wait for the child within its timeout, always draining the reader threads."""
+    timed_out = False
+    try:
+        try:
+            returncode = process.wait(timeout=timeout_seconds)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            returncode = _terminate_after_timeout(process)
+    finally:
+        reader_cleanup_failed = _join_output_readers(process, readers)
+    return _CommandRun(returncode, timed_out, reader_cleanup_failed)
+
+
+def _managed_command_error(run: _CommandRun) -> str:
+    """The redacted error string for a managed command that did not succeed."""
+    if run.timed_out:
+        return "Managed command timed out"
+    if run.reader_cleanup_failed:
+        return "Managed command output cleanup failed"
+    return "Managed command failed"
+
+
+def _managed_command_result(
+    run: _CommandRun,
+    timeout_seconds: int,
+    stdout_buffer: bytearray,
+    stderr_buffer: bytearray,
+    capture_output: bool,
+) -> dict[str, Any]:
+    """Assemble the public result mapping for one managed command."""
+    result: dict[str, Any] = {
+        "success": (
+            run.returncode == 0 and not run.timed_out and not run.reader_cleanup_failed
+        ),
+        "returncode": run.returncode,
+        "timed_out": run.timed_out,
+        "timeout_seconds": timeout_seconds,
+        "reader_cleanup_failed": run.reader_cleanup_failed,
+        "output_truncated": (
+            len(stdout_buffer) >= _MAX_COMMAND_OUTPUT_BYTES
+            or len(stderr_buffer) >= _MAX_COMMAND_OUTPUT_BYTES
+        ),
+    }
+    if capture_output:
+        result["stdout"] = stdout_buffer.decode("utf-8", errors="replace")
+        result["stderr"] = stderr_buffer.decode("utf-8", errors="replace")
+    if not result["success"]:
+        result["error"] = _managed_command_error(run)
+    return result
+
+
 def _minimal_child_environment(
     overrides: dict[str, str] | None = None,
 ) -> dict[str, str]:
@@ -1623,120 +1778,32 @@ class SystemsManagerBase(ABC):
             argv = _validated_command_argv(command)
             operation_argv = list(argv)
             argv[0] = _resolve_trusted_executable(argv[0])
-            if elevated and platform.system() == "Linux":
-                is_root = hasattr(os, "geteuid") and os.geteuid() == 0
-                if not is_root:
-                    argv = [
-                        _resolve_trusted_executable("sudo"),
-                        "--non-interactive",
-                        "--",
-                        *argv,
-                    ]
-            elif elevated and platform.system() == "Windows":
+            system = platform.system()
+            if elevated and system == "Linux":
+                argv = _elevate_argv(argv)
+            elif elevated and system == "Windows":
                 # The service/process token is the privilege boundary. Never
                 # synthesize Start-Process/PowerShell elevation strings.
-                try:
-                    import ctypes
-
-                    is_admin = bool(ctypes.windll.shell32.IsUserAnAdmin())
-                except (AttributeError, OSError):
-                    is_admin = False
-                if not is_admin:
+                if not _windows_process_is_admin():
                     return {
                         "success": False,
                         "error": "Operation requires a pre-authorized service account",
                     }
 
-            executable = (
-                Path(argv[-len(command)]).name
-                if elevated and argv[0] == "sudo"
-                else Path(argv[0]).name
+            self.logger.info(
+                "Running managed executable=%s",
+                _managed_executable_name(argv, command, elevated),
             )
-            self.logger.info("Running managed executable=%s", executable)
-            stdout_buffer = bytearray()
-            stderr_buffer = bytearray()
-            process = subprocess.Popen(
-                argv,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=False,
-                env=_minimal_child_environment(env_overrides),
-                start_new_session=os.name != "nt",
-                creationflags=(
-                    getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-                    if os.name == "nt"
-                    else 0
-                ),
-            )
-            assert process.stdout is not None
-            assert process.stderr is not None
-            readers = [
-                threading.Thread(
-                    target=_bounded_stream_reader,
-                    args=(process.stdout, stdout_buffer, _MAX_COMMAND_OUTPUT_BYTES),
-                    daemon=True,
-                ),
-                threading.Thread(
-                    target=_bounded_stream_reader,
-                    args=(process.stderr, stderr_buffer, _MAX_COMMAND_OUTPUT_BYTES),
-                    daemon=True,
-                ),
-            ]
-            for reader in readers:
-                reader.start()
-            timed_out = False
-            reader_cleanup_failed = False
+            process = _spawn_managed_process(argv, env_overrides)
+            readers, stdout_buffer, stderr_buffer = _start_output_readers(process)
             timeout_seconds = _validated_timeout_seconds(
                 operation_argv, timeout_seconds
             )
-            try:
-                try:
-                    returncode = process.wait(timeout=timeout_seconds)
-                except subprocess.TimeoutExpired:
-                    timed_out = True
-                    try:
-                        returncode = _terminate_process_tree(process)
-                    except (OSError, psutil.Error, subprocess.TimeoutExpired):
-                        process.kill()
-                        returncode = process.wait(
-                            timeout=_COMMAND_TERMINATION_GRACE_SECONDS
-                        )
-            finally:
-                for reader in readers:
-                    reader.join(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
-                for reader, stream in zip(
-                    readers, (process.stdout, process.stderr), strict=True
-                ):
-                    if reader.is_alive():
-                        reader_cleanup_failed = True
-                        stream.close()
-                        reader.join(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
-
-            result: dict[str, Any] = {
-                "success": (
-                    returncode == 0 and not timed_out and not reader_cleanup_failed
-                ),
-                "returncode": returncode,
-                "timed_out": timed_out,
-                "timeout_seconds": timeout_seconds,
-                "reader_cleanup_failed": reader_cleanup_failed,
-                "output_truncated": (
-                    len(stdout_buffer) >= _MAX_COMMAND_OUTPUT_BYTES
-                    or len(stderr_buffer) >= _MAX_COMMAND_OUTPUT_BYTES
-                ),
-            }
-            if capture_output:
-                result["stdout"] = stdout_buffer.decode("utf-8", errors="replace")
-                result["stderr"] = stderr_buffer.decode("utf-8", errors="replace")
-            if not result["success"]:
-                if timed_out:
-                    result["error"] = "Managed command timed out"
-                elif reader_cleanup_failed:
-                    result["error"] = "Managed command output cleanup failed"
-                else:
-                    result["error"] = "Managed command failed"
-            self.logger.info("Managed command return code=%s", returncode)
+            run = _await_managed_process(process, readers, timeout_seconds)
+            result = _managed_command_result(
+                run, timeout_seconds, stdout_buffer, stderr_buffer, capture_output
+            )
+            self.logger.info("Managed command return code=%s", run.returncode)
             return result
         except Exception as e:
             self.log_command(command, error=e)
