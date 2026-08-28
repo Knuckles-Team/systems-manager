@@ -19,7 +19,7 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Any, BinaryIO, Literal, NamedTuple
@@ -640,105 +640,173 @@ def _coerce_firewall_rule(
     return FirewallRuleSpec.model_validate(rule)
 
 
+class _FirewallArgs(NamedTuple):
+    """Normalised inputs shared by every firewall backend argv builder."""
+
+    spec: FirewallRuleSpec
+    port: str
+    source: str
+    destination: str
+    remove: bool
+
+
+def _firewall_rule_networks(spec: FirewallRuleSpec) -> list[Any]:
+    """The rule's declared source/destination networks, in declaration order."""
+    return [
+        ipaddress.ip_network(value)
+        for value in (spec.source, spec.destination)
+        if value is not None
+    ]
+
+
+def _ufw_firewall_args(request: _FirewallArgs) -> list[str]:
+    spec = request.spec
+    return [
+        spec.action,
+        spec.direction,
+        "proto",
+        spec.protocol,
+        "from",
+        request.source,
+        "to",
+        request.destination,
+        "port",
+        request.port,
+        "comment",
+        spec.name,
+    ]
+
+
+def _firewalld_firewall_args(request: _FirewallArgs) -> list[str]:
+    spec = request.spec
+    if spec.direction != "in":
+        raise ValueError("firewalld outbound rules require a separate policy API")
+    networks = _firewall_rule_networks(spec)
+    family = f' family="ipv{networks[0].version}"' if networks else ""
+    source_clause = f' source address="{spec.source}"' if spec.source else ""
+    destination_clause = (
+        f' destination address="{spec.destination}"' if spec.destination else ""
+    )
+    verdict = "accept" if spec.action == "allow" else "drop"
+    rich_rule = (
+        f"rule{family}{source_clause}{destination_clause}"
+        f' port port="{request.port}" protocol="{spec.protocol}" {verdict}'
+    )
+    operation = "--remove-rich-rule=" if request.remove else "--add-rich-rule="
+    return [f"{operation}{rich_rule}"]
+
+
+def _iptables_firewall_args(request: _FirewallArgs) -> list[str]:
+    spec = request.spec
+    networks = _firewall_rule_networks(spec)
+    if any(network.version != 4 for network in networks):
+        raise ValueError("IPv6 firewall rules require an ip6tables-specific API")
+    arguments = [
+        "-D" if request.remove else "-A",
+        "INPUT" if spec.direction == "in" else "OUTPUT",
+        "-p",
+        spec.protocol,
+        "-m",
+        spec.protocol,
+        "--dport",
+        request.port,
+    ]
+    if spec.source:
+        arguments.extend(["-s", spec.source])
+    if spec.destination:
+        arguments.extend(["-d", spec.destination])
+    arguments.extend(
+        [
+            "-m",
+            "comment",
+            "--comment",
+            spec.name,
+            "-j",
+            "ACCEPT" if spec.action == "allow" else "DROP",
+        ]
+    )
+    return arguments
+
+
+def _netsh_firewall_args(request: _FirewallArgs) -> list[str]:
+    spec = request.spec
+    inbound = spec.direction == "in"
+    local_ip = request.destination if inbound else request.source
+    remote_ip = request.source if inbound else request.destination
+    port_field = "localport" if inbound else "remoteport"
+    arguments = [
+        f"name={spec.name}",
+        f"dir={spec.direction}",
+        f"protocol={spec.protocol.upper()}",
+        f"{port_field}={request.port}",
+        f"localip={local_ip}",
+        f"remoteip={remote_ip}",
+    ]
+    if not request.remove:
+        arguments.insert(2, f"action={'allow' if spec.action == 'allow' else 'block'}")
+    return arguments
+
+
+_FIREWALL_ARG_BUILDERS: dict[str, Callable[[_FirewallArgs], list[str]]] = {
+    "ufw": _ufw_firewall_args,
+    "firewalld": _firewalld_firewall_args,
+    "iptables": _iptables_firewall_args,
+    "netsh": _netsh_firewall_args,
+}
+
+
 def _validated_firewall_args(
     rule: FirewallRuleSpec | dict[str, Any], *, backend: str, remove: bool
 ) -> list[str]:
     """Generate an exact argv suffix for a supported firewall backend."""
     spec = _coerce_firewall_rule(rule)
-    port = str(spec.port)
-    source = spec.source or "any"
-    destination = spec.destination or "any"
-
-    if backend == "ufw":
-        return [
-            spec.action,
-            spec.direction,
-            "proto",
-            spec.protocol,
-            "from",
-            source,
-            "to",
-            destination,
-            "port",
-            port,
-            "comment",
-            spec.name,
-        ]
-
-    if backend == "firewalld":
-        if spec.direction != "in":
-            raise ValueError("firewalld outbound rules require a separate policy API")
-        networks = [
-            ipaddress.ip_network(value)
-            for value in (spec.source, spec.destination)
-            if value is not None
-        ]
-        family = f' family="ipv{networks[0].version}"' if networks else ""
-        source_clause = f' source address="{spec.source}"' if spec.source else ""
-        destination_clause = (
-            f' destination address="{spec.destination}"' if spec.destination else ""
+    builder = _FIREWALL_ARG_BUILDERS.get(backend)
+    if builder is None:
+        raise ValueError("Unsupported firewall backend")
+    return builder(
+        _FirewallArgs(
+            spec=spec,
+            port=str(spec.port),
+            source=spec.source or "any",
+            destination=spec.destination or "any",
+            remove=remove,
         )
-        verdict = "accept" if spec.action == "allow" else "drop"
-        rich_rule = (
-            f"rule{family}{source_clause}{destination_clause}"
-            f' port port="{port}" protocol="{spec.protocol}" {verdict}'
-        )
-        operation = "--remove-rich-rule=" if remove else "--add-rich-rule="
-        return [f"{operation}{rich_rule}"]
+    )
 
-    if backend == "iptables":
-        networks = [
-            ipaddress.ip_network(value)
-            for value in (spec.source, spec.destination)
-            if value is not None
-        ]
-        if any(network.version != 4 for network in networks):
-            raise ValueError("IPv6 firewall rules require an ip6tables-specific API")
-        arguments = [
-            "-D" if remove else "-A",
-            "INPUT" if spec.direction == "in" else "OUTPUT",
-            "-p",
-            spec.protocol,
-            "-m",
-            spec.protocol,
-            "--dport",
-            port,
-        ]
-        if spec.source:
-            arguments.extend(["-s", spec.source])
-        if spec.destination:
-            arguments.extend(["-d", spec.destination])
-        arguments.extend(
-            [
-                "-m",
-                "comment",
-                "--comment",
-                spec.name,
-                "-j",
-                "ACCEPT" if spec.action == "allow" else "DROP",
-            ]
-        )
-        return arguments
 
-    if backend == "netsh":
-        local_ip = destination if spec.direction == "in" else source
-        remote_ip = source if spec.direction == "in" else destination
-        port_field = "localport" if spec.direction == "in" else "remoteport"
-        arguments = [
-            f"name={spec.name}",
-            f"dir={spec.direction}",
-            f"protocol={spec.protocol.upper()}",
-            f"{port_field}={port}",
-            f"localip={local_ip}",
-            f"remoteip={remote_ip}",
-        ]
-        if not remove:
-            arguments.insert(
-                2, f"action={'allow' if spec.action == 'allow' else 'block'}"
-            )
-        return arguments
+def _count_ufw_rules(stdout: str) -> int:
+    return sum(1 for line in stdout.splitlines() if re.match(r"\s*\[\s*\d+\]", line))
 
-    raise ValueError("Unsupported firewall backend")
+
+def _count_firewalld_rules(stdout: str) -> int:
+    return sum(len(line.split()[1:]) for line in stdout.splitlines() if ":" in line)
+
+
+def _count_iptables_rules(stdout: str) -> int:
+    return sum(1 for line in stdout.splitlines() if re.match(r"\s*\d+\s", line))
+
+
+def _firewall_rule_summary(
+    tool: str, result: dict, counter: Callable[[str], int]
+) -> dict:
+    """Redacted rule-count summary for one firewall backend listing."""
+    return {
+        "success": result["success"],
+        "tool": tool,
+        "total": counter(result.get("stdout") or ""),
+        "details_redacted": True,
+    }
+
+
+def _windows_firewall_rule_count(result: dict) -> int | None:
+    """Rule count from a PowerShell JSON listing, or None when unavailable."""
+    if not result["success"]:
+        return None
+    try:
+        rules = json.loads(result.get("stdout", "[]"))
+    except json.JSONDecodeError:
+        return None
+    return len([rules] if isinstance(rules, dict) else rules)
 
 
 def _opaque_ref(namespace: str, value: str) -> str:
@@ -2640,87 +2708,58 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _linux_firewall_rules(self) -> dict:
+        if shutil.which("ufw"):
+            result = self.run_command(
+                ["ufw", "status", "numbered"], elevated=True, capture_output=True
+            )
+            return _firewall_rule_summary("ufw", result, _count_ufw_rules)
+        if shutil.which("firewall-cmd"):
+            result = self.run_command(
+                ["firewall-cmd", "--list-all"], elevated=True, capture_output=True
+            )
+            return _firewall_rule_summary("firewalld", result, _count_firewalld_rules)
+        result = self.run_command(
+            ["iptables", "-L", "-n", "-v", "--line-numbers"],
+            elevated=True,
+            capture_output=True,
+        )
+        return _firewall_rule_summary("iptables", result, _count_iptables_rules)
+
+    def _windows_firewall_rules(self) -> dict:
+        result = self.run_command(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action "
+                "| ConvertTo-Json -Depth 3",
+            ],
+            capture_output=True,
+        )
+        total = _windows_firewall_rule_count(result)
+        if total is None:
+            return {
+                "success": result["success"],
+                "tool": "netsh",
+                "details_redacted": True,
+            }
+        return {
+            "success": True,
+            "tool": "netsh",
+            "total": total,
+            "details_redacted": True,
+        }
+
     def list_firewall_rules(self) -> dict:
         try:
-            if platform.system() == "Linux":
-                if shutil.which("ufw"):
-                    r = self.run_command(
-                        ["ufw", "status", "numbered"],
-                        elevated=True,
-                        capture_output=True,
-                    )
-                    return {
-                        "success": r["success"],
-                        "tool": "ufw",
-                        "total": sum(
-                            1
-                            for line in (r.get("stdout") or "").splitlines()
-                            if re.match(r"\s*\[\s*\d+\]", line)
-                        ),
-                        "details_redacted": True,
-                    }
-                if shutil.which("firewall-cmd"):
-                    r = self.run_command(
-                        ["firewall-cmd", "--list-all"],
-                        elevated=True,
-                        capture_output=True,
-                    )
-                    return {
-                        "success": r["success"],
-                        "tool": "firewalld",
-                        "total": sum(
-                            len(line.split()[1:])
-                            for line in (r.get("stdout") or "").splitlines()
-                            if ":" in line
-                        ),
-                        "details_redacted": True,
-                    }
-                r = self.run_command(
-                    ["iptables", "-L", "-n", "-v", "--line-numbers"],
-                    elevated=True,
-                    capture_output=True,
-                )
-                return {
-                    "success": r["success"],
-                    "tool": "iptables",
-                    "total": sum(
-                        1
-                        for line in (r.get("stdout") or "").splitlines()
-                        if re.match(r"\s*\d+\s", line)
-                    ),
-                    "details_redacted": True,
-                }
-            elif platform.system() == "Windows":
-                r = self.run_command(
-                    [
-                        "powershell.exe",
-                        "-NoProfile",
-                        "-NonInteractive",
-                        "-Command",
-                        "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action "
-                        "| ConvertTo-Json -Depth 3",
-                    ],
-                    capture_output=True,
-                )
-                if r["success"]:
-                    try:
-                        rules = json.loads(r.get("stdout", "[]"))
-                        if isinstance(rules, dict):
-                            rules = [rules]
-                        return {
-                            "success": True,
-                            "tool": "netsh",
-                            "total": len(rules),
-                            "details_redacted": True,
-                        }
-                    except json.JSONDecodeError:
-                        pass
-                return {
-                    "success": r["success"],
-                    "tool": "netsh",
-                    "details_redacted": True,
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            system = platform.system()
+            if system == "Linux":
+                return self._linux_firewall_rules()
+            if system == "Windows":
+                return self._windows_firewall_rules()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
