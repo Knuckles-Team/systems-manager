@@ -1311,3 +1311,60 @@ user:x:1000:user"""
         assert result["success"] is False
         assert result["prerequisite"] == "snapd"
         concrete_manager.run_command.assert_not_called()
+
+
+class TestManagedExecutableName:
+    """BUG-CX-081: `_managed_executable_name` kept an `argv[0] == "sudo"`
+    test that in practice never matches, because `_elevate_argv` always
+    puts `_resolve_trusted_executable("sudo")` -- an ABSOLUTE resolved path,
+    never the bare string "sudo" -- at argv[0]. The guard's caller is what's
+    broken, not the guard's logic in isolation: the function already
+    receives `elevated` as an explicit parameter, so it never needed to
+    sniff argv[0] for "sudo" at all.
+    """
+
+    def test_elevate_argv_never_produces_bare_sudo_at_argv0(self, monkeypatch):
+        """Confirms the guard's premise is unreachable: `_elevate_argv`'s
+        argv[0] is always the resolved absolute path, never "sudo"."""
+        from systems_manager.systems_manager import _elevate_argv
+
+        monkeypatch.setattr(
+            "systems_manager.systems_manager._resolve_trusted_executable",
+            lambda executable: f"/usr/bin/{executable}",
+        )
+
+        argv = _elevate_argv(["/usr/bin/echo", "hi"])
+
+        assert argv[0] == "/usr/bin/sudo"
+        assert argv[0] != "sudo"
+
+    def test_managed_executable_name_reports_wrapped_executable_when_elevated(self):
+        """The actual bug: with the dead `argv[0] == "sudo"` condition, an
+        elevated run's audit-log line named sudo's own basename instead of
+        the wrapped executable. `argv` here is shaped exactly as
+        `_elevate_argv` produces it -- an absolute sudo path, never bare
+        "sudo"."""
+        from systems_manager.systems_manager import _managed_executable_name
+
+        argv = [
+            "/usr/bin/sudo",
+            "--non-interactive",
+            "--",
+            "/usr/bin/systemctl",
+            "restart",
+            "foo",
+        ]
+        command = ["systemctl", "restart", "foo"]
+
+        assert _managed_executable_name(argv, command, elevated=True) == "systemctl"
+
+    def test_managed_executable_name_not_elevated_reports_argv0(self):
+        """Unchanged behaviour: a non-elevated run reports argv[0]'s name."""
+        from systems_manager.systems_manager import _managed_executable_name
+
+        argv = ["/usr/bin/systemctl", "status", "foo"]
+        command = ["systemctl", "status", "foo"]
+
+        assert (
+            _managed_executable_name(argv, command, elevated=False) == "systemctl"
+        )
