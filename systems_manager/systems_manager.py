@@ -19,10 +19,10 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from collections.abc import Iterator
+from collections.abc import Callable, Iterable, Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, BinaryIO, Literal, NamedTuple
 from urllib.parse import urlsplit
 
 import distro
@@ -159,8 +159,41 @@ def _validated_timeout_seconds(
     return max(1, min(value, _MAX_COMMAND_TIMEOUT_SECONDS))
 
 
-def _validated_command_argv(command: list[str] | tuple[str, ...]) -> list[str]:
-    """Validate a fixed argv vector and reject arbitrary executables."""
+_MANAGED_BASH_PROGRAMS = frozenset(
+    {
+        'source "$1"; nvm install "$2"',
+        'source "$1"; nvm use "$2"',
+    }
+)
+_WINDOWS_FEATURE_VERBS = frozenset(
+    {"Enable-WindowsOptionalFeature", "Disable-WindowsOptionalFeature"}
+)
+_FIXED_POWERSHELL_SCRIPTS = frozenset(
+    {
+        "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3",
+        "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Json -Depth 3",
+        "Get-LocalGroup | Select-Object Name | ConvertTo-Json -Depth 3",
+        "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action | ConvertTo-Json -Depth 3",
+        "Get-WindowsOptionalFeature -Online | ConvertTo-Json -Depth 3",
+        "Optimize-Volume -DriveLetter C",
+        r"Remove-Item -Path $env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_*\LocalState\DiagOutputDir\* -Recurse -Force -ErrorAction SilentlyContinue",
+    }
+)
+_MANAGED_SERVICE_NAME_PATTERN = r"[A-Za-z0-9_.@:-]{1,256}"
+_PERMITTED_POWERSHELL_PATTERNS = frozenset(
+    {
+        rf"Get-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}' \| Select-Object Name,Status,DisplayName,StartType \| ConvertTo-Json",
+        rf"Start-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}'",
+        rf"Stop-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}' -Force",
+        rf"Restart-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}' -Force",
+        rf"Set-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}' -StartupType (?:Automatic|Disabled)",
+        r"Get-EventLog -LogName System -Newest (?:[1-9]\d{0,2}|1000) \| Format-List \| Out-String",
+    }
+)
+
+
+def _validated_argv_strings(command: list[str] | tuple[str, ...]) -> list[str]:
+    """Validate argv shape plus the per-argument and total byte budgets."""
     if not isinstance(command, (list, tuple)) or not command:
         raise ValueError("A non-empty argument vector is required")
     if len(command) > _MAX_COMMAND_ARGS:
@@ -177,86 +210,90 @@ def _validated_command_argv(command: list[str] | tuple[str, ...]) -> list[str]:
         argv.append(argument)
     if total > _MAX_COMMAND_BYTES:
         raise ValueError("Managed command size limit exceeded")
+    return argv
 
+
+def _is_current_python(candidate: Path) -> bool:
+    """True when `candidate` resolves to the interpreter running this process."""
+    try:
+        return candidate.resolve(strict=True) == Path(sys.executable).resolve(
+            strict=True
+        )
+    except OSError:
+        return False
+
+
+def _validated_executable_name(argv: list[str]) -> str:
+    """Reject caller-supplied paths and executables outside the allowlist."""
     supplied_executable = Path(argv[0])
     executable = supplied_executable.name.casefold()
     python_executable = Path(sys.executable).name.casefold()
     if supplied_executable != Path(supplied_executable.name):
-        try:
-            is_current_python = supplied_executable.resolve(strict=True) == Path(
-                sys.executable
-            ).resolve(strict=True)
-        except OSError:
-            is_current_python = False
-        if not is_current_python:
+        if not _is_current_python(supplied_executable):
             raise PermissionError("Caller-supplied executable paths are not permitted")
     if executable not in _MANAGED_EXECUTABLES and executable != python_executable:
         if not re.fullmatch(r"python(?:\d+(?:\.\d+)*)?(?:\.exe)?", executable):
             raise PermissionError("Executable is outside the managed allowlist")
-    _validate_interpreter_policy(argv, executable)
+    return executable
+
+
+def _validated_command_argv(command: list[str] | tuple[str, ...]) -> list[str]:
+    """Validate a fixed argv vector and reject arbitrary executables."""
+    argv = _validated_argv_strings(command)
+    _validate_interpreter_policy(argv, _validated_executable_name(argv))
     return argv
+
+
+def _validate_bash_program(argv: list[str]) -> None:
+    """Only the two fixed nvm bootstrap programs may run under bash."""
+    if (
+        len(argv) != 6
+        or argv[1] != "-c"
+        or argv[2] not in _MANAGED_BASH_PROGRAMS
+        or argv[3] != "nvm"
+        or resolve_managed_path(argv[4], must_exist=True).name != "nvm.sh"
+    ):
+        raise PermissionError("Bash program is outside the managed allowlist")
+
+
+def _validate_python_program(argv: list[str]) -> None:
+    """Only `-m pip install ...` may run under a Python interpreter."""
+    if len(argv) < 5 or argv[1:3] != ["-m", "pip"] or argv[3] != "install":
+        raise PermissionError("Python program is outside the managed allowlist")
+
+
+def _is_managed_feature_command(argv: list[str]) -> bool:
+    """True for the two fixed Windows optional-feature invocations."""
+    if len(argv) != 6 or argv[1] not in _WINDOWS_FEATURE_VERBS:
+        return False
+    if argv[2] != "-Online" or argv[3] != "-FeatureName" or argv[5] != "-NoRestart":
+        return False
+    return bool(re.fullmatch(_MANAGED_SERVICE_NAME_PATTERN, argv[4]))
+
+
+def _validate_powershell_program(argv: list[str]) -> None:
+    """Only the fixed scripts and parameterised patterns may run under PowerShell."""
+    if _is_managed_feature_command(argv):
+        return
+    if argv[1:4] != ["-NoProfile", "-NonInteractive", "-Command"] or len(argv) != 5:
+        raise PermissionError("PowerShell program is outside the managed allowlist")
+    script = argv[4]
+    if script in _FIXED_POWERSHELL_SCRIPTS:
+        return
+    if not any(
+        re.fullmatch(pattern, script) for pattern in _PERMITTED_POWERSHELL_PATTERNS
+    ):
+        raise PermissionError("PowerShell program is outside the managed allowlist")
 
 
 def _validate_interpreter_policy(argv: list[str], executable: str) -> None:
     """Constrain interpreter-capable executables to fixed internal programs."""
     if executable == "bash":
-        if (
-            len(argv) != 6
-            or argv[1] != "-c"
-            or argv[2]
-            not in {
-                'source "$1"; nvm install "$2"',
-                'source "$1"; nvm use "$2"',
-            }
-            or argv[3] != "nvm"
-            or resolve_managed_path(argv[4], must_exist=True).name != "nvm.sh"
-        ):
-            raise PermissionError("Bash program is outside the managed allowlist")
-        return
-
-    if executable.startswith("python"):
-        if len(argv) < 5 or argv[1:3] != ["-m", "pip"] or argv[3] != "install":
-            raise PermissionError("Python program is outside the managed allowlist")
-        return
-
-    if executable not in {"powershell", "powershell.exe"}:
-        return
-    if len(argv) == 6 and argv[1] in {
-        "Enable-WindowsOptionalFeature",
-        "Disable-WindowsOptionalFeature",
-    }:
-        if (
-            argv[2] == "-Online"
-            and argv[3] == "-FeatureName"
-            and argv[5] == "-NoRestart"
-        ):
-            if re.fullmatch(r"[A-Za-z0-9_.@:-]{1,256}", argv[4]):
-                return
-    if argv[1:4] != ["-NoProfile", "-NonInteractive", "-Command"] or len(argv) != 5:
-        raise PermissionError("PowerShell program is outside the managed allowlist")
-    script = argv[4]
-    fixed_scripts = {
-        "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3",
-        "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Json -Depth 3",
-        "Get-LocalGroup | Select-Object Name | ConvertTo-Json -Depth 3",
-        "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action | ConvertTo-Json -Depth 3",
-        "Get-WindowsOptionalFeature -Online | ConvertTo-Json -Depth 3",
-        "Optimize-Volume -DriveLetter C",
-        r"Remove-Item -Path $env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_*\LocalState\DiagOutputDir\* -Recurse -Force -ErrorAction SilentlyContinue",
-    }
-    if script in fixed_scripts:
-        return
-    service = r"[A-Za-z0-9_.@:-]{1,256}"
-    permitted_patterns = {
-        rf"Get-Service -Name '{service}' \| Select-Object Name,Status,DisplayName,StartType \| ConvertTo-Json",
-        rf"Start-Service -Name '{service}'",
-        rf"Stop-Service -Name '{service}' -Force",
-        rf"Restart-Service -Name '{service}' -Force",
-        rf"Set-Service -Name '{service}' -StartupType (?:Automatic|Disabled)",
-        r"Get-EventLog -LogName System -Newest (?:[1-9]\d{0,2}|1000) \| Format-List \| Out-String",
-    }
-    if not any(re.fullmatch(pattern, script) for pattern in permitted_patterns):
-        raise PermissionError("PowerShell program is outside the managed allowlist")
+        _validate_bash_program(argv)
+    elif executable.startswith("python"):
+        _validate_python_program(argv)
+    elif executable in {"powershell", "powershell.exe"}:
+        _validate_powershell_program(argv)
 
 
 def _bounded_stream_reader(stream, output: bytearray, limit: int) -> None:
@@ -305,6 +342,39 @@ def _trusted_search_directories() -> tuple[Path, ...]:
     return tuple(dict.fromkeys(directories))
 
 
+def _windows_path_is_trusted(resolved: Path) -> bool:
+    """True when a resolved Windows path sits under an administrator-owned root."""
+    attributes = getattr(resolved.stat(), "st_file_attributes", 0)
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+    if attributes & reparse_flag:
+        return False
+    windows = Path(os.environ.get("SYSTEMROOT", r"C:\Windows")).resolve()
+    program_files = Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")).resolve()
+    trusted_roots = (windows, program_files / "WindowsApps")
+    return any(
+        resolved == root or resolved.is_relative_to(root) for root in trusted_roots
+    )
+
+
+def _posix_path_is_trusted(resolved: Path) -> bool:
+    """True when the path and every ancestor are owned by root or us, not group-writable."""
+    effective_uid = os.geteuid() if hasattr(os, "geteuid") else None
+    permitted_owners = {0}
+    if effective_uid is not None:
+        permitted_owners.add(effective_uid)
+    current = resolved
+    while True:
+        metadata = current.stat()
+        if metadata.st_uid not in permitted_owners:
+            return False
+        if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            return False
+        if current.parent == current:
+            break
+        current = current.parent
+    return os.access(resolved, os.X_OK)
+
+
 def _path_is_trusted_executable(path: Path) -> bool:
     """Check executable type, ownership, and writable ancestors on POSIX."""
     try:
@@ -312,35 +382,8 @@ def _path_is_trusted_executable(path: Path) -> bool:
         if not resolved.is_file():
             return False
         if os.name == "nt":
-            attributes = getattr(resolved.stat(), "st_file_attributes", 0)
-            reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
-            if attributes & reparse_flag:
-                return False
-            windows = Path(os.environ.get("SYSTEMROOT", r"C:\Windows")).resolve()
-            program_files = Path(
-                os.environ.get("PROGRAMFILES", r"C:\Program Files")
-            ).resolve()
-            trusted_roots = (windows, program_files / "WindowsApps")
-            return any(
-                resolved == root or resolved.is_relative_to(root)
-                for root in trusted_roots
-            )
-
-        effective_uid = os.geteuid() if hasattr(os, "geteuid") else None
-        permitted_owners = {0}
-        if effective_uid is not None:
-            permitted_owners.add(effective_uid)
-        current = resolved
-        while True:
-            metadata = current.stat()
-            if metadata.st_uid not in permitted_owners:
-                return False
-            if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
-                return False
-            if current.parent == current:
-                break
-            current = current.parent
-        return os.access(resolved, os.X_OK)
+            return _windows_path_is_trusted(resolved)
+        return _posix_path_is_trusted(resolved)
     except OSError:
         return False
 
@@ -369,29 +412,24 @@ def _resolve_trusted_executable(executable: str) -> str:
     raise FileNotFoundError("Managed executable is not installed in a trusted location")
 
 
-def _terminate_process_tree(
-    process: subprocess.Popen,
-    *,
-    grace_seconds: int = _COMMAND_TERMINATION_GRACE_SECONDS,
-) -> int:
-    """Gracefully terminate a child tree, then force-kill survivors."""
-    if process.poll() is not None:
-        return int(process.returncode)
-
-    if os.name != "nt":
+def _terminate_posix_group(process: subprocess.Popen, grace_seconds: int) -> int:
+    """SIGTERM then SIGKILL the child's whole process group."""
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError):
+        process.terminate()
+    try:
+        return process.wait(timeout=grace_seconds)
+    except subprocess.TimeoutExpired:
         try:
-            os.killpg(process.pid, signal.SIGTERM)
+            os.killpg(process.pid, signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
-            process.terminate()
-        try:
-            return process.wait(timeout=grace_seconds)
-        except subprocess.TimeoutExpired:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except (ProcessLookupError, PermissionError):
-                process.kill()
-            return process.wait(timeout=grace_seconds)
+            process.kill()
+        return process.wait(timeout=grace_seconds)
 
+
+def _terminate_windows_tree(process: subprocess.Popen, grace_seconds: int) -> None:
+    """Terminate the child and its descendants, then kill whatever survives."""
     try:
         parent = psutil.Process(process.pid)
         descendants = parent.children(recursive=True)
@@ -405,11 +443,184 @@ def _terminate_process_tree(
             psutil.wait_procs(alive, timeout=grace_seconds)
     except (psutil.Error, OSError):
         process.terminate()
+
+
+def _wait_or_kill(process: subprocess.Popen, grace_seconds: int) -> int:
+    """Wait for the child, force-killing it if it outlives the grace period."""
     try:
         return process.wait(timeout=grace_seconds)
     except subprocess.TimeoutExpired:
         process.kill()
         return process.wait(timeout=grace_seconds)
+
+
+def _terminate_process_tree(
+    process: subprocess.Popen,
+    *,
+    grace_seconds: int = _COMMAND_TERMINATION_GRACE_SECONDS,
+) -> int:
+    """Gracefully terminate a child tree, then force-kill survivors."""
+    if process.poll() is not None:
+        return int(process.returncode)
+    if os.name != "nt":
+        return _terminate_posix_group(process, grace_seconds)
+    _terminate_windows_tree(process, grace_seconds)
+    return _wait_or_kill(process, grace_seconds)
+
+
+def _windows_process_is_admin() -> bool:
+    """True when the hosting Windows process already holds an administrator token."""
+    try:
+        import ctypes
+
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except (AttributeError, OSError):
+        return False
+
+
+def _elevate_argv(argv: list[str]) -> list[str]:
+    """Prefix sudo unless the process is already root."""
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        return argv
+    return [_resolve_trusted_executable("sudo"), "--non-interactive", "--", *argv]
+
+
+def _managed_executable_name(
+    argv: list[str], command: list[str] | tuple[str, ...], elevated: bool
+) -> str:
+    """Name of the executable actually being run, seeing through a sudo prefix."""
+    if elevated and argv[0] == "sudo":
+        return Path(argv[-len(command)]).name
+    return Path(argv[0]).name
+
+
+def _spawn_managed_process(
+    argv: list[str], env_overrides: dict[str, str] | None
+) -> subprocess.Popen:
+    """Start an allowlisted argv in its own process group with no inherited stdin."""
+    return subprocess.Popen(
+        argv,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=False,
+        env=_minimal_child_environment(env_overrides),
+        start_new_session=os.name != "nt",
+        creationflags=(
+            getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if os.name == "nt" else 0
+        ),
+    )
+
+
+def _start_output_readers(
+    process: subprocess.Popen,
+) -> tuple[list[threading.Thread], bytearray, bytearray]:
+    """Start the two bounded reader threads and return them with their buffers."""
+    assert process.stdout is not None
+    assert process.stderr is not None
+    stdout_buffer = bytearray()
+    stderr_buffer = bytearray()
+    readers = [
+        threading.Thread(
+            target=_bounded_stream_reader,
+            args=(process.stdout, stdout_buffer, _MAX_COMMAND_OUTPUT_BYTES),
+            daemon=True,
+        ),
+        threading.Thread(
+            target=_bounded_stream_reader,
+            args=(process.stderr, stderr_buffer, _MAX_COMMAND_OUTPUT_BYTES),
+            daemon=True,
+        ),
+    ]
+    for reader in readers:
+        reader.start()
+    return readers, stdout_buffer, stderr_buffer
+
+
+def _terminate_after_timeout(process: subprocess.Popen) -> int:
+    """Kill a timed-out child, falling back to a direct kill if the tree walk fails."""
+    try:
+        return _terminate_process_tree(process)
+    except (OSError, psutil.Error, subprocess.TimeoutExpired):
+        process.kill()
+        return process.wait(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
+
+
+def _join_output_readers(
+    process: subprocess.Popen, readers: list[threading.Thread]
+) -> bool:
+    """Join the reader threads; True when a stream had to be force-closed."""
+    cleanup_failed = False
+    for reader in readers:
+        reader.join(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
+    for reader, stream in zip(readers, (process.stdout, process.stderr), strict=True):
+        if reader.is_alive():
+            cleanup_failed = True
+            stream.close()
+            reader.join(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
+    return cleanup_failed
+
+
+class _CommandRun(NamedTuple):
+    """Outcome of waiting on one managed child process."""
+
+    returncode: int
+    timed_out: bool
+    reader_cleanup_failed: bool
+
+
+def _await_managed_process(
+    process: subprocess.Popen, readers: list[threading.Thread], timeout_seconds: int
+) -> _CommandRun:
+    """Wait for the child within its timeout, always draining the reader threads."""
+    timed_out = False
+    try:
+        try:
+            returncode = process.wait(timeout=timeout_seconds)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            returncode = _terminate_after_timeout(process)
+    finally:
+        reader_cleanup_failed = _join_output_readers(process, readers)
+    return _CommandRun(returncode, timed_out, reader_cleanup_failed)
+
+
+def _managed_command_error(run: _CommandRun) -> str:
+    """The redacted error string for a managed command that did not succeed."""
+    if run.timed_out:
+        return "Managed command timed out"
+    if run.reader_cleanup_failed:
+        return "Managed command output cleanup failed"
+    return "Managed command failed"
+
+
+def _managed_command_result(
+    run: _CommandRun,
+    timeout_seconds: int,
+    stdout_buffer: bytearray,
+    stderr_buffer: bytearray,
+    capture_output: bool,
+) -> dict[str, Any]:
+    """Assemble the public result mapping for one managed command."""
+    result: dict[str, Any] = {
+        "success": (
+            run.returncode == 0 and not run.timed_out and not run.reader_cleanup_failed
+        ),
+        "returncode": run.returncode,
+        "timed_out": run.timed_out,
+        "timeout_seconds": timeout_seconds,
+        "reader_cleanup_failed": run.reader_cleanup_failed,
+        "output_truncated": (
+            len(stdout_buffer) >= _MAX_COMMAND_OUTPUT_BYTES
+            or len(stderr_buffer) >= _MAX_COMMAND_OUTPUT_BYTES
+        ),
+    }
+    if capture_output:
+        result["stdout"] = stdout_buffer.decode("utf-8", errors="replace")
+        result["stderr"] = stderr_buffer.decode("utf-8", errors="replace")
+    if not result["success"]:
+        result["error"] = _managed_command_error(run)
+    return result
 
 
 def _minimal_child_environment(
@@ -457,15 +668,18 @@ def _validated_search_query(value: str) -> str:
     return candidate
 
 
-def _validated_local_package(path: str, suffixes: tuple[str, ...]) -> Path:
-    candidate = resolve_managed_path(path, must_exist=True)
-    if (
-        not candidate.is_file()
-        or candidate.is_symlink()
-        or candidate.stat().st_size > _MAX_LOCAL_PACKAGE_BYTES
-        or not candidate.name.casefold().endswith(suffixes)
-    ):
-        raise ValueError("Invalid local package artifact")
+def _is_permitted_package_artifact(candidate: Path, suffixes: tuple[str, ...]) -> bool:
+    """True for a real, non-symlink, size-bounded file with an allowed suffix."""
+    return (
+        candidate.is_file()
+        and not candidate.is_symlink()
+        and candidate.stat().st_size <= _MAX_LOCAL_PACKAGE_BYTES
+        and candidate.name.casefold().endswith(suffixes)
+    )
+
+
+def _local_package_digest_map() -> dict[str, Any]:
+    """The deployment-controlled artifact-name to sha256 policy map."""
     raw_digests = str(setting("SYSTEMS_MANAGER_LOCAL_PACKAGE_SHA256_MAP", "")).strip()
     if not raw_digests or len(raw_digests) > 64 * 1024:
         raise PermissionError("A deployment-controlled package digest is required")
@@ -475,15 +689,26 @@ def _validated_local_package(path: str, suffixes: tuple[str, ...]) -> Path:
         raise ValueError("Local package digest policy is invalid") from exc
     if not isinstance(digest_map, dict) or len(digest_map) > 256:
         raise ValueError("Local package digest policy is invalid")
-    artifact_name = managed_display_path(candidate)
-    expected = digest_map.get(artifact_name)
-    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", expected):
-        raise PermissionError("The local package is not digest-allowlisted")
+    return digest_map
+
+
+def _file_sha256(path: Path) -> str:
+    """Streaming SHA-256 of a file, read in 1 MiB chunks."""
     digest = hashlib.sha256()
-    with candidate.open("rb") as package_file:
+    with path.open("rb") as package_file:
         for chunk in iter(lambda: package_file.read(1024 * 1024), b""):
             digest.update(chunk)
-    if digest.hexdigest().casefold() != expected.casefold():
+    return digest.hexdigest()
+
+
+def _validated_local_package(path: str, suffixes: tuple[str, ...]) -> Path:
+    candidate = resolve_managed_path(path, must_exist=True)
+    if not _is_permitted_package_artifact(candidate, suffixes):
+        raise ValueError("Invalid local package artifact")
+    expected = _local_package_digest_map().get(managed_display_path(candidate))
+    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", expected):
+        raise PermissionError("The local package is not digest-allowlisted")
+    if _file_sha256(candidate).casefold() != expected.casefold():
         raise ValueError("Local package digest verification failed")
     return candidate
 
@@ -507,24 +732,20 @@ def _validated_python_requirement(value: str) -> str:
     return candidate
 
 
-def _validated_repository_url(value: str) -> str:
-    candidate = value.strip()
-    if len(candidate) > 2_048:
-        raise ValueError("Repository URL is too long")
-    parsed = urlsplit(candidate)
-    if (
-        parsed.scheme != "https"
-        or not parsed.hostname
-        or parsed.username
-        or parsed.password
-        or parsed.query
-        or parsed.fragment
-    ):
-        raise ValueError("Repository URL must be credential-free HTTPS")
-    try:
-        parsed.hostname.encode("idna")
-    except UnicodeError as exc:
-        raise ValueError("Invalid repository hostname") from exc
+def _is_credential_free_https(parsed: Any) -> bool:
+    """True for an https URL with a hostname and no credentials, query or fragment."""
+    return bool(
+        parsed.scheme == "https"
+        and parsed.hostname
+        and not parsed.username
+        and not parsed.password
+        and not parsed.query
+        and not parsed.fragment
+    )
+
+
+def _repository_allowlist() -> list[str]:
+    """The deployment-controlled list of permitted repository URLs."""
     raw_allowlist = str(
         setting("SYSTEMS_MANAGER_REPOSITORY_ALLOWLIST_JSON", "")
     ).strip()
@@ -542,7 +763,21 @@ def _validated_repository_url(value: str) -> str:
         or not all(isinstance(item, str) for item in allowed)
     ):
         raise ValueError("Repository allowlist is invalid")
-    if candidate not in allowed:
+    return allowed
+
+
+def _validated_repository_url(value: str) -> str:
+    candidate = value.strip()
+    if len(candidate) > 2_048:
+        raise ValueError("Repository URL is too long")
+    parsed = urlsplit(candidate)
+    if not _is_credential_free_https(parsed):
+        raise ValueError("Repository URL must be credential-free HTTPS")
+    try:
+        parsed.hostname.encode("idna")
+    except UnicodeError as exc:
+        raise ValueError("Invalid repository hostname") from exc
+    if candidate not in _repository_allowlist():
         raise PermissionError("Repository URL is not allowlisted")
     return candidate
 
@@ -640,110 +875,444 @@ def _coerce_firewall_rule(
     return FirewallRuleSpec.model_validate(rule)
 
 
+class _FirewallArgs(NamedTuple):
+    """Normalised inputs shared by every firewall backend argv builder."""
+
+    spec: FirewallRuleSpec
+    port: str
+    source: str
+    destination: str
+    remove: bool
+
+
+def _firewall_rule_networks(spec: FirewallRuleSpec) -> list[Any]:
+    """The rule's declared source/destination networks, in declaration order."""
+    return [
+        ipaddress.ip_network(value)
+        for value in (spec.source, spec.destination)
+        if value is not None
+    ]
+
+
+def _ufw_firewall_args(request: _FirewallArgs) -> list[str]:
+    spec = request.spec
+    return [
+        spec.action,
+        spec.direction,
+        "proto",
+        spec.protocol,
+        "from",
+        request.source,
+        "to",
+        request.destination,
+        "port",
+        request.port,
+        "comment",
+        spec.name,
+    ]
+
+
+def _firewalld_firewall_args(request: _FirewallArgs) -> list[str]:
+    spec = request.spec
+    if spec.direction != "in":
+        raise ValueError("firewalld outbound rules require a separate policy API")
+    networks = _firewall_rule_networks(spec)
+    family = f' family="ipv{networks[0].version}"' if networks else ""
+    source_clause = f' source address="{spec.source}"' if spec.source else ""
+    destination_clause = (
+        f' destination address="{spec.destination}"' if spec.destination else ""
+    )
+    verdict = "accept" if spec.action == "allow" else "drop"
+    rich_rule = (
+        f"rule{family}{source_clause}{destination_clause}"
+        f' port port="{request.port}" protocol="{spec.protocol}" {verdict}'
+    )
+    operation = "--remove-rich-rule=" if request.remove else "--add-rich-rule="
+    return [f"{operation}{rich_rule}"]
+
+
+def _iptables_firewall_args(request: _FirewallArgs) -> list[str]:
+    spec = request.spec
+    networks = _firewall_rule_networks(spec)
+    if any(network.version != 4 for network in networks):
+        raise ValueError("IPv6 firewall rules require an ip6tables-specific API")
+    arguments = [
+        "-D" if request.remove else "-A",
+        "INPUT" if spec.direction == "in" else "OUTPUT",
+        "-p",
+        spec.protocol,
+        "-m",
+        spec.protocol,
+        "--dport",
+        request.port,
+    ]
+    if spec.source:
+        arguments.extend(["-s", spec.source])
+    if spec.destination:
+        arguments.extend(["-d", spec.destination])
+    arguments.extend(
+        [
+            "-m",
+            "comment",
+            "--comment",
+            spec.name,
+            "-j",
+            "ACCEPT" if spec.action == "allow" else "DROP",
+        ]
+    )
+    return arguments
+
+
+def _netsh_firewall_args(request: _FirewallArgs) -> list[str]:
+    spec = request.spec
+    inbound = spec.direction == "in"
+    local_ip = request.destination if inbound else request.source
+    remote_ip = request.source if inbound else request.destination
+    port_field = "localport" if inbound else "remoteport"
+    arguments = [
+        f"name={spec.name}",
+        f"dir={spec.direction}",
+        f"protocol={spec.protocol.upper()}",
+        f"{port_field}={request.port}",
+        f"localip={local_ip}",
+        f"remoteip={remote_ip}",
+    ]
+    if not request.remove:
+        arguments.insert(2, f"action={'allow' if spec.action == 'allow' else 'block'}")
+    return arguments
+
+
+_FIREWALL_ARG_BUILDERS: dict[str, Callable[[_FirewallArgs], list[str]]] = {
+    "ufw": _ufw_firewall_args,
+    "firewalld": _firewalld_firewall_args,
+    "iptables": _iptables_firewall_args,
+    "netsh": _netsh_firewall_args,
+}
+
+
 def _validated_firewall_args(
     rule: FirewallRuleSpec | dict[str, Any], *, backend: str, remove: bool
 ) -> list[str]:
     """Generate an exact argv suffix for a supported firewall backend."""
     spec = _coerce_firewall_rule(rule)
-    port = str(spec.port)
-    source = spec.source or "any"
-    destination = spec.destination or "any"
-
-    if backend == "ufw":
-        return [
-            spec.action,
-            spec.direction,
-            "proto",
-            spec.protocol,
-            "from",
-            source,
-            "to",
-            destination,
-            "port",
-            port,
-            "comment",
-            spec.name,
-        ]
-
-    if backend == "firewalld":
-        if spec.direction != "in":
-            raise ValueError("firewalld outbound rules require a separate policy API")
-        networks = [
-            ipaddress.ip_network(value)
-            for value in (spec.source, spec.destination)
-            if value is not None
-        ]
-        family = f' family="ipv{networks[0].version}"' if networks else ""
-        source_clause = f' source address="{spec.source}"' if spec.source else ""
-        destination_clause = (
-            f' destination address="{spec.destination}"' if spec.destination else ""
+    builder = _FIREWALL_ARG_BUILDERS.get(backend)
+    if builder is None:
+        raise ValueError("Unsupported firewall backend")
+    return builder(
+        _FirewallArgs(
+            spec=spec,
+            port=str(spec.port),
+            source=spec.source or "any",
+            destination=spec.destination or "any",
+            remove=remove,
         )
-        verdict = "accept" if spec.action == "allow" else "drop"
-        rich_rule = (
-            f"rule{family}{source_clause}{destination_clause}"
-            f' port port="{port}" protocol="{spec.protocol}" {verdict}'
-        )
-        operation = "--remove-rich-rule=" if remove else "--add-rich-rule="
-        return [f"{operation}{rich_rule}"]
+    )
 
-    if backend == "iptables":
-        networks = [
-            ipaddress.ip_network(value)
-            for value in (spec.source, spec.destination)
-            if value is not None
-        ]
-        if any(network.version != 4 for network in networks):
-            raise ValueError("IPv6 firewall rules require an ip6tables-specific API")
-        arguments = [
-            "-D" if remove else "-A",
-            "INPUT" if spec.direction == "in" else "OUTPUT",
-            "-p",
-            spec.protocol,
-            "-m",
-            spec.protocol,
-            "--dport",
-            port,
-        ]
-        if spec.source:
-            arguments.extend(["-s", spec.source])
-        if spec.destination:
-            arguments.extend(["-d", spec.destination])
-        arguments.extend(
-            [
-                "-m",
-                "comment",
-                "--comment",
-                spec.name,
-                "-j",
-                "ACCEPT" if spec.action == "allow" else "DROP",
-            ]
-        )
-        return arguments
 
-    if backend == "netsh":
-        local_ip = destination if spec.direction == "in" else source
-        remote_ip = source if spec.direction == "in" else destination
-        port_field = "localport" if spec.direction == "in" else "remoteport"
-        arguments = [
-            f"name={spec.name}",
-            f"dir={spec.direction}",
-            f"protocol={spec.protocol.upper()}",
-            f"{port_field}={port}",
-            f"localip={local_ip}",
-            f"remoteip={remote_ip}",
-        ]
-        if not remove:
-            arguments.insert(
-                2, f"action={'allow' if spec.action == 'allow' else 'block'}"
-            )
-        return arguments
+def _count_ufw_rules(stdout: str) -> int:
+    return sum(1 for line in stdout.splitlines() if re.match(r"\s*\[\s*\d+\]", line))
 
-    raise ValueError("Unsupported firewall backend")
+
+def _count_firewalld_rules(stdout: str) -> int:
+    return sum(len(line.split()[1:]) for line in stdout.splitlines() if ":" in line)
+
+
+def _count_iptables_rules(stdout: str) -> int:
+    return sum(1 for line in stdout.splitlines() if re.match(r"\s*\d+\s", line))
+
+
+def _firewall_rule_summary(
+    tool: str, result: dict, counter: Callable[[str], int]
+) -> dict:
+    """Redacted rule-count summary for one firewall backend listing."""
+    return {
+        "success": result["success"],
+        "tool": tool,
+        "total": counter(result.get("stdout") or ""),
+        "details_redacted": True,
+    }
+
+
+def _windows_firewall_rule_count(result: dict) -> int | None:
+    """Rule count from a PowerShell JSON listing, or None when unavailable."""
+    if not result["success"]:
+        return None
+    try:
+        rules = json.loads(result.get("stdout", "[]"))
+    except json.JSONDecodeError:
+        return None
+    return len([rules] if isinstance(rules, dict) else rules)
 
 
 def _opaque_ref(namespace: str, value: str) -> str:
     digest = hashlib.sha256(f"{namespace}\x00{value}".encode()).hexdigest()
     return f"{namespace}:{digest[:16]}"
+
+
+def _crontab_list_command(user: str | None) -> list[str]:
+    """The crontab listing argv, optionally scoped to one account."""
+    return ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
+
+
+def _parse_crontab_jobs(stdout: str) -> list[dict[str, str]]:
+    """Opaque job references and schedules parsed from a crontab listing."""
+    jobs: list[dict[str, str]] = []
+    for line in stdout.strip().splitlines():
+        content = line.strip()
+        if not content or content.startswith("#"):
+            continue
+        fields = content.split(None, 5)
+        jobs.append(
+            {
+                "job_ref": _opaque_ref("cron", content),
+                "schedule": " ".join(fields[:5]) if len(fields) >= 6 else "special",
+            }
+        )
+        if len(jobs) >= _MAX_FILESYSTEM_RESULTS:
+            break
+    return jobs
+
+
+def _partition_crontab_lines(
+    lines: list[str], pattern: str
+) -> tuple[list[str], list[str]]:
+    """Split crontab lines into (matching the reference, to keep)."""
+    removed: list[str] = []
+    kept: list[str] = []
+    for line in lines:
+        target = removed if _opaque_ref("cron", line.strip()) == pattern else kept
+        target.append(line)
+    return removed, kept
+
+
+_LOG_PRIORITIES = frozenset(
+    {"emerg", "alert", "crit", "err", "warning", "notice", "info", "debug"}
+)
+
+
+def _journalctl_command(
+    lines: int, unit: str | None, priority: str | None
+) -> list[str]:
+    """The journalctl argv for a bounded, optionally filtered log read."""
+    command = ["journalctl", "--no-pager", "-n", str(lines)]
+    if unit:
+        command.extend(["-u", unit])
+    if priority:
+        command.extend(["-p", priority])
+    return command
+
+
+def _powershell_json_records(result: dict) -> list[Any]:
+    """Bounded records from a PowerShell ConvertTo-Json payload."""
+    records = json.loads(result.get("stdout", "[]"))
+    if isinstance(records, dict):
+        records = [records]
+    return records[:_MAX_FILESYSTEM_RESULTS]
+
+
+def _parse_systemctl_units(stdout: str) -> list[dict[str, str]]:
+    """Unit records parsed from `systemctl list-units --plain --no-legend`."""
+    services: list[dict[str, str]] = []
+    for line in stdout.strip().splitlines():
+        parts = line.split(None, 4)
+        if len(parts) >= 4:
+            services.append(
+                {
+                    "name": parts[0],
+                    "load": parts[1],
+                    "active": parts[2],
+                    "sub": parts[3],
+                    "description": parts[4] if len(parts) > 4 else "",
+                }
+            )
+    return services
+
+
+_AUTHORIZED_KEY_TYPES = frozenset(
+    {
+        "ecdsa-sha2-nistp256",
+        "ecdsa-sha2-nistp384",
+        "ecdsa-sha2-nistp521",
+        "sk-ecdsa-sha2-nistp256@openssh.com",
+        "sk-ssh-ed25519@openssh.com",
+        "ssh-ed25519",
+        "ssh-rsa",
+    }
+)
+
+
+def _validated_public_key(public_key: str) -> str:
+    """Validate one OpenSSH public-key line and return its stripped form."""
+    candidate = public_key.strip()
+    if len(candidate) > 16_384 or any(
+        character in candidate for character in ("\x00", "\n", "\r")
+    ):
+        raise ValueError("Invalid public key")
+    fields = candidate.split(None, 2)
+    if len(fields) < 2 or fields[0] not in _AUTHORIZED_KEY_TYPES:
+        raise ValueError("Unsupported public key type")
+    try:
+        decoded = base64.b64decode(fields[1], validate=True)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid public key encoding") from exc
+    if not 32 <= len(decoded) <= 16_384:
+        raise ValueError("Invalid public key size")
+    return candidate
+
+
+def _prepared_ssh_paths() -> tuple[Path, Path]:
+    """Return (~/.ssh, ~/.ssh/authorized_keys), creating the directory at 0700."""
+    ssh_dir = Path.home() / ".ssh"
+    if ssh_dir.is_symlink():
+        raise PermissionError("Symbolic-link SSH directories are not permitted")
+    ssh_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    auth_keys = ssh_dir / "authorized_keys"
+    if auth_keys.is_symlink():
+        raise PermissionError("Symbolic-link key files are not permitted")
+    return ssh_dir, auth_keys
+
+
+def _read_authorized_keys(auth_keys: Path) -> str:
+    """Current authorized_keys content, or an empty string when absent."""
+    if not auth_keys.exists():
+        return ""
+    if auth_keys.stat().st_size > _MAX_MANAGED_FILE_BYTES:
+        raise ValueError("Authorized key file size limit exceeded")
+    return auth_keys.read_text(encoding="utf-8")
+
+
+def _write_authorized_keys(
+    ssh_dir: Path, auth_keys: Path, existing: str, candidate: str
+) -> None:
+    """Append `candidate` through a 0600 temporary replaced into place."""
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=ssh_dir,
+        prefix=".authorized-keys-",
+        delete=False,
+    ) as handle:
+        handle.write(existing.rstrip("\n") + ("\n" if existing else ""))
+        handle.write(candidate + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+        temporary = Path(handle.name)
+    try:
+        temporary.chmod(0o600)
+        if auth_keys.is_symlink():
+            raise PermissionError("Symbolic-link key files are not permitted")
+        os.replace(temporary, auth_keys)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _disk_capacity_warnings() -> list[dict[str, Any]]:
+    """Opaque records for every mounted filesystem over 90% full."""
+    warnings: list[dict[str, Any]] = []
+    for part in psutil.disk_partitions(all=False):
+        try:
+            usage = psutil.disk_usage(part.mountpoint)
+            if usage.percent > 90:
+                warnings.append(
+                    {
+                        "disk_ref": _opaque_ref(
+                            "disk", f"{part.device}\x00{part.mountpoint}"
+                        ),
+                        "percent": usage.percent,
+                        "free_gb": round(usage.free / (1024**3), 2),
+                    }
+                )
+        except (PermissionError, OSError):
+            continue
+    return warnings
+
+
+def _top_memory_processes() -> list[dict[str, Any]]:
+    """The ten processes with the largest memory share, as opaque records."""
+    ranked = sorted(
+        psutil.process_iter(["pid", "name", "cpu_percent", "memory_percent"]),
+        key=lambda p: p.info.get("memory_percent", 0) or 0,
+        reverse=True,
+    )[:10]
+    top: list[dict[str, Any]] = []
+    for proc in ranked:
+        try:
+            info = proc.info
+            top.append(
+                {
+                    "process_ref": _opaque_ref(
+                        "process", f"{info['pid']}\x00{info['name']}"
+                    ),
+                    "cpu_percent": info.get("cpu_percent") or 0,
+                    "memory_percent": round(info.get("memory_percent") or 0, 2),
+                }
+            )
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return top
+
+
+def _resource_warnings(
+    cpu_percent: float, memory: Any, swap: Any, disk_warnings: list[dict[str, Any]]
+) -> list[str]:
+    """Human-readable warnings for CPU, memory, swap and disk pressure."""
+    warnings: list[str] = []
+    if cpu_percent > 90:
+        warnings.append(f"HIGH CPU: {cpu_percent}%")
+    if memory.percent > 90:
+        warnings.append(f"HIGH MEMORY: {memory.percent}%")
+    if swap.percent > 80:
+        warnings.append(f"HIGH SWAP: {swap.percent}%")
+    for entry in disk_warnings:
+        warnings.append(f"DISK CAPACITY HIGH: {entry['percent']}%")
+    return warnings
+
+
+def _listening_connection_record(conn: Any) -> dict[str, Any]:
+    """One redacted listening-socket record."""
+    address = conn.laddr
+    return {
+        "local_port": address.port if address else None,
+        "listener_ref": _opaque_ref(
+            "listener",
+            f"{address.ip if address else ''}:"
+            f"{address.port if address else ''}:"
+            f"{conn.pid or ''}",
+        ),
+        "status": conn.status,
+    }
+
+
+def _parse_passwd_entries(stream: Iterable[str]) -> list[dict[str, Any]]:
+    """Opaque account records parsed from an /etc/passwd stream."""
+    users: list[dict[str, Any]] = []
+    for line in stream:
+        parts = line.strip().split(":")
+        if len(parts) >= 7:
+            users.append(
+                {
+                    "user_ref": _opaque_ref("user", parts[0]),
+                    "uid": int(parts[2]),
+                    "gid": int(parts[3]),
+                }
+            )
+    return users
+
+
+def _parse_group_entries(stream: Iterable[str]) -> list[dict[str, Any]]:
+    """Opaque group records parsed from an /etc/group stream."""
+    groups: list[dict[str, Any]] = []
+    for line in stream:
+        parts = line.strip().split(":")
+        if len(parts) >= 4:
+            groups.append(
+                {
+                    "group_ref": _opaque_ref("group", parts[0]),
+                    "gid": int(parts[2]),
+                    "member_count": len(parts[3].split(",")) if parts[3] else 0,
+                }
+            )
+    return groups
 
 
 def _parse_package_metadata(output: str) -> dict[str, str]:
@@ -763,6 +1332,47 @@ def _parse_package_metadata(output: str) -> dict[str, str]:
         if separator and normalized in allowed and normalized not in metadata:
             metadata[normalized] = value.strip()[:2_048]
     return metadata
+
+
+def _parse_dnf_installed(stdout: str) -> list[str]:
+    """Package names from `dnf list installed`, minus its header lines."""
+    packages: list[str] = []
+    for line in stdout.strip().splitlines():
+        if line.startswith("Installed") or line.startswith("Last"):
+            continue
+        parts = line.split()
+        if not parts:
+            continue
+        packages.append(parts[0].split(".")[0])
+        if len(packages) >= _MAX_FILESYSTEM_RESULTS:
+            break
+    return packages
+
+
+def _parse_zypper_search(stdout: str) -> list[dict[str, str]]:
+    """Name/description rows from a `zypper search` table."""
+    packages: list[dict[str, str]] = []
+    for line in stdout.strip().splitlines():
+        parts = line.split("|")
+        if len(parts) < 3 or parts[0].strip() in ("S", "-", ""):
+            continue
+        packages.append({"name": parts[1].strip(), "description": parts[2].strip()})
+        if len(packages) >= 1_000:
+            break
+    return packages
+
+
+def _parse_zypper_updates(stdout: str) -> list[str]:
+    """Package names from a `zypper list-updates` table."""
+    packages: list[str] = []
+    for line in stdout.strip().splitlines():
+        parts = line.split("|")
+        if len(parts) < 3 or parts[0].strip() in ("S", "-", "", "v"):
+            continue
+        packages.append(parts[2].strip())
+        if len(packages) >= _MAX_FILESYSTEM_RESULTS:
+            break
+    return packages
 
 
 def _parse_package_table(output: str) -> list[dict[str, str]]:
@@ -787,16 +1397,8 @@ def _parse_package_table(output: str) -> list[dict[str, str]]:
     return rows
 
 
-def managed_filesystem_root() -> Path:
-    """Return the administrator-selected root for all MCP filesystem access."""
-    configured = str(setting("SYSTEMS_MANAGER_FILESYSTEM_ROOT", "")).strip()
-    if not configured:
-        raise PermissionError(
-            "SYSTEMS_MANAGER_FILESYSTEM_ROOT must explicitly select a data directory"
-        )
-    candidate = Path(configured).expanduser()
-    if not candidate.is_absolute():
-        raise ValueError("Managed filesystem root must be an absolute path")
+def _reject_root_link_traversal(candidate: Path) -> None:
+    """Refuse a root whose path traverses a symlink or a Windows reparse point."""
     reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
     for component in (candidate, *candidate.parents):
         try:
@@ -810,6 +1412,33 @@ def managed_filesystem_root() -> Path:
             raise PermissionError(
                 "Managed filesystem root cannot traverse links or reparse points"
             )
+
+
+def _reject_untrusted_root(metadata: os.stat_result) -> None:
+    """Refuse a managed root that is a reparse point or is not privately owned."""
+    if os.name == "nt":
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+        if getattr(metadata, "st_file_attributes", 0) & reparse_flag:
+            raise PermissionError("Managed filesystem root cannot be a reparse point")
+        return
+    effective_uid = os.geteuid() if hasattr(os, "geteuid") else metadata.st_uid
+    if metadata.st_uid != effective_uid:
+        raise PermissionError("Managed filesystem root has an untrusted owner")
+    if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+        raise PermissionError("Managed filesystem root cannot be group/world writable")
+
+
+def managed_filesystem_root() -> Path:
+    """Return the administrator-selected root for all MCP filesystem access."""
+    configured = str(setting("SYSTEMS_MANAGER_FILESYSTEM_ROOT", "")).strip()
+    if not configured:
+        raise PermissionError(
+            "SYSTEMS_MANAGER_FILESYSTEM_ROOT must explicitly select a data directory"
+        )
+    candidate = Path(configured).expanduser()
+    if not candidate.is_absolute():
+        raise ValueError("Managed filesystem root must be an absolute path")
+    _reject_root_link_traversal(candidate)
     try:
         root = candidate.resolve(strict=True)
         metadata = root.stat()
@@ -819,18 +1448,7 @@ def managed_filesystem_root() -> Path:
         raise PermissionError("Managed filesystem root cannot be a volume root")
     if not root.is_dir():
         raise ValueError("Managed filesystem root must be a directory")
-    if os.name == "nt":
-        attributes = getattr(metadata, "st_file_attributes", 0)
-        if attributes & reparse_flag:
-            raise PermissionError("Managed filesystem root cannot be a reparse point")
-    else:
-        effective_uid = os.geteuid() if hasattr(os, "geteuid") else metadata.st_uid
-        if metadata.st_uid != effective_uid:
-            raise PermissionError("Managed filesystem root has an untrusted owner")
-        if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
-            raise PermissionError(
-                "Managed filesystem root cannot be group/world writable"
-            )
+    _reject_untrusted_root(metadata)
     return root
 
 
@@ -861,30 +1479,20 @@ def managed_display_path(path: Path) -> str:
     return "." if not relative.parts else relative.as_posix()
 
 
-def atomic_write_managed_text(
-    path: Path | str,
-    payload: str,
-    *,
-    create: bool = False,
-) -> Path:
-    """Write a bounded text file beneath the managed root without following links."""
-    if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
-        raise ValueError("Managed file size limit exceeded")
-    target = resolve_managed_path(str(path))
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target = resolve_managed_path(str(target))
-    if target.is_symlink():
-        raise PermissionError("Symbolic-link file operations are not permitted")
-    if create:
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-        if hasattr(os, "O_NOFOLLOW"):
-            flags |= os.O_NOFOLLOW
-        descriptor = os.open(target, flags, 0o600)
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        return target
+def _create_exclusive_managed_file(target: Path, payload: str) -> None:
+    """Create `target` exclusively at 0600, never following a symlink."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(target, flags, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _replace_managed_file(target: Path, payload: str) -> None:
+    """Atomically replace `target` through a 0600 temporary in the same directory."""
     with tempfile.NamedTemporaryFile(
         mode="w",
         encoding="utf-8",
@@ -903,6 +1511,26 @@ def atomic_write_managed_text(
         os.replace(temporary, target)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def atomic_write_managed_text(
+    path: Path | str,
+    payload: str,
+    *,
+    create: bool = False,
+) -> Path:
+    """Write a bounded text file beneath the managed root without following links."""
+    if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
+        raise ValueError("Managed file size limit exceeded")
+    target = resolve_managed_path(str(path))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target = resolve_managed_path(str(target))
+    if target.is_symlink():
+        raise PermissionError("Symbolic-link file operations are not permitted")
+    if create:
+        _create_exclusive_managed_file(target, payload)
+    else:
+        _replace_managed_file(target, payload)
     return target
 
 
@@ -955,6 +1583,61 @@ class _FilesystemScanBudget:
         return True
 
 
+def _scandir_entries(directory: Path) -> Iterator["os.DirEntry[str]"]:
+    """Yield a directory's entries lazily; an unopenable directory yields nothing."""
+    try:
+        scanner = os.scandir(directory)
+    except OSError:
+        return
+    with scanner:
+        yield from scanner
+
+
+def _scandir_entries_quietly(directory: Path) -> Iterator["os.DirEntry[str]"]:
+    """As `_scandir_entries`, but also swallows errors raised mid-iteration."""
+    try:
+        yield from _scandir_entries(directory)
+    except OSError:
+        return
+
+
+def _take_managed_entry(
+    entry: "os.DirEntry[str]",
+    managed_root: Path,
+    recursive: bool,
+    pending: list[Path],
+) -> Path | None:
+    """Queue a managed subdirectory for later, or return a managed file to yield."""
+    try:
+        if entry.is_symlink():
+            return None
+        candidate = Path(entry.path).resolve(strict=True)
+        candidate.relative_to(managed_root)
+        if recursive and entry.is_dir(follow_symlinks=False):
+            pending.append(candidate)
+        elif entry.is_file(follow_symlinks=False):
+            return candidate
+    except (OSError, ValueError):
+        return None
+    return None
+
+
+def _walk_managed_tree(
+    base: Path, budget: _FilesystemScanBudget, recursive: bool
+) -> Iterator[Path]:
+    """Walk `base` depth-first, bounded by the request-global entry budget."""
+    managed_root = managed_filesystem_root()
+    pending = [base]
+    while pending and not budget.truncated:
+        directory = pending.pop()
+        for entry in _scandir_entries_quietly(directory):
+            if not budget.consume_entry():
+                return
+            candidate = _take_managed_entry(entry, managed_root, recursive, pending)
+            if candidate is not None:
+                yield candidate
+
+
 def _iter_managed_files(
     base: Path, budget: _FilesystemScanBudget, *, recursive: bool = True
 ) -> Iterator[Path]:
@@ -964,28 +1647,258 @@ def _iter_managed_files(
             yield base
         return
 
-    managed_root = managed_filesystem_root()
-    pending = [base]
-    while pending and not budget.truncated:
-        directory = pending.pop()
+    yield from _walk_managed_tree(base, budget, recursive)
+
+
+class _DirectoryListing:
+    """Mutable accumulator for one `list_files` request."""
+
+    def __init__(self, recursive: bool, depth: int) -> None:
+        self.recursive = recursive
+        self.depth = depth
+        self.budget = _FilesystemScanBudget()
+        self.managed_root = managed_filesystem_root()
+        self.items: list[dict[str, str]] = []
+        self.pending: list[tuple[Path, int]] = []
+
+
+def _resolve_listed_entry(
+    entry: "os.DirEntry[str]", managed_root: Path
+) -> tuple[Path, bool] | None:
+    """Resolve a scandir entry to (path, is_directory) inside the managed root."""
+    try:
+        if entry.is_symlink():
+            return None
+        entry_path = Path(entry.path).resolve(strict=True)
+        entry_path.relative_to(managed_root)
+        return entry_path, entry.is_dir(follow_symlinks=False)
+    except (OSError, ValueError):
+        return None
+
+
+def _append_listed_item(
+    listing: _DirectoryListing,
+    entry: "os.DirEntry[str]",
+    entry_path: Path,
+    is_directory: bool,
+) -> bool:
+    """Record one entry; False when the response or result budget says stop."""
+    item_type = "directory" if is_directory else "file"
+    display = managed_display_path(entry_path)
+    if not listing.budget.consume_response(f"{entry.name}\x00{item_type}\x00{display}"):
+        return False
+    listing.items.append({"name": entry.name, "type": item_type, "path": display})
+    if len(listing.items) >= _MAX_FILESYSTEM_RESULTS:
+        listing.budget.truncated = True
+        return False
+    return True
+
+
+def _list_directory_level(
+    listing: _DirectoryListing, directory: Path, current_depth: int
+) -> None:
+    """Append one directory's managed entries, queuing subdirectories to descend."""
+    for entry in _scandir_entries(directory):
+        if not listing.budget.consume_entry():
+            return
+        resolved = _resolve_listed_entry(entry, listing.managed_root)
+        if resolved is None:
+            continue
+        entry_path, is_directory = resolved
+        if not _append_listed_item(listing, entry, entry_path, is_directory):
+            return
+        if listing.recursive and is_directory and current_depth + 1 < listing.depth:
+            listing.pending.append((entry_path, current_depth + 1))
+
+
+def _walk_listing(listing: _DirectoryListing, root: Path) -> None:
+    """Drive the listing's pending queue until the scan budget is spent."""
+    listing.pending.append((root, 0))
+    while listing.pending and not listing.budget.truncated:
+        directory, current_depth = listing.pending.pop()
+        _list_directory_level(listing, directory, current_depth)
+        if not listing.recursive:
+            break
+
+
+def _managed_subdirectory(item: "os.DirEntry[str]", managed_root: Path) -> Path | None:
+    """Resolve a scandir entry to a managed subdirectory, or None to skip it."""
+    try:
+        if item.is_symlink() or not item.is_dir(follow_symlinks=False):
+            return None
+        child = Path(item.path).resolve(strict=True)
+        child.relative_to(managed_root)
+        return child
+    except (OSError, ValueError):
+        return None
+
+
+def _managed_tree_size(child: Path, budget: _FilesystemScanBudget) -> int:
+    """Total size of the files under `child`, within the shared scan budget."""
+    size = 0
+    for candidate in _iter_managed_files(child, budget):
         try:
-            with os.scandir(directory) as entries:
-                for entry in entries:
-                    if not budget.consume_entry():
-                        return
-                    try:
-                        if entry.is_symlink():
-                            continue
-                        candidate = Path(entry.path).resolve(strict=True)
-                        candidate.relative_to(managed_root)
-                        if recursive and entry.is_dir(follow_symlinks=False):
-                            pending.append(candidate)
-                        elif entry.is_file(follow_symlinks=False):
-                            yield candidate
-                    except (OSError, ValueError):
-                        continue
+            size += candidate.stat().st_size
         except OSError:
             continue
+    return size
+
+
+def _disk_usage_entries(
+    base: Path, budget: _FilesystemScanBudget, managed_root: Path
+) -> list[dict[str, Any]]:
+    """Per-subdirectory usage under `base`, stopping when the budget is spent."""
+    entries: list[dict[str, Any]] = []
+    with os.scandir(base) as children:
+        for item in children:
+            if not budget.consume_entry():
+                break
+            child = _managed_subdirectory(item, managed_root)
+            if child is None:
+                continue
+            size = _managed_tree_size(child, budget)
+            entries.append(
+                {
+                    "size_bytes": size,
+                    "path": managed_display_path(child),
+                    "truncated": budget.truncated,
+                }
+            )
+            if budget.truncated:
+                break
+    return entries
+
+
+def _validate_search_pattern(pattern: str, max_length: int) -> None:
+    """Reject empty, over-long, or control-character search patterns."""
+    if (
+        not pattern
+        or len(pattern) > max_length
+        or any(character in pattern for character in ("\x00", "\n", "\r"))
+    ):
+        raise ValueError("Invalid search pattern")
+
+
+class _GrepLine(NamedTuple):
+    """Outcome of scanning one logical line of a candidate file."""
+
+    matched: bool
+    displayed: bytes
+    truncated: bool
+
+
+def _scan_grep_line(
+    handle: BinaryIO, first_fragment: bytes, encoded_pattern: bytes
+) -> _GrepLine:
+    """Scan one logical line, following continuation reads for over-long lines."""
+    displayed = first_fragment[:_MAX_GREP_LINE_BYTES]
+    combined_tail = b""
+    matched = False
+    fragment = first_fragment
+    line_truncated = len(first_fragment) > _MAX_GREP_LINE_BYTES
+    tail_length = len(encoded_pattern) - 1
+    while True:
+        searchable = combined_tail + fragment
+        match_offset = searchable.find(encoded_pattern)
+        if not matched and match_offset >= 0:
+            matched = True
+            snippet_start = max(0, match_offset - 256)
+            displayed = searchable[snippet_start : snippet_start + _MAX_GREP_LINE_BYTES]
+        combined_tail = searchable[-tail_length:] if tail_length else b""
+        if fragment.endswith(b"\n") or len(fragment) <= _MAX_GREP_LINE_BYTES:
+            break
+        line_truncated = True
+        fragment = handle.readline(_MAX_GREP_LINE_BYTES + 1)
+        if not fragment:
+            break
+    return _GrepLine(matched, displayed, line_truncated)
+
+
+def _grep_one_file(
+    handle: BinaryIO,
+    encoded_pattern: bytes,
+    display: str,
+    budget: "_FilesystemScanBudget",
+    matches: list[str],
+) -> None:
+    """Append `display:line:text` matches from one open file until it is exhausted."""
+    line_number = 0
+    while True:
+        first_fragment = handle.readline(_MAX_GREP_LINE_BYTES + 1)
+        if not first_fragment:
+            return
+        line_number += 1
+        scan = _scan_grep_line(handle, first_fragment, encoded_pattern)
+        if scan.truncated:
+            budget.truncated = True
+        if not scan.matched:
+            continue
+        line = scan.displayed.rstrip(b"\r\n").decode("utf-8", errors="replace")
+        match = f"{display}:{line_number}:{line}"
+        if not budget.consume_response(match):
+            return
+        matches.append(match)
+        if len(matches) >= _MAX_FILESYSTEM_RESULTS:
+            budget.truncated = True
+            return
+
+
+def _grep_candidate_size(
+    candidate: Path, budget: "_FilesystemScanBudget"
+) -> int | None:
+    """Return a scannable candidate's size, or None when it must be skipped."""
+    try:
+        size = candidate.stat().st_size
+    except OSError:
+        return None
+    if size > _MAX_MANAGED_FILE_BYTES:
+        budget.truncated = True
+        return None
+    return size
+
+
+def _open_grep_candidate(candidate: Path) -> tuple[str, BinaryIO] | None:
+    """Return (display path, open binary handle) or None when unreadable."""
+    try:
+        display = managed_display_path(candidate.resolve(strict=True))
+        return display, candidate.open("rb")
+    except (OSError, ValueError):
+        return None
+
+
+def _grep_budget_exhausted(budget: "_FilesystemScanBudget", matches: list[str]) -> bool:
+    """True when a truncated request has hit a hard limit and must stop scanning."""
+    if not budget.truncated:
+        return False
+    return (
+        len(matches) >= _MAX_FILESYSTEM_RESULTS
+        or budget.response_bytes >= _MAX_FILESYSTEM_RESPONSE_BYTES
+        or budget.scanned_bytes >= _MAX_FILESYSTEM_SCAN_BYTES
+        or time.monotonic() >= budget.deadline
+    )
+
+
+def _grep_candidates(
+    candidates: Iterable[Path],
+    encoded_pattern: bytes,
+    budget: "_FilesystemScanBudget",
+    matches: list[str],
+) -> None:
+    """Scan every candidate file, honouring the request-global scan budget."""
+    for candidate in candidates:
+        size = _grep_candidate_size(candidate, budget)
+        if size is None:
+            continue
+        if not budget.consume_scan_bytes(size):
+            break
+        opened = _open_grep_candidate(candidate)
+        if opened is None:
+            continue
+        display, handle = opened
+        with handle:
+            _grep_one_file(handle, encoded_pattern, display, budget, matches)
+        if _grep_budget_exhausted(budget, matches):
+            break
 
 
 class FileSystemManager:
@@ -1002,55 +1915,15 @@ class FileSystemManager:
             if not expanded_path.is_dir():
                 return {"success": False, "error": "Managed path is not a directory"}
 
-            items: list[dict[str, str]] = []
-            budget = _FilesystemScanBudget()
-            managed_root = managed_filesystem_root()
-            pending = [(expanded_path, 0)]
-            while pending and not budget.truncated:
-                directory, current_depth = pending.pop()
-                try:
-                    entries = os.scandir(directory)
-                except OSError:
-                    continue
-                with entries:
-                    for entry in entries:
-                        if not budget.consume_entry():
-                            break
-                        try:
-                            if entry.is_symlink():
-                                continue
-                            entry_path = Path(entry.path).resolve(strict=True)
-                            entry_path.relative_to(managed_root)
-                            is_directory = entry.is_dir(follow_symlinks=False)
-                        except (OSError, ValueError):
-                            continue
-                        item_type = "directory" if is_directory else "file"
-                        display = managed_display_path(entry_path)
-                        if not budget.consume_response(
-                            f"{entry.name}\x00{item_type}\x00{display}"
-                        ):
-                            break
-                        items.append(
-                            {
-                                "name": entry.name,
-                                "type": item_type,
-                                "path": display,
-                            }
-                        )
-                        if len(items) >= _MAX_FILESYSTEM_RESULTS:
-                            budget.truncated = True
-                            break
-                        if recursive and is_directory and current_depth + 1 < depth:
-                            pending.append((entry_path, current_depth + 1))
-                if not recursive:
-                    break
+            listing = _DirectoryListing(recursive, depth)
+            _walk_listing(listing, expanded_path)
             return {
                 "success": True,
                 "path": managed_display_path(expanded_path),
-                "items": items,
-                "total": len(items),
-                "truncated": budget.truncated,
-                "visited_entries": budget.visited_entries,
+                "items": listing.items,
+                "total": len(listing.items),
+                "truncated": listing.budget.truncated,
+                "visited_entries": listing.budget.visited_entries,
             }
         except (PermissionError, FileNotFoundError, ValueError):
             return {"success": False, "error": "Operation failed"}
@@ -1059,12 +1932,7 @@ class FileSystemManager:
 
     def search_files(self, path: str, pattern: str) -> dict:
         try:
-            if (
-                not pattern
-                or len(pattern) > 512
-                or any(character in pattern for character in ("\x00", "\n", "\r"))
-            ):
-                raise ValueError("Invalid search pattern")
+            _validate_search_pattern(pattern, 512)
             expanded_path = resolve_managed_path(path, must_exist=True)
             budget = _FilesystemScanBudget()
             matches: list[str] = []
@@ -1092,86 +1960,12 @@ class FileSystemManager:
 
     def grep_files(self, path: str, pattern: str, recursive: bool = False) -> dict:
         try:
-            if (
-                not pattern
-                or len(pattern) > 4_096
-                or any(character in pattern for character in ("\x00", "\n", "\r"))
-            ):
-                raise ValueError("Invalid search pattern")
+            _validate_search_pattern(pattern, 4_096)
             expanded_path = resolve_managed_path(path, must_exist=True)
             budget = _FilesystemScanBudget()
             candidates = _iter_managed_files(expanded_path, budget, recursive=recursive)
             matches: list[str] = []
-            encoded_pattern = pattern.encode("utf-8")
-            for candidate in candidates:
-                try:
-                    size = candidate.stat().st_size
-                except OSError:
-                    continue
-                if size > _MAX_MANAGED_FILE_BYTES:
-                    budget.truncated = True
-                    continue
-                if not budget.consume_scan_bytes(size):
-                    break
-                try:
-                    display = managed_display_path(candidate.resolve(strict=True))
-                    handle = candidate.open("rb")
-                except (OSError, ValueError):
-                    continue
-                with handle:
-                    line_number = 0
-                    while True:
-                        first_fragment = handle.readline(_MAX_GREP_LINE_BYTES + 1)
-                        if not first_fragment:
-                            break
-                        line_number += 1
-                        displayed = first_fragment[:_MAX_GREP_LINE_BYTES]
-                        combined_tail = b""
-                        matched = False
-                        fragment = first_fragment
-                        line_truncated = len(first_fragment) > _MAX_GREP_LINE_BYTES
-                        while True:
-                            searchable = combined_tail + fragment
-                            match_offset = searchable.find(encoded_pattern)
-                            if not matched and match_offset >= 0:
-                                matched = True
-                                snippet_start = max(0, match_offset - 256)
-                                displayed = searchable[
-                                    snippet_start : snippet_start + _MAX_GREP_LINE_BYTES
-                                ]
-                            tail_length = len(encoded_pattern) - 1
-                            combined_tail = (
-                                searchable[-tail_length:] if tail_length else b""
-                            )
-                            if (
-                                fragment.endswith(b"\n")
-                                or len(fragment) <= _MAX_GREP_LINE_BYTES
-                            ):
-                                break
-                            line_truncated = True
-                            fragment = handle.readline(_MAX_GREP_LINE_BYTES + 1)
-                            if not fragment:
-                                break
-                        if line_truncated:
-                            budget.truncated = True
-                        if matched:
-                            line = displayed.rstrip(b"\r\n").decode(
-                                "utf-8", errors="replace"
-                            )
-                            match = f"{display}:{line_number}:{line}"
-                            if not budget.consume_response(match):
-                                break
-                            matches.append(match)
-                            if len(matches) >= _MAX_FILESYSTEM_RESULTS:
-                                budget.truncated = True
-                                break
-                if budget.truncated and (
-                    len(matches) >= _MAX_FILESYSTEM_RESULTS
-                    or budget.response_bytes >= _MAX_FILESYSTEM_RESPONSE_BYTES
-                    or budget.scanned_bytes >= _MAX_FILESYSTEM_SCAN_BYTES
-                    or time.monotonic() >= budget.deadline
-                ):
-                    break
+            _grep_candidates(candidates, pattern.encode("utf-8"), budget, matches)
             return {
                 "success": True,
                 "matches": "\n".join(matches),
@@ -1185,6 +1979,28 @@ class FileSystemManager:
         except Exception as e:
             return {"success": False, "error": type(e).__name__}
 
+    @staticmethod
+    def _write_managed_file(action: str, expanded_path: Path, content: str | None):
+        payload = content or ""
+        if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
+            raise ValueError("Managed file size limit exceeded")
+        expanded_path.parent.mkdir(parents=True, exist_ok=True)
+        # Re-resolve after creating parents to catch a raced symlink.
+        target = resolve_managed_path(str(expanded_path))
+        if action == "create":
+            _create_exclusive_managed_file(target, payload)
+        else:
+            _replace_managed_file(target, payload)
+
+    @staticmethod
+    def _read_managed_file(expanded_path: Path) -> dict:
+        if not expanded_path.is_file():
+            return {"success": False, "error": "Managed file not found"}
+        if expanded_path.stat().st_size > _MAX_MANAGED_FILE_BYTES:
+            raise ValueError("Managed file size limit exceeded")
+        with expanded_path.open(encoding="utf-8") as handle:
+            return {"success": True, "content": handle.read()}
+
     def manage_file(self, action: str, path: str, content: str | None = None) -> dict:
         try:
             if action not in {"create", "update", "delete", "read"}:
@@ -1193,57 +2009,15 @@ class FileSystemManager:
             display_path = managed_display_path(expanded_path)
             if expanded_path.is_symlink():
                 raise PermissionError("Symbolic-link file operations are not permitted")
-            if action == "create" or action == "update":
-                payload = content or ""
-                if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
-                    raise ValueError("Managed file size limit exceeded")
-                expanded_path.parent.mkdir(parents=True, exist_ok=True)
-                # Re-resolve after creating parents to catch a raced symlink.
-                expanded_path = resolve_managed_path(str(expanded_path))
-                flags = os.O_WRONLY | os.O_CREAT
-                if hasattr(os, "O_NOFOLLOW"):
-                    flags |= os.O_NOFOLLOW
-                if action == "create":
-                    flags |= os.O_EXCL
-                    descriptor = os.open(expanded_path, flags, 0o600)
-                    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-                        handle.write(payload)
-                        handle.flush()
-                        os.fsync(handle.fileno())
-                else:
-                    with tempfile.NamedTemporaryFile(
-                        mode="w",
-                        encoding="utf-8",
-                        dir=expanded_path.parent,
-                        prefix=".systems-manager-",
-                        delete=False,
-                    ) as handle:
-                        handle.write(payload)
-                        handle.flush()
-                        os.fsync(handle.fileno())
-                        temporary = Path(handle.name)
-                    try:
-                        temporary.chmod(0o600)
-                        if expanded_path.is_symlink():
-                            raise PermissionError(
-                                "Symbolic-link file operations are not permitted"
-                            )
-                        os.replace(temporary, expanded_path)
-                    finally:
-                        temporary.unlink(missing_ok=True)
-                return {"success": True, "message": f"File {action}d: {display_path}"}
-            elif action == "delete":
-                if expanded_path.is_file():
-                    expanded_path.unlink()
-                    return {"success": True, "message": f"File deleted: {display_path}"}
-                return {"success": False, "error": "Managed file not found"}
-            elif action == "read":
-                if expanded_path.is_file():
-                    if expanded_path.stat().st_size > _MAX_MANAGED_FILE_BYTES:
-                        raise ValueError("Managed file size limit exceeded")
-                    with expanded_path.open(encoding="utf-8") as f:
-                        return {"success": True, "content": f.read()}
-                return {"success": False, "error": "Managed file not found"}
+            if action == "read":
+                return self._read_managed_file(expanded_path)
+            if action == "delete":
+                if not expanded_path.is_file():
+                    return {"success": False, "error": "Managed file not found"}
+                expanded_path.unlink()
+                return {"success": True, "message": f"File deleted: {display_path}"}
+            self._write_managed_file(action, expanded_path, content)
+            return {"success": True, "message": f"File {action}d: {display_path}"}
         except (PermissionError, FileNotFoundError, FileExistsError, ValueError):
             return {"success": False, "error": "Operation failed"}
         except Exception as e:
@@ -1437,120 +2211,32 @@ class SystemsManagerBase(ABC):
             argv = _validated_command_argv(command)
             operation_argv = list(argv)
             argv[0] = _resolve_trusted_executable(argv[0])
-            if elevated and platform.system() == "Linux":
-                is_root = hasattr(os, "geteuid") and os.geteuid() == 0
-                if not is_root:
-                    argv = [
-                        _resolve_trusted_executable("sudo"),
-                        "--non-interactive",
-                        "--",
-                        *argv,
-                    ]
-            elif elevated and platform.system() == "Windows":
+            system = platform.system()
+            if elevated and system == "Linux":
+                argv = _elevate_argv(argv)
+            elif elevated and system == "Windows":
                 # The service/process token is the privilege boundary. Never
                 # synthesize Start-Process/PowerShell elevation strings.
-                try:
-                    import ctypes
-
-                    is_admin = bool(ctypes.windll.shell32.IsUserAnAdmin())
-                except (AttributeError, OSError):
-                    is_admin = False
-                if not is_admin:
+                if not _windows_process_is_admin():
                     return {
                         "success": False,
                         "error": "Operation requires a pre-authorized service account",
                     }
 
-            executable = (
-                Path(argv[-len(command)]).name
-                if elevated and argv[0] == "sudo"
-                else Path(argv[0]).name
+            self.logger.info(
+                "Running managed executable=%s",
+                _managed_executable_name(argv, command, elevated),
             )
-            self.logger.info("Running managed executable=%s", executable)
-            stdout_buffer = bytearray()
-            stderr_buffer = bytearray()
-            process = subprocess.Popen(
-                argv,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=False,
-                env=_minimal_child_environment(env_overrides),
-                start_new_session=os.name != "nt",
-                creationflags=(
-                    getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-                    if os.name == "nt"
-                    else 0
-                ),
-            )
-            assert process.stdout is not None
-            assert process.stderr is not None
-            readers = [
-                threading.Thread(
-                    target=_bounded_stream_reader,
-                    args=(process.stdout, stdout_buffer, _MAX_COMMAND_OUTPUT_BYTES),
-                    daemon=True,
-                ),
-                threading.Thread(
-                    target=_bounded_stream_reader,
-                    args=(process.stderr, stderr_buffer, _MAX_COMMAND_OUTPUT_BYTES),
-                    daemon=True,
-                ),
-            ]
-            for reader in readers:
-                reader.start()
-            timed_out = False
-            reader_cleanup_failed = False
+            process = _spawn_managed_process(argv, env_overrides)
+            readers, stdout_buffer, stderr_buffer = _start_output_readers(process)
             timeout_seconds = _validated_timeout_seconds(
                 operation_argv, timeout_seconds
             )
-            try:
-                try:
-                    returncode = process.wait(timeout=timeout_seconds)
-                except subprocess.TimeoutExpired:
-                    timed_out = True
-                    try:
-                        returncode = _terminate_process_tree(process)
-                    except (OSError, psutil.Error, subprocess.TimeoutExpired):
-                        process.kill()
-                        returncode = process.wait(
-                            timeout=_COMMAND_TERMINATION_GRACE_SECONDS
-                        )
-            finally:
-                for reader in readers:
-                    reader.join(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
-                for reader, stream in zip(
-                    readers, (process.stdout, process.stderr), strict=True
-                ):
-                    if reader.is_alive():
-                        reader_cleanup_failed = True
-                        stream.close()
-                        reader.join(timeout=_COMMAND_TERMINATION_GRACE_SECONDS)
-
-            result: dict[str, Any] = {
-                "success": (
-                    returncode == 0 and not timed_out and not reader_cleanup_failed
-                ),
-                "returncode": returncode,
-                "timed_out": timed_out,
-                "timeout_seconds": timeout_seconds,
-                "reader_cleanup_failed": reader_cleanup_failed,
-                "output_truncated": (
-                    len(stdout_buffer) >= _MAX_COMMAND_OUTPUT_BYTES
-                    or len(stderr_buffer) >= _MAX_COMMAND_OUTPUT_BYTES
-                ),
-            }
-            if capture_output:
-                result["stdout"] = stdout_buffer.decode("utf-8", errors="replace")
-                result["stderr"] = stderr_buffer.decode("utf-8", errors="replace")
-            if not result["success"]:
-                if timed_out:
-                    result["error"] = "Managed command timed out"
-                elif reader_cleanup_failed:
-                    result["error"] = "Managed command output cleanup failed"
-                else:
-                    result["error"] = "Managed command failed"
-            self.logger.info("Managed command return code=%s", returncode)
+            run = _await_managed_process(process, readers, timeout_seconds)
+            result = _managed_command_result(
+                run, timeout_seconds, stdout_buffer, stderr_buffer, capture_output
+            )
+            self.logger.info("Managed command return code=%s", run.returncode)
             return result
         except Exception as e:
             self.log_command(command, error=e)
@@ -1704,62 +2390,53 @@ class SystemsManagerBase(ABC):
             "network": psutil.net_io_counters()._asdict(),
         }
 
+    def _linux_services(self) -> dict:
+        result = self.run_command(
+            [
+                "systemctl",
+                "list-units",
+                "--type=service",
+                "--all",
+                "--no-pager",
+                "--plain",
+                "--no-legend",
+            ],
+            capture_output=True,
+        )
+        if not result["success"]:
+            return {"success": False, "error": "Service inventory failed"}
+        services = _parse_systemctl_units(result.get("stdout") or "")
+        return {"success": True, "services": services, "total": len(services)}
+
+    def _windows_services(self) -> dict:
+        result = self.run_command(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3",
+            ],
+            capture_output=True,
+        )
+        if not result["success"]:
+            return {"success": False, "error": "Service inventory failed"}
+        try:
+            services = json.loads(result.get("stdout", "[]"))
+        except json.JSONDecodeError:
+            return {"success": False, "error": "Failed to parse service list"}
+        if isinstance(services, dict):
+            services = [services]
+        return {"success": True, "services": services, "total": len(services)}
+
     def list_services(self) -> dict:
         try:
-            if platform.system() == "Linux":
-                result = self.run_command(
-                    [
-                        "systemctl",
-                        "list-units",
-                        "--type=service",
-                        "--all",
-                        "--no-pager",
-                        "--plain",
-                        "--no-legend",
-                    ],
-                    capture_output=True,
-                )
-                if not result["success"]:
-                    return {"success": False, "error": "Service inventory failed"}
-                services = []
-                for line in (result.get("stdout") or "").strip().splitlines():
-                    parts = line.split(None, 4)
-                    if len(parts) >= 4:
-                        services.append(
-                            {
-                                "name": parts[0],
-                                "load": parts[1],
-                                "active": parts[2],
-                                "sub": parts[3],
-                                "description": parts[4] if len(parts) > 4 else "",
-                            }
-                        )
-                return {"success": True, "services": services, "total": len(services)}
-            elif platform.system() == "Windows":
-                result = self.run_command(
-                    [
-                        "powershell.exe",
-                        "-NoProfile",
-                        "-NonInteractive",
-                        "-Command",
-                        "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3",
-                    ],
-                    capture_output=True,
-                )
-                if not result["success"]:
-                    return {"success": False, "error": "Service inventory failed"}
-                try:
-                    services = json.loads(result.get("stdout", "[]"))
-                    if isinstance(services, dict):
-                        services = [services]
-                    return {
-                        "success": True,
-                        "services": services,
-                        "total": len(services),
-                    }
-                except json.JSONDecodeError:
-                    return {"success": False, "error": "Failed to parse service list"}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            system = platform.system()
+            if system == "Linux":
+                return self._linux_services()
+            if system == "Windows":
+                return self._windows_services()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
@@ -2011,23 +2688,13 @@ class SystemsManagerBase(ABC):
 
     def list_open_ports(self) -> dict:
         try:
-            connections = []
+            connections: list[dict[str, Any]] = []
             for conn in psutil.net_connections(kind="inet"):
-                if conn.status == "LISTEN":
-                    connections.append(
-                        {
-                            "local_port": conn.laddr.port if conn.laddr else None,
-                            "listener_ref": _opaque_ref(
-                                "listener",
-                                f"{conn.laddr.ip if conn.laddr else ''}:"
-                                f"{conn.laddr.port if conn.laddr else ''}:"
-                                f"{conn.pid or ''}",
-                            ),
-                            "status": conn.status,
-                        }
-                    )
-                    if len(connections) >= _MAX_FILESYSTEM_RESULTS:
-                        break
+                if conn.status != "LISTEN":
+                    continue
+                connections.append(_listening_connection_record(conn))
+                if len(connections) >= _MAX_FILESYSTEM_RESULTS:
+                    break
             return {"success": True, "ports": connections, "total": len(connections)}
         except psutil.AccessDenied:
             cmd = (
@@ -2110,110 +2777,78 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _windows_local_users(self) -> dict:
+        result = self.run_command(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Json -Depth 3",
+            ],
+            capture_output=True,
+        )
+        if not result["success"]:
+            return {"success": False, "error": "User inventory failed"}
+        try:
+            records = _powershell_json_records(result)
+        except json.JSONDecodeError:
+            return {"success": False, "error": "Failed to parse user list"}
+        users = [
+            {
+                "user_ref": _opaque_ref("user", str(user.get("Name", "unknown"))),
+                "enabled": bool(user.get("Enabled", False)),
+            }
+            for user in records
+        ]
+        return {"success": True, "users": users, "total": len(users)}
+
     def list_users(self) -> dict:
         try:
-            if platform.system() == "Linux":
-                users = []
-                with open("/etc/passwd") as f:
-                    for line in f:
-                        parts = line.strip().split(":")
-                        if len(parts) >= 7:
-                            users.append(
-                                {
-                                    "user_ref": _opaque_ref("user", parts[0]),
-                                    "uid": int(parts[2]),
-                                    "gid": int(parts[3]),
-                                }
-                            )
+            system = platform.system()
+            if system == "Linux":
+                with open("/etc/passwd") as handle:
+                    users = _parse_passwd_entries(handle)
                 return {"success": True, "users": users, "total": len(users)}
-            elif platform.system() == "Windows":
-                result = self.run_command(
-                    [
-                        "powershell.exe",
-                        "-NoProfile",
-                        "-NonInteractive",
-                        "-Command",
-                        "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Json -Depth 3",
-                    ],
-                    capture_output=True,
-                )
-                if result["success"]:
-                    try:
-                        users = json.loads(result.get("stdout", "[]"))
-                        if isinstance(users, dict):
-                            users = [users]
-                        redacted_users = [
-                            {
-                                "user_ref": _opaque_ref(
-                                    "user", str(user.get("Name", "unknown"))
-                                ),
-                                "enabled": bool(user.get("Enabled", False)),
-                            }
-                            for user in users[:_MAX_FILESYSTEM_RESULTS]
-                        ]
-                        return {
-                            "success": True,
-                            "users": redacted_users,
-                            "total": len(redacted_users),
-                        }
-                    except json.JSONDecodeError:
-                        return {"success": False, "error": "Failed to parse user list"}
-                return {"success": False, "error": "User inventory failed"}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            if system == "Windows":
+                return self._windows_local_users()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _windows_local_groups(self) -> dict:
+        result = self.run_command(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-LocalGroup | Select-Object Name | ConvertTo-Json -Depth 3",
+            ],
+            capture_output=True,
+        )
+        if not result["success"]:
+            return {"success": False, "error": "Group inventory failed"}
+        try:
+            records = _powershell_json_records(result)
+        except json.JSONDecodeError:
+            return {"success": False, "error": "Failed to parse group list"}
+        groups = [
+            {"group_ref": _opaque_ref("group", str(group.get("Name", "unknown")))}
+            for group in records
+        ]
+        return {"success": True, "groups": groups, "total": len(groups)}
+
     def list_groups(self) -> dict:
         try:
-            if platform.system() == "Linux":
-                groups = []
-                with open("/etc/group") as f:
-                    for line in f:
-                        parts = line.strip().split(":")
-                        if len(parts) >= 4:
-                            groups.append(
-                                {
-                                    "group_ref": _opaque_ref("group", parts[0]),
-                                    "gid": int(parts[2]),
-                                    "member_count": (
-                                        len(parts[3].split(",")) if parts[3] else 0
-                                    ),
-                                }
-                            )
+            system = platform.system()
+            if system == "Linux":
+                with open("/etc/group") as handle:
+                    groups = _parse_group_entries(handle)
                 return {"success": True, "groups": groups, "total": len(groups)}
-            elif platform.system() == "Windows":
-                result = self.run_command(
-                    [
-                        "powershell.exe",
-                        "-NoProfile",
-                        "-NonInteractive",
-                        "-Command",
-                        "Get-LocalGroup | Select-Object Name | ConvertTo-Json -Depth 3",
-                    ],
-                    capture_output=True,
-                )
-                if result["success"]:
-                    try:
-                        groups = json.loads(result.get("stdout", "[]"))
-                        if isinstance(groups, dict):
-                            groups = [groups]
-                        redacted_groups = [
-                            {
-                                "group_ref": _opaque_ref(
-                                    "group", str(group.get("Name", "unknown"))
-                                )
-                            }
-                            for group in groups[:_MAX_FILESYSTEM_RESULTS]
-                        ]
-                        return {
-                            "success": True,
-                            "groups": redacted_groups,
-                            "total": len(redacted_groups),
-                        }
-                    except json.JSONDecodeError:
-                        return {"success": False, "error": "Failed to parse group list"}
-                return {"success": False, "error": "Group inventory failed"}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            if system == "Windows":
+                return self._windows_local_groups()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
@@ -2224,28 +2859,15 @@ class SystemsManagerBase(ABC):
             lines = max(1, min(int(lines), 1_000))
             if unit:
                 unit = self._validated_service_name(unit)
-            if priority and priority not in {
-                "emerg",
-                "alert",
-                "crit",
-                "err",
-                "warning",
-                "notice",
-                "info",
-                "debug",
-            }:
+            if priority and priority not in _LOG_PRIORITIES:
                 raise ValueError("Invalid log priority")
-            if platform.system() == "Linux":
-                cmd = ["journalctl", "--no-pager", "-n", str(lines)]
-                if unit:
-                    cmd.extend(["-u", unit])
-                if priority:
-                    cmd.extend(["-p", priority])
-                result = self.run_command(cmd, capture_output=True)
-                logs = result.get("stdout", "") if result["success"] else ""
-                return {"success": result["success"], "logs": logs}
-            elif platform.system() == "Windows":
-                result = self.run_command(
+            system = platform.system()
+            if system == "Linux":
+                return self._log_result(
+                    _journalctl_command(lines, unit, priority),
+                )
+            if system == "Windows":
+                return self._log_result(
                     [
                         "powershell.exe",
                         "-NoProfile",
@@ -2253,13 +2875,16 @@ class SystemsManagerBase(ABC):
                         "-Command",
                         f"Get-EventLog -LogName System -Newest {lines} | Format-List | Out-String",
                     ],
-                    capture_output=True,
                 )
-                logs = result.get("stdout", "") if result["success"] else ""
-                return {"success": result["success"], "logs": logs}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
+
+    def _log_result(self, command: list[str]) -> dict:
+        """Run a log-reading command and return its stdout only on success."""
+        result = self.run_command(command, capture_output=True)
+        logs = result.get("stdout", "") if result["success"] else ""
+        return {"success": result["success"], "logs": logs}
 
     def tail_log_file(self, path: str, lines: int = 50) -> dict:
         try:
@@ -2280,6 +2905,23 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _drive_health_faults(self, warnings: list[str]) -> list[dict[str, Any]]:
+        """Optional storage telemetry; never fails the base health endpoint."""
+        try:
+            from systems_manager.storage_health import drive_health_summary
+
+            drive_summary = drive_health_summary(self)
+            warnings.extend(drive_summary.get("warnings", []))
+            return drive_summary.get("faults", [])
+        except Exception as exc:
+            # Storage telemetry is optional and must not make the base
+            # health endpoint unavailable on unsupported hosts.
+            self.logger.debug(
+                "Storage health telemetry unavailable: %s",
+                type(exc).__name__,
+            )
+        return []
+
     def system_health_check(self) -> dict:
         try:
             boot_time = datetime.fromtimestamp(psutil.boot_time())
@@ -2287,64 +2929,10 @@ class SystemsManagerBase(ABC):
             cpu_percent = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
             swap = psutil.swap_memory()
-            disk_warnings = []
-            for part in psutil.disk_partitions(all=False):
-                try:
-                    usage = psutil.disk_usage(part.mountpoint)
-                    if usage.percent > 90:
-                        disk_warnings.append(
-                            {
-                                "disk_ref": _opaque_ref(
-                                    "disk", f"{part.device}\x00{part.mountpoint}"
-                                ),
-                                "percent": usage.percent,
-                                "free_gb": round(usage.free / (1024**3), 2),
-                            }
-                        )
-                except (PermissionError, OSError):
-                    continue
-            top_procs = []
-            for proc in sorted(
-                psutil.process_iter(["pid", "name", "cpu_percent", "memory_percent"]),
-                key=lambda p: p.info.get("memory_percent", 0) or 0,
-                reverse=True,
-            )[:10]:
-                try:
-                    info = proc.info
-                    top_procs.append(
-                        {
-                            "process_ref": _opaque_ref(
-                                "process", f"{info['pid']}\x00{info['name']}"
-                            ),
-                            "cpu_percent": info.get("cpu_percent") or 0,
-                            "memory_percent": round(info.get("memory_percent") or 0, 2),
-                        }
-                    )
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-            warnings = []
-            if cpu_percent > 90:
-                warnings.append(f"HIGH CPU: {cpu_percent}%")
-            if memory.percent > 90:
-                warnings.append(f"HIGH MEMORY: {memory.percent}%")
-            if swap.percent > 80:
-                warnings.append(f"HIGH SWAP: {swap.percent}%")
-            for dw in disk_warnings:
-                warnings.append(f"DISK CAPACITY HIGH: {dw['percent']}%")
-            drive_faults: list[dict[str, Any]] = []
-            try:
-                from systems_manager.storage_health import drive_health_summary
-
-                drive_summary = drive_health_summary(self)
-                warnings.extend(drive_summary.get("warnings", []))
-                drive_faults = drive_summary.get("faults", [])
-            except Exception as exc:
-                # Storage telemetry is optional and must not make the base
-                # health endpoint unavailable on unsupported hosts.
-                self.logger.debug(
-                    "Storage health telemetry unavailable: %s",
-                    type(exc).__name__,
-                )
+            disk_warnings = _disk_capacity_warnings()
+            top_procs = _top_memory_processes()
+            warnings = _resource_warnings(cpu_percent, memory, swap, disk_warnings)
+            drive_faults = self._drive_health_faults(warnings)
             load_avg = os.getloadavg() if platform.system() != "Windows" else None
             return {
                 "success": True,
@@ -2377,42 +2965,33 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _linux_cron_jobs(self, user: str | None) -> dict:
+        result = self.run_command(_crontab_list_command(user), capture_output=True)
+        jobs = (
+            _parse_crontab_jobs(result.get("stdout") or "") if result["success"] else []
+        )
+        return {"success": True, "jobs": jobs, "total": len(jobs)}
+
+    def _windows_scheduled_tasks(self) -> dict:
+        result = self.run_command(
+            ["schtasks", "/query", "/fo", "CSV", "/v"],
+            capture_output=True,
+        )
+        return {
+            "success": result["success"],
+            "total": max(0, len((result.get("stdout") or "").splitlines()) - 1),
+            "details_redacted": True,
+        }
+
     def list_cron_jobs(self, user: str | None = None) -> dict:
         try:
             user = _validated_account_name(user)
-            if platform.system() == "Linux":
-                cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
-                result = self.run_command(cmd, capture_output=True)
-                jobs = []
-                if result["success"]:
-                    for line in (result.get("stdout") or "").strip().splitlines():
-                        if line.strip() and not line.strip().startswith("#"):
-                            content = line.strip()
-                            fields = content.split(None, 5)
-                            jobs.append(
-                                {
-                                    "job_ref": _opaque_ref("cron", content),
-                                    "schedule": (
-                                        " ".join(fields[:5])
-                                        if len(fields) >= 6
-                                        else "special"
-                                    ),
-                                }
-                            )
-                            if len(jobs) >= _MAX_FILESYSTEM_RESULTS:
-                                break
-                return {"success": True, "jobs": jobs, "total": len(jobs)}
-            elif platform.system() == "Windows":
-                result = self.run_command(
-                    ["schtasks", "/query", "/fo", "CSV", "/v"],
-                    capture_output=True,
-                )
-                return {
-                    "success": result["success"],
-                    "total": max(0, len((result.get("stdout") or "").splitlines()) - 1),
-                    "details_redacted": True,
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            system = platform.system()
+            if system == "Linux":
+                return self._linux_cron_jobs(user)
+            if system == "Windows":
+                return self._windows_scheduled_tasks()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
@@ -2426,49 +3005,43 @@ class SystemsManagerBase(ABC):
             user = _validated_account_name(user)
             if not re.fullmatch(r"cron:[0-9a-f]{16}", pattern):
                 raise ValueError("An exact cron job reference is required")
-            list_cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
-            existing = self.run_command(list_cmd, capture_output=True)
+            existing = self.run_command(
+                _crontab_list_command(user), capture_output=True
+            )
             if not existing["success"]:
                 return {"success": False, "error": "Failed to read current crontab"}
             lines = (existing.get("stdout") or "").splitlines()
-            removed = [
-                line_content
-                for line_content in lines
-                if _opaque_ref("cron", line_content.strip()) == pattern
-            ]
-            kept = [
-                line_content
-                for line_content in lines
-                if _opaque_ref("cron", line_content.strip()) != pattern
-            ]
+            removed, kept = _partition_crontab_lines(lines, pattern)
             if not removed:
                 return {
                     "success": False,
                     "error": "Cron job reference was not found",
                 }
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".cron", delete=False
-            ) as tmp:
-                tmp.write("\n".join(kept) + "\n")
-                tmp_path = tmp.name
-            os.chmod(tmp_path, 0o600)
-            try:
-                install_cmd = (
-                    ["crontab", "-u", user, tmp_path] if user else ["crontab", tmp_path]
-                )
-                result = self.run_command(install_cmd, elevated=bool(user))
-                return {
-                    "success": result["success"],
-                    "message": (
-                        f"Removed {len(removed)} cron job(s)"
-                        if result["success"]
-                        else "Failed"
-                    ),
-                }
-            finally:
-                os.remove(tmp_path)
+            result = self._install_crontab(kept, user)
+            return {
+                "success": result["success"],
+                "message": (
+                    f"Removed {len(removed)} cron job(s)"
+                    if result["success"]
+                    else "Failed"
+                ),
+            }
         except Exception:
             return {"success": False, "error": "Operation failed"}
+
+    def _install_crontab(self, kept: list[str], user: str | None) -> dict:
+        """Replace the crontab with `kept` via a 0600 temporary file."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".cron", delete=False) as tmp:
+            tmp.write("\n".join(kept) + "\n")
+            tmp_path = tmp.name
+        os.chmod(tmp_path, 0o600)
+        try:
+            install_cmd = (
+                ["crontab", "-u", user, tmp_path] if user else ["crontab", tmp_path]
+            )
+            return self.run_command(install_cmd, elevated=bool(user))
+        finally:
+            os.remove(tmp_path)
 
     def get_firewall_status(self) -> dict:
         try:
@@ -2522,87 +3095,58 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _linux_firewall_rules(self) -> dict:
+        if shutil.which("ufw"):
+            result = self.run_command(
+                ["ufw", "status", "numbered"], elevated=True, capture_output=True
+            )
+            return _firewall_rule_summary("ufw", result, _count_ufw_rules)
+        if shutil.which("firewall-cmd"):
+            result = self.run_command(
+                ["firewall-cmd", "--list-all"], elevated=True, capture_output=True
+            )
+            return _firewall_rule_summary("firewalld", result, _count_firewalld_rules)
+        result = self.run_command(
+            ["iptables", "-L", "-n", "-v", "--line-numbers"],
+            elevated=True,
+            capture_output=True,
+        )
+        return _firewall_rule_summary("iptables", result, _count_iptables_rules)
+
+    def _windows_firewall_rules(self) -> dict:
+        result = self.run_command(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action "
+                "| ConvertTo-Json -Depth 3",
+            ],
+            capture_output=True,
+        )
+        total = _windows_firewall_rule_count(result)
+        if total is None:
+            return {
+                "success": result["success"],
+                "tool": "netsh",
+                "details_redacted": True,
+            }
+        return {
+            "success": True,
+            "tool": "netsh",
+            "total": total,
+            "details_redacted": True,
+        }
+
     def list_firewall_rules(self) -> dict:
         try:
-            if platform.system() == "Linux":
-                if shutil.which("ufw"):
-                    r = self.run_command(
-                        ["ufw", "status", "numbered"],
-                        elevated=True,
-                        capture_output=True,
-                    )
-                    return {
-                        "success": r["success"],
-                        "tool": "ufw",
-                        "total": sum(
-                            1
-                            for line in (r.get("stdout") or "").splitlines()
-                            if re.match(r"\s*\[\s*\d+\]", line)
-                        ),
-                        "details_redacted": True,
-                    }
-                if shutil.which("firewall-cmd"):
-                    r = self.run_command(
-                        ["firewall-cmd", "--list-all"],
-                        elevated=True,
-                        capture_output=True,
-                    )
-                    return {
-                        "success": r["success"],
-                        "tool": "firewalld",
-                        "total": sum(
-                            len(line.split()[1:])
-                            for line in (r.get("stdout") or "").splitlines()
-                            if ":" in line
-                        ),
-                        "details_redacted": True,
-                    }
-                r = self.run_command(
-                    ["iptables", "-L", "-n", "-v", "--line-numbers"],
-                    elevated=True,
-                    capture_output=True,
-                )
-                return {
-                    "success": r["success"],
-                    "tool": "iptables",
-                    "total": sum(
-                        1
-                        for line in (r.get("stdout") or "").splitlines()
-                        if re.match(r"\s*\d+\s", line)
-                    ),
-                    "details_redacted": True,
-                }
-            elif platform.system() == "Windows":
-                r = self.run_command(
-                    [
-                        "powershell.exe",
-                        "-NoProfile",
-                        "-NonInteractive",
-                        "-Command",
-                        "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action "
-                        "| ConvertTo-Json -Depth 3",
-                    ],
-                    capture_output=True,
-                )
-                if r["success"]:
-                    try:
-                        rules = json.loads(r.get("stdout", "[]"))
-                        if isinstance(rules, dict):
-                            rules = [rules]
-                        return {
-                            "success": True,
-                            "tool": "netsh",
-                            "total": len(rules),
-                            "details_redacted": True,
-                        }
-                    except json.JSONDecodeError:
-                        pass
-                return {
-                    "success": r["success"],
-                    "tool": "netsh",
-                    "details_redacted": True,
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            system = platform.system()
+            if system == "Linux":
+                return self._linux_firewall_rules()
+            if system == "Windows":
+                return self._windows_firewall_rules()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
@@ -2748,65 +3292,15 @@ class SystemsManagerBase(ABC):
 
     def add_authorized_key(self, public_key: str) -> dict:
         try:
-            candidate = public_key.strip()
-            if len(candidate) > 16_384 or any(
-                character in candidate for character in ("\x00", "\n", "\r")
-            ):
-                raise ValueError("Invalid public key")
-            fields = candidate.split(None, 2)
-            if len(fields) < 2 or fields[0] not in {
-                "ecdsa-sha2-nistp256",
-                "ecdsa-sha2-nistp384",
-                "ecdsa-sha2-nistp521",
-                "sk-ecdsa-sha2-nistp256@openssh.com",
-                "sk-ssh-ed25519@openssh.com",
-                "ssh-ed25519",
-                "ssh-rsa",
-            }:
-                raise ValueError("Unsupported public key type")
-            try:
-                decoded = base64.b64decode(fields[1], validate=True)
-            except (ValueError, TypeError) as exc:
-                raise ValueError("Invalid public key encoding") from exc
-            if not 32 <= len(decoded) <= 16_384:
-                raise ValueError("Invalid public key size")
-
-            ssh_dir = Path.home() / ".ssh"
-            if ssh_dir.is_symlink():
-                raise PermissionError("Symbolic-link SSH directories are not permitted")
-            ssh_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-            auth_keys = ssh_dir / "authorized_keys"
-            if auth_keys.is_symlink():
-                raise PermissionError("Symbolic-link key files are not permitted")
-            existing = ""
-            if auth_keys.exists():
-                if auth_keys.stat().st_size > _MAX_MANAGED_FILE_BYTES:
-                    raise ValueError("Authorized key file size limit exceeded")
-                existing = auth_keys.read_text(encoding="utf-8")
-                if candidate in existing.splitlines():
-                    return {
-                        "success": True,
-                        "message": "Key already exists in authorized_keys",
-                    }
-            with tempfile.NamedTemporaryFile(
-                mode="w",
-                encoding="utf-8",
-                dir=ssh_dir,
-                prefix=".authorized-keys-",
-                delete=False,
-            ) as handle:
-                handle.write(existing.rstrip("\n") + ("\n" if existing else ""))
-                handle.write(candidate + "\n")
-                handle.flush()
-                os.fsync(handle.fileno())
-                temporary = Path(handle.name)
-            try:
-                temporary.chmod(0o600)
-                if auth_keys.is_symlink():
-                    raise PermissionError("Symbolic-link key files are not permitted")
-                os.replace(temporary, auth_keys)
-            finally:
-                temporary.unlink(missing_ok=True)
+            candidate = _validated_public_key(public_key)
+            ssh_dir, auth_keys = _prepared_ssh_paths()
+            existing = _read_authorized_keys(auth_keys)
+            if candidate in existing.splitlines():
+                return {
+                    "success": True,
+                    "message": "Key already exists in authorized_keys",
+                }
+            _write_authorized_keys(ssh_dir, auth_keys, existing, candidate)
             return {"success": True, "message": "Public key added to authorized_keys"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
@@ -2881,38 +3375,8 @@ class SystemsManagerBase(ABC):
             base = resolve_managed_path(path, must_exist=True)
             if not base.is_dir():
                 return {"success": False, "error": "Base path is not a directory"}
-            entries: list[dict[str, Any]] = []
             budget = _FilesystemScanBudget()
-            managed_root = managed_filesystem_root()
-            with os.scandir(base) as children:
-                for item in children:
-                    if not budget.consume_entry():
-                        break
-                    try:
-                        if item.is_symlink() or not item.is_dir(follow_symlinks=False):
-                            continue
-                        child = Path(item.path).resolve(strict=True)
-                        child.relative_to(managed_root)
-                    except (OSError, ValueError):
-                        continue
-                    size = 0
-                    child_was_truncated = False
-                    for candidate in _iter_managed_files(child, budget):
-                        try:
-                            size += candidate.stat().st_size
-                        except OSError:
-                            continue
-                    if budget.truncated:
-                        child_was_truncated = True
-                    entries.append(
-                        {
-                            "size_bytes": size,
-                            "path": managed_display_path(child),
-                            "truncated": child_was_truncated,
-                        }
-                    )
-                    if budget.truncated:
-                        break
+            entries = _disk_usage_entries(base, budget, managed_filesystem_root())
             entries.sort(key=lambda item: item["size_bytes"], reverse=True)
             return {
                 "success": True,
@@ -3242,15 +3706,11 @@ class DnfManager(SystemsManagerBase):
 
     def list_installed_packages(self):
         result = self.run_command(["dnf", "list", "installed"], capture_output=True)
-        packages = []
-        if result["success"]:
-            for line in (result.get("stdout") or "").strip().splitlines():
-                if not line.startswith("Installed") and not line.startswith("Last"):
-                    parts = line.split()
-                    if parts:
-                        packages.append(parts[0].split(".")[0])
-                        if len(packages) >= _MAX_FILESYSTEM_RESULTS:
-                            break
+        packages = (
+            _parse_dnf_installed(result.get("stdout") or "")
+            if result["success"]
+            else []
+        )
         return {
             "success": result["success"],
             "packages": packages,
@@ -3372,19 +3832,11 @@ class ZypperManager(SystemsManagerBase):
     def search_package(self, query: str):
         query = _validated_search_query(query)
         result = self.run_command(["zypper", "search", query], capture_output=True)
-        packages = []
-        if result["success"]:
-            for line in (result.get("stdout") or "").strip().splitlines():
-                parts = line.split("|")
-                if len(parts) >= 3 and parts[0].strip() not in ("S", "-", ""):
-                    packages.append(
-                        {
-                            "name": parts[1].strip(),
-                            "description": parts[2].strip() if len(parts) > 2 else "",
-                        }
-                    )
-                    if len(packages) >= 1_000:
-                        break
+        packages = (
+            _parse_zypper_search(result.get("stdout") or "")
+            if result["success"]
+            else []
+        )
         return {
             "success": result["success"],
             "packages": packages,
@@ -3419,16 +3871,11 @@ class ZypperManager(SystemsManagerBase):
 
     def list_upgradable_packages(self):
         result = self.run_command(["zypper", "list-updates"], capture_output=True)
-        packages = []
-        if result["success"]:
-            for line in (result.get("stdout") or "").strip().splitlines():
-                parts = line.split("|")
-                if len(parts) >= 3 and parts[0].strip() not in ("S", "-", "", "v"):
-                    packages.append(
-                        parts[2].strip() if len(parts) > 2 else parts[1].strip()
-                    )
-                    if len(packages) >= _MAX_FILESYSTEM_RESULTS:
-                        break
+        packages = (
+            _parse_zypper_updates(result.get("stdout") or "")
+            if result["success"]
+            else []
+        )
         return {
             "success": result["success"],
             "packages": packages,
@@ -3865,8 +4312,8 @@ def detect_and_create_manager(silent: bool | None = False) -> SystemsManagerBase
         raise NotImplementedError(f"Unsupported OS: {sys_name}")
 
 
-def systems_manager():
-    print(f"systems_manager v{__version__}")
+def _systems_manager_parser() -> argparse.ArgumentParser:
+    """Build the systems-manager command-line parser."""
     parser = argparse.ArgumentParser(
         add_help=False, description="System Manager Utility"
     )
@@ -3924,76 +4371,74 @@ def systems_manager():
     )
 
     parser.add_argument("--help", action="store_true", help="Show usage")
+    return parser
 
+
+def _run_package_actions(manager, args: argparse.Namespace) -> None:
+    """Apply the package-lifecycle flags in their documented order."""
+    if args.update:
+        manager.update()
+    if args.install:
+        manager.install_applications(args.install.split(","))
+    if args.python:
+        manager.install_python_modules(args.python.split(","))
+    if args.clean:
+        manager.clean()
+    if args.optimize:
+        manager.optimize()
+
+
+def _run_repository_actions(manager, args: argparse.Namespace) -> None:
+    """Apply the repository and local-package flags."""
+    if args.add_repo:
+        parts = args.add_repo.split(":")
+        manager.add_repository(parts[0], parts[1] if len(parts) > 1 else None)
+    if args.install_local:
+        for candidate in args.install_local.split(","):
+            manager.install_local_package(candidate.strip())
+
+
+def _run_statistics_actions(manager, args: argparse.Namespace) -> None:
+    """Print the requested statistics reports."""
+    if args.os_stats:
+        print(json.dumps(manager.get_os_statistics(), indent=2))
+    if args.hw_stats:
+        print(json.dumps(manager.get_hardware_statistics(), indent=2))
+
+
+def _windows_features_available(manager, action: str) -> bool:
+    """True on a Windows manager; otherwise explain why the flag was ignored."""
+    if isinstance(manager, WindowsManager):
+        return True
+    print(f"Feature {action} is only available on Windows.")
+    return False
+
+
+def _run_feature_actions(manager, args: argparse.Namespace) -> None:
+    """Apply the Windows-only feature flags."""
+    if args.list_features and _windows_features_available(manager, "listing"):
+        print(json.dumps(manager.list_windows_features(), indent=2))
+    if args.enable_features and _windows_features_available(manager, "enabling"):
+        manager.enable_windows_features(args.enable_features.split(","))
+    if args.disable_features and _windows_features_available(manager, "disabling"):
+        manager.disable_windows_features(args.disable_features.split(","))
+
+
+def systems_manager():
+    print(f"systems_manager v{__version__}")
+    parser = _systems_manager_parser()
     args = parser.parse_args()
 
     if hasattr(args, "help") and args.help:
         parser.print_help()
         sys.exit(0)
 
-    apps = args.install.split(",") if args.install else []
-    python_modules = args.python.split(",") if args.python else []
-    enable_features_list = (
-        args.enable_features.split(",") if args.enable_features else []
-    )
-    disable_features_list = (
-        args.disable_features.split(",") if args.disable_features else []
-    )
-    install = bool(args.install)
-    update = args.update
-    clean = args.clean
-    optimize = args.optimize
-    install_python = bool(args.python)
-    os_stats = args.os_stats
-    hw_stats = args.hw_stats
-    silent = args.silent
-    list_features = args.list_features
-    enable_features = bool(args.enable_features)
-    disable_features = bool(args.disable_features)
-    add_repo = args.add_repo
-    install_local = args.install_local
+    manager = detect_and_create_manager(args.silent)
 
-    manager = detect_and_create_manager(silent)
-
-    if update:
-        manager.update()
-    if install:
-        manager.install_applications(apps)
-    if install_python:
-        manager.install_python_modules(python_modules)
-    if clean:
-        manager.clean()
-    if optimize:
-        manager.optimize()
-    if add_repo:
-        parts = add_repo.split(":")
-        url = parts[0]
-        name = parts[1] if len(parts) > 1 else None
-        manager.add_repository(url, name)
-    if install_local:
-        files = [f.strip() for f in install_local.split(",")]
-        for f in files:
-            manager.install_local_package(f)
-    if os_stats:
-        print(json.dumps(manager.get_os_statistics(), indent=2))
-    if hw_stats:
-        print(json.dumps(manager.get_hardware_statistics(), indent=2))
-    if list_features:
-        if isinstance(manager, WindowsManager):
-            features = manager.list_windows_features()
-            print(json.dumps(features, indent=2))
-        else:
-            print("Feature listing is only available on Windows.")
-    if enable_features:
-        if isinstance(manager, WindowsManager):
-            manager.enable_windows_features(enable_features_list)
-        else:
-            print("Feature enabling is only available on Windows.")
-    if disable_features:
-        if isinstance(manager, WindowsManager):
-            manager.disable_windows_features(disable_features_list)
-        else:
-            print("Feature disabling is only available on Windows.")
+    _run_package_actions(manager, args)
+    _run_repository_actions(manager, args)
+    _run_statistics_actions(manager, args)
+    _run_feature_actions(manager, args)
 
     print("Done!")
 
