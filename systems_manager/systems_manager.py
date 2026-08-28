@@ -342,6 +342,39 @@ def _trusted_search_directories() -> tuple[Path, ...]:
     return tuple(dict.fromkeys(directories))
 
 
+def _windows_path_is_trusted(resolved: Path) -> bool:
+    """True when a resolved Windows path sits under an administrator-owned root."""
+    attributes = getattr(resolved.stat(), "st_file_attributes", 0)
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+    if attributes & reparse_flag:
+        return False
+    windows = Path(os.environ.get("SYSTEMROOT", r"C:\Windows")).resolve()
+    program_files = Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")).resolve()
+    trusted_roots = (windows, program_files / "WindowsApps")
+    return any(
+        resolved == root or resolved.is_relative_to(root) for root in trusted_roots
+    )
+
+
+def _posix_path_is_trusted(resolved: Path) -> bool:
+    """True when the path and every ancestor are owned by root or us, not group-writable."""
+    effective_uid = os.geteuid() if hasattr(os, "geteuid") else None
+    permitted_owners = {0}
+    if effective_uid is not None:
+        permitted_owners.add(effective_uid)
+    current = resolved
+    while True:
+        metadata = current.stat()
+        if metadata.st_uid not in permitted_owners:
+            return False
+        if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+            return False
+        if current.parent == current:
+            break
+        current = current.parent
+    return os.access(resolved, os.X_OK)
+
+
 def _path_is_trusted_executable(path: Path) -> bool:
     """Check executable type, ownership, and writable ancestors on POSIX."""
     try:
@@ -349,35 +382,8 @@ def _path_is_trusted_executable(path: Path) -> bool:
         if not resolved.is_file():
             return False
         if os.name == "nt":
-            attributes = getattr(resolved.stat(), "st_file_attributes", 0)
-            reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
-            if attributes & reparse_flag:
-                return False
-            windows = Path(os.environ.get("SYSTEMROOT", r"C:\Windows")).resolve()
-            program_files = Path(
-                os.environ.get("PROGRAMFILES", r"C:\Program Files")
-            ).resolve()
-            trusted_roots = (windows, program_files / "WindowsApps")
-            return any(
-                resolved == root or resolved.is_relative_to(root)
-                for root in trusted_roots
-            )
-
-        effective_uid = os.geteuid() if hasattr(os, "geteuid") else None
-        permitted_owners = {0}
-        if effective_uid is not None:
-            permitted_owners.add(effective_uid)
-        current = resolved
-        while True:
-            metadata = current.stat()
-            if metadata.st_uid not in permitted_owners:
-                return False
-            if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
-                return False
-            if current.parent == current:
-                break
-            current = current.parent
-        return os.access(resolved, os.X_OK)
+            return _windows_path_is_trusted(resolved)
+        return _posix_path_is_trusted(resolved)
     except OSError:
         return False
 
@@ -406,29 +412,24 @@ def _resolve_trusted_executable(executable: str) -> str:
     raise FileNotFoundError("Managed executable is not installed in a trusted location")
 
 
-def _terminate_process_tree(
-    process: subprocess.Popen,
-    *,
-    grace_seconds: int = _COMMAND_TERMINATION_GRACE_SECONDS,
-) -> int:
-    """Gracefully terminate a child tree, then force-kill survivors."""
-    if process.poll() is not None:
-        return int(process.returncode)
-
-    if os.name != "nt":
+def _terminate_posix_group(process: subprocess.Popen, grace_seconds: int) -> int:
+    """SIGTERM then SIGKILL the child's whole process group."""
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError):
+        process.terminate()
+    try:
+        return process.wait(timeout=grace_seconds)
+    except subprocess.TimeoutExpired:
         try:
-            os.killpg(process.pid, signal.SIGTERM)
+            os.killpg(process.pid, signal.SIGKILL)
         except (ProcessLookupError, PermissionError):
-            process.terminate()
-        try:
-            return process.wait(timeout=grace_seconds)
-        except subprocess.TimeoutExpired:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except (ProcessLookupError, PermissionError):
-                process.kill()
-            return process.wait(timeout=grace_seconds)
+            process.kill()
+        return process.wait(timeout=grace_seconds)
 
+
+def _terminate_windows_tree(process: subprocess.Popen, grace_seconds: int) -> None:
+    """Terminate the child and its descendants, then kill whatever survives."""
     try:
         parent = psutil.Process(process.pid)
         descendants = parent.children(recursive=True)
@@ -442,11 +443,29 @@ def _terminate_process_tree(
             psutil.wait_procs(alive, timeout=grace_seconds)
     except (psutil.Error, OSError):
         process.terminate()
+
+
+def _wait_or_kill(process: subprocess.Popen, grace_seconds: int) -> int:
+    """Wait for the child, force-killing it if it outlives the grace period."""
     try:
         return process.wait(timeout=grace_seconds)
     except subprocess.TimeoutExpired:
         process.kill()
         return process.wait(timeout=grace_seconds)
+
+
+def _terminate_process_tree(
+    process: subprocess.Popen,
+    *,
+    grace_seconds: int = _COMMAND_TERMINATION_GRACE_SECONDS,
+) -> int:
+    """Gracefully terminate a child tree, then force-kill survivors."""
+    if process.poll() is not None:
+        return int(process.returncode)
+    if os.name != "nt":
+        return _terminate_posix_group(process, grace_seconds)
+    _terminate_windows_tree(process, grace_seconds)
+    return _wait_or_kill(process, grace_seconds)
 
 
 def _windows_process_is_admin() -> bool:
@@ -1067,6 +1086,179 @@ def _powershell_json_records(result: dict) -> list[Any]:
     return records[:_MAX_FILESYSTEM_RESULTS]
 
 
+def _parse_systemctl_units(stdout: str) -> list[dict[str, str]]:
+    """Unit records parsed from `systemctl list-units --plain --no-legend`."""
+    services: list[dict[str, str]] = []
+    for line in stdout.strip().splitlines():
+        parts = line.split(None, 4)
+        if len(parts) >= 4:
+            services.append(
+                {
+                    "name": parts[0],
+                    "load": parts[1],
+                    "active": parts[2],
+                    "sub": parts[3],
+                    "description": parts[4] if len(parts) > 4 else "",
+                }
+            )
+    return services
+
+
+_AUTHORIZED_KEY_TYPES = frozenset(
+    {
+        "ecdsa-sha2-nistp256",
+        "ecdsa-sha2-nistp384",
+        "ecdsa-sha2-nistp521",
+        "sk-ecdsa-sha2-nistp256@openssh.com",
+        "sk-ssh-ed25519@openssh.com",
+        "ssh-ed25519",
+        "ssh-rsa",
+    }
+)
+
+
+def _validated_public_key(public_key: str) -> str:
+    """Validate one OpenSSH public-key line and return its stripped form."""
+    candidate = public_key.strip()
+    if len(candidate) > 16_384 or any(
+        character in candidate for character in ("\x00", "\n", "\r")
+    ):
+        raise ValueError("Invalid public key")
+    fields = candidate.split(None, 2)
+    if len(fields) < 2 or fields[0] not in _AUTHORIZED_KEY_TYPES:
+        raise ValueError("Unsupported public key type")
+    try:
+        decoded = base64.b64decode(fields[1], validate=True)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid public key encoding") from exc
+    if not 32 <= len(decoded) <= 16_384:
+        raise ValueError("Invalid public key size")
+    return candidate
+
+
+def _prepared_ssh_paths() -> tuple[Path, Path]:
+    """Return (~/.ssh, ~/.ssh/authorized_keys), creating the directory at 0700."""
+    ssh_dir = Path.home() / ".ssh"
+    if ssh_dir.is_symlink():
+        raise PermissionError("Symbolic-link SSH directories are not permitted")
+    ssh_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    auth_keys = ssh_dir / "authorized_keys"
+    if auth_keys.is_symlink():
+        raise PermissionError("Symbolic-link key files are not permitted")
+    return ssh_dir, auth_keys
+
+
+def _read_authorized_keys(auth_keys: Path) -> str:
+    """Current authorized_keys content, or an empty string when absent."""
+    if not auth_keys.exists():
+        return ""
+    if auth_keys.stat().st_size > _MAX_MANAGED_FILE_BYTES:
+        raise ValueError("Authorized key file size limit exceeded")
+    return auth_keys.read_text(encoding="utf-8")
+
+
+def _write_authorized_keys(
+    ssh_dir: Path, auth_keys: Path, existing: str, candidate: str
+) -> None:
+    """Append `candidate` through a 0600 temporary replaced into place."""
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=ssh_dir,
+        prefix=".authorized-keys-",
+        delete=False,
+    ) as handle:
+        handle.write(existing.rstrip("\n") + ("\n" if existing else ""))
+        handle.write(candidate + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+        temporary = Path(handle.name)
+    try:
+        temporary.chmod(0o600)
+        if auth_keys.is_symlink():
+            raise PermissionError("Symbolic-link key files are not permitted")
+        os.replace(temporary, auth_keys)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _disk_capacity_warnings() -> list[dict[str, Any]]:
+    """Opaque records for every mounted filesystem over 90% full."""
+    warnings: list[dict[str, Any]] = []
+    for part in psutil.disk_partitions(all=False):
+        try:
+            usage = psutil.disk_usage(part.mountpoint)
+            if usage.percent > 90:
+                warnings.append(
+                    {
+                        "disk_ref": _opaque_ref(
+                            "disk", f"{part.device}\x00{part.mountpoint}"
+                        ),
+                        "percent": usage.percent,
+                        "free_gb": round(usage.free / (1024**3), 2),
+                    }
+                )
+        except (PermissionError, OSError):
+            continue
+    return warnings
+
+
+def _top_memory_processes() -> list[dict[str, Any]]:
+    """The ten processes with the largest memory share, as opaque records."""
+    ranked = sorted(
+        psutil.process_iter(["pid", "name", "cpu_percent", "memory_percent"]),
+        key=lambda p: p.info.get("memory_percent", 0) or 0,
+        reverse=True,
+    )[:10]
+    top: list[dict[str, Any]] = []
+    for proc in ranked:
+        try:
+            info = proc.info
+            top.append(
+                {
+                    "process_ref": _opaque_ref(
+                        "process", f"{info['pid']}\x00{info['name']}"
+                    ),
+                    "cpu_percent": info.get("cpu_percent") or 0,
+                    "memory_percent": round(info.get("memory_percent") or 0, 2),
+                }
+            )
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return top
+
+
+def _resource_warnings(
+    cpu_percent: float, memory: Any, swap: Any, disk_warnings: list[dict[str, Any]]
+) -> list[str]:
+    """Human-readable warnings for CPU, memory, swap and disk pressure."""
+    warnings: list[str] = []
+    if cpu_percent > 90:
+        warnings.append(f"HIGH CPU: {cpu_percent}%")
+    if memory.percent > 90:
+        warnings.append(f"HIGH MEMORY: {memory.percent}%")
+    if swap.percent > 80:
+        warnings.append(f"HIGH SWAP: {swap.percent}%")
+    for entry in disk_warnings:
+        warnings.append(f"DISK CAPACITY HIGH: {entry['percent']}%")
+    return warnings
+
+
+def _listening_connection_record(conn: Any) -> dict[str, Any]:
+    """One redacted listening-socket record."""
+    address = conn.laddr
+    return {
+        "local_port": address.port if address else None,
+        "listener_ref": _opaque_ref(
+            "listener",
+            f"{address.ip if address else ''}:"
+            f"{address.port if address else ''}:"
+            f"{conn.pid or ''}",
+        ),
+        "status": conn.status,
+    }
+
+
 def _parse_passwd_entries(stream: Iterable[str]) -> list[dict[str, Any]]:
     """Opaque account records parsed from an /etc/passwd stream."""
     users: list[dict[str, Any]] = []
@@ -1140,16 +1332,8 @@ def _parse_package_table(output: str) -> list[dict[str, str]]:
     return rows
 
 
-def managed_filesystem_root() -> Path:
-    """Return the administrator-selected root for all MCP filesystem access."""
-    configured = str(setting("SYSTEMS_MANAGER_FILESYSTEM_ROOT", "")).strip()
-    if not configured:
-        raise PermissionError(
-            "SYSTEMS_MANAGER_FILESYSTEM_ROOT must explicitly select a data directory"
-        )
-    candidate = Path(configured).expanduser()
-    if not candidate.is_absolute():
-        raise ValueError("Managed filesystem root must be an absolute path")
+def _reject_root_link_traversal(candidate: Path) -> None:
+    """Refuse a root whose path traverses a symlink or a Windows reparse point."""
     reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
     for component in (candidate, *candidate.parents):
         try:
@@ -1163,6 +1347,33 @@ def managed_filesystem_root() -> Path:
             raise PermissionError(
                 "Managed filesystem root cannot traverse links or reparse points"
             )
+
+
+def _reject_untrusted_root(metadata: os.stat_result) -> None:
+    """Refuse a managed root that is a reparse point or is not privately owned."""
+    if os.name == "nt":
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+        if getattr(metadata, "st_file_attributes", 0) & reparse_flag:
+            raise PermissionError("Managed filesystem root cannot be a reparse point")
+        return
+    effective_uid = os.geteuid() if hasattr(os, "geteuid") else metadata.st_uid
+    if metadata.st_uid != effective_uid:
+        raise PermissionError("Managed filesystem root has an untrusted owner")
+    if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
+        raise PermissionError("Managed filesystem root cannot be group/world writable")
+
+
+def managed_filesystem_root() -> Path:
+    """Return the administrator-selected root for all MCP filesystem access."""
+    configured = str(setting("SYSTEMS_MANAGER_FILESYSTEM_ROOT", "")).strip()
+    if not configured:
+        raise PermissionError(
+            "SYSTEMS_MANAGER_FILESYSTEM_ROOT must explicitly select a data directory"
+        )
+    candidate = Path(configured).expanduser()
+    if not candidate.is_absolute():
+        raise ValueError("Managed filesystem root must be an absolute path")
+    _reject_root_link_traversal(candidate)
     try:
         root = candidate.resolve(strict=True)
         metadata = root.stat()
@@ -1172,18 +1383,7 @@ def managed_filesystem_root() -> Path:
         raise PermissionError("Managed filesystem root cannot be a volume root")
     if not root.is_dir():
         raise ValueError("Managed filesystem root must be a directory")
-    if os.name == "nt":
-        attributes = getattr(metadata, "st_file_attributes", 0)
-        if attributes & reparse_flag:
-            raise PermissionError("Managed filesystem root cannot be a reparse point")
-    else:
-        effective_uid = os.geteuid() if hasattr(os, "geteuid") else metadata.st_uid
-        if metadata.st_uid != effective_uid:
-            raise PermissionError("Managed filesystem root has an untrusted owner")
-        if metadata.st_mode & (stat.S_IWGRP | stat.S_IWOTH):
-            raise PermissionError(
-                "Managed filesystem root cannot be group/world writable"
-            )
+    _reject_untrusted_root(metadata)
     return root
 
 
@@ -1454,6 +1654,54 @@ def _walk_listing(listing: _DirectoryListing, root: Path) -> None:
         _list_directory_level(listing, directory, current_depth)
         if not listing.recursive:
             break
+
+
+def _managed_subdirectory(item: "os.DirEntry[str]", managed_root: Path) -> Path | None:
+    """Resolve a scandir entry to a managed subdirectory, or None to skip it."""
+    try:
+        if item.is_symlink() or not item.is_dir(follow_symlinks=False):
+            return None
+        child = Path(item.path).resolve(strict=True)
+        child.relative_to(managed_root)
+        return child
+    except (OSError, ValueError):
+        return None
+
+
+def _managed_tree_size(child: Path, budget: _FilesystemScanBudget) -> int:
+    """Total size of the files under `child`, within the shared scan budget."""
+    size = 0
+    for candidate in _iter_managed_files(child, budget):
+        try:
+            size += candidate.stat().st_size
+        except OSError:
+            continue
+    return size
+
+
+def _disk_usage_entries(
+    base: Path, budget: _FilesystemScanBudget, managed_root: Path
+) -> list[dict[str, Any]]:
+    """Per-subdirectory usage under `base`, stopping when the budget is spent."""
+    entries: list[dict[str, Any]] = []
+    with os.scandir(base) as children:
+        for item in children:
+            if not budget.consume_entry():
+                break
+            child = _managed_subdirectory(item, managed_root)
+            if child is None:
+                continue
+            size = _managed_tree_size(child, budget)
+            entries.append(
+                {
+                    "size_bytes": size,
+                    "path": managed_display_path(child),
+                    "truncated": budget.truncated,
+                }
+            )
+            if budget.truncated:
+                break
+    return entries
 
 
 def _validate_search_pattern(pattern: str, max_length: int) -> None:
@@ -2077,62 +2325,53 @@ class SystemsManagerBase(ABC):
             "network": psutil.net_io_counters()._asdict(),
         }
 
+    def _linux_services(self) -> dict:
+        result = self.run_command(
+            [
+                "systemctl",
+                "list-units",
+                "--type=service",
+                "--all",
+                "--no-pager",
+                "--plain",
+                "--no-legend",
+            ],
+            capture_output=True,
+        )
+        if not result["success"]:
+            return {"success": False, "error": "Service inventory failed"}
+        services = _parse_systemctl_units(result.get("stdout") or "")
+        return {"success": True, "services": services, "total": len(services)}
+
+    def _windows_services(self) -> dict:
+        result = self.run_command(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3",
+            ],
+            capture_output=True,
+        )
+        if not result["success"]:
+            return {"success": False, "error": "Service inventory failed"}
+        try:
+            services = json.loads(result.get("stdout", "[]"))
+        except json.JSONDecodeError:
+            return {"success": False, "error": "Failed to parse service list"}
+        if isinstance(services, dict):
+            services = [services]
+        return {"success": True, "services": services, "total": len(services)}
+
     def list_services(self) -> dict:
         try:
-            if platform.system() == "Linux":
-                result = self.run_command(
-                    [
-                        "systemctl",
-                        "list-units",
-                        "--type=service",
-                        "--all",
-                        "--no-pager",
-                        "--plain",
-                        "--no-legend",
-                    ],
-                    capture_output=True,
-                )
-                if not result["success"]:
-                    return {"success": False, "error": "Service inventory failed"}
-                services = []
-                for line in (result.get("stdout") or "").strip().splitlines():
-                    parts = line.split(None, 4)
-                    if len(parts) >= 4:
-                        services.append(
-                            {
-                                "name": parts[0],
-                                "load": parts[1],
-                                "active": parts[2],
-                                "sub": parts[3],
-                                "description": parts[4] if len(parts) > 4 else "",
-                            }
-                        )
-                return {"success": True, "services": services, "total": len(services)}
-            elif platform.system() == "Windows":
-                result = self.run_command(
-                    [
-                        "powershell.exe",
-                        "-NoProfile",
-                        "-NonInteractive",
-                        "-Command",
-                        "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3",
-                    ],
-                    capture_output=True,
-                )
-                if not result["success"]:
-                    return {"success": False, "error": "Service inventory failed"}
-                try:
-                    services = json.loads(result.get("stdout", "[]"))
-                    if isinstance(services, dict):
-                        services = [services]
-                    return {
-                        "success": True,
-                        "services": services,
-                        "total": len(services),
-                    }
-                except json.JSONDecodeError:
-                    return {"success": False, "error": "Failed to parse service list"}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            system = platform.system()
+            if system == "Linux":
+                return self._linux_services()
+            if system == "Windows":
+                return self._windows_services()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
@@ -2384,23 +2623,13 @@ class SystemsManagerBase(ABC):
 
     def list_open_ports(self) -> dict:
         try:
-            connections = []
+            connections: list[dict[str, Any]] = []
             for conn in psutil.net_connections(kind="inet"):
-                if conn.status == "LISTEN":
-                    connections.append(
-                        {
-                            "local_port": conn.laddr.port if conn.laddr else None,
-                            "listener_ref": _opaque_ref(
-                                "listener",
-                                f"{conn.laddr.ip if conn.laddr else ''}:"
-                                f"{conn.laddr.port if conn.laddr else ''}:"
-                                f"{conn.pid or ''}",
-                            ),
-                            "status": conn.status,
-                        }
-                    )
-                    if len(connections) >= _MAX_FILESYSTEM_RESULTS:
-                        break
+                if conn.status != "LISTEN":
+                    continue
+                connections.append(_listening_connection_record(conn))
+                if len(connections) >= _MAX_FILESYSTEM_RESULTS:
+                    break
             return {"success": True, "ports": connections, "total": len(connections)}
         except psutil.AccessDenied:
             cmd = (
@@ -2611,6 +2840,23 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _drive_health_faults(self, warnings: list[str]) -> list[dict[str, Any]]:
+        """Optional storage telemetry; never fails the base health endpoint."""
+        try:
+            from systems_manager.storage_health import drive_health_summary
+
+            drive_summary = drive_health_summary(self)
+            warnings.extend(drive_summary.get("warnings", []))
+            return drive_summary.get("faults", [])
+        except Exception as exc:
+            # Storage telemetry is optional and must not make the base
+            # health endpoint unavailable on unsupported hosts.
+            self.logger.debug(
+                "Storage health telemetry unavailable: %s",
+                type(exc).__name__,
+            )
+        return []
+
     def system_health_check(self) -> dict:
         try:
             boot_time = datetime.fromtimestamp(psutil.boot_time())
@@ -2618,64 +2864,10 @@ class SystemsManagerBase(ABC):
             cpu_percent = psutil.cpu_percent(interval=1)
             memory = psutil.virtual_memory()
             swap = psutil.swap_memory()
-            disk_warnings = []
-            for part in psutil.disk_partitions(all=False):
-                try:
-                    usage = psutil.disk_usage(part.mountpoint)
-                    if usage.percent > 90:
-                        disk_warnings.append(
-                            {
-                                "disk_ref": _opaque_ref(
-                                    "disk", f"{part.device}\x00{part.mountpoint}"
-                                ),
-                                "percent": usage.percent,
-                                "free_gb": round(usage.free / (1024**3), 2),
-                            }
-                        )
-                except (PermissionError, OSError):
-                    continue
-            top_procs = []
-            for proc in sorted(
-                psutil.process_iter(["pid", "name", "cpu_percent", "memory_percent"]),
-                key=lambda p: p.info.get("memory_percent", 0) or 0,
-                reverse=True,
-            )[:10]:
-                try:
-                    info = proc.info
-                    top_procs.append(
-                        {
-                            "process_ref": _opaque_ref(
-                                "process", f"{info['pid']}\x00{info['name']}"
-                            ),
-                            "cpu_percent": info.get("cpu_percent") or 0,
-                            "memory_percent": round(info.get("memory_percent") or 0, 2),
-                        }
-                    )
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-            warnings = []
-            if cpu_percent > 90:
-                warnings.append(f"HIGH CPU: {cpu_percent}%")
-            if memory.percent > 90:
-                warnings.append(f"HIGH MEMORY: {memory.percent}%")
-            if swap.percent > 80:
-                warnings.append(f"HIGH SWAP: {swap.percent}%")
-            for dw in disk_warnings:
-                warnings.append(f"DISK CAPACITY HIGH: {dw['percent']}%")
-            drive_faults: list[dict[str, Any]] = []
-            try:
-                from systems_manager.storage_health import drive_health_summary
-
-                drive_summary = drive_health_summary(self)
-                warnings.extend(drive_summary.get("warnings", []))
-                drive_faults = drive_summary.get("faults", [])
-            except Exception as exc:
-                # Storage telemetry is optional and must not make the base
-                # health endpoint unavailable on unsupported hosts.
-                self.logger.debug(
-                    "Storage health telemetry unavailable: %s",
-                    type(exc).__name__,
-                )
+            disk_warnings = _disk_capacity_warnings()
+            top_procs = _top_memory_processes()
+            warnings = _resource_warnings(cpu_percent, memory, swap, disk_warnings)
+            drive_faults = self._drive_health_faults(warnings)
             load_avg = os.getloadavg() if platform.system() != "Windows" else None
             return {
                 "success": True,
@@ -3035,65 +3227,15 @@ class SystemsManagerBase(ABC):
 
     def add_authorized_key(self, public_key: str) -> dict:
         try:
-            candidate = public_key.strip()
-            if len(candidate) > 16_384 or any(
-                character in candidate for character in ("\x00", "\n", "\r")
-            ):
-                raise ValueError("Invalid public key")
-            fields = candidate.split(None, 2)
-            if len(fields) < 2 or fields[0] not in {
-                "ecdsa-sha2-nistp256",
-                "ecdsa-sha2-nistp384",
-                "ecdsa-sha2-nistp521",
-                "sk-ecdsa-sha2-nistp256@openssh.com",
-                "sk-ssh-ed25519@openssh.com",
-                "ssh-ed25519",
-                "ssh-rsa",
-            }:
-                raise ValueError("Unsupported public key type")
-            try:
-                decoded = base64.b64decode(fields[1], validate=True)
-            except (ValueError, TypeError) as exc:
-                raise ValueError("Invalid public key encoding") from exc
-            if not 32 <= len(decoded) <= 16_384:
-                raise ValueError("Invalid public key size")
-
-            ssh_dir = Path.home() / ".ssh"
-            if ssh_dir.is_symlink():
-                raise PermissionError("Symbolic-link SSH directories are not permitted")
-            ssh_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-            auth_keys = ssh_dir / "authorized_keys"
-            if auth_keys.is_symlink():
-                raise PermissionError("Symbolic-link key files are not permitted")
-            existing = ""
-            if auth_keys.exists():
-                if auth_keys.stat().st_size > _MAX_MANAGED_FILE_BYTES:
-                    raise ValueError("Authorized key file size limit exceeded")
-                existing = auth_keys.read_text(encoding="utf-8")
-                if candidate in existing.splitlines():
-                    return {
-                        "success": True,
-                        "message": "Key already exists in authorized_keys",
-                    }
-            with tempfile.NamedTemporaryFile(
-                mode="w",
-                encoding="utf-8",
-                dir=ssh_dir,
-                prefix=".authorized-keys-",
-                delete=False,
-            ) as handle:
-                handle.write(existing.rstrip("\n") + ("\n" if existing else ""))
-                handle.write(candidate + "\n")
-                handle.flush()
-                os.fsync(handle.fileno())
-                temporary = Path(handle.name)
-            try:
-                temporary.chmod(0o600)
-                if auth_keys.is_symlink():
-                    raise PermissionError("Symbolic-link key files are not permitted")
-                os.replace(temporary, auth_keys)
-            finally:
-                temporary.unlink(missing_ok=True)
+            candidate = _validated_public_key(public_key)
+            ssh_dir, auth_keys = _prepared_ssh_paths()
+            existing = _read_authorized_keys(auth_keys)
+            if candidate in existing.splitlines():
+                return {
+                    "success": True,
+                    "message": "Key already exists in authorized_keys",
+                }
+            _write_authorized_keys(ssh_dir, auth_keys, existing, candidate)
             return {"success": True, "message": "Public key added to authorized_keys"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
@@ -3168,38 +3310,8 @@ class SystemsManagerBase(ABC):
             base = resolve_managed_path(path, must_exist=True)
             if not base.is_dir():
                 return {"success": False, "error": "Base path is not a directory"}
-            entries: list[dict[str, Any]] = []
             budget = _FilesystemScanBudget()
-            managed_root = managed_filesystem_root()
-            with os.scandir(base) as children:
-                for item in children:
-                    if not budget.consume_entry():
-                        break
-                    try:
-                        if item.is_symlink() or not item.is_dir(follow_symlinks=False):
-                            continue
-                        child = Path(item.path).resolve(strict=True)
-                        child.relative_to(managed_root)
-                    except (OSError, ValueError):
-                        continue
-                    size = 0
-                    child_was_truncated = False
-                    for candidate in _iter_managed_files(child, budget):
-                        try:
-                            size += candidate.stat().st_size
-                        except OSError:
-                            continue
-                    if budget.truncated:
-                        child_was_truncated = True
-                    entries.append(
-                        {
-                            "size_bytes": size,
-                            "path": managed_display_path(child),
-                            "truncated": child_was_truncated,
-                        }
-                    )
-                    if budget.truncated:
-                        break
+            entries = _disk_usage_entries(base, budget, managed_filesystem_root())
             entries.sort(key=lambda item: item["size_bytes"], reverse=True)
             return {
                 "success": True,
