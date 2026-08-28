@@ -969,6 +969,42 @@ def _opaque_ref(namespace: str, value: str) -> str:
     return f"{namespace}:{digest[:16]}"
 
 
+def _crontab_list_command(user: str | None) -> list[str]:
+    """The crontab listing argv, optionally scoped to one account."""
+    return ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
+
+
+def _parse_crontab_jobs(stdout: str) -> list[dict[str, str]]:
+    """Opaque job references and schedules parsed from a crontab listing."""
+    jobs: list[dict[str, str]] = []
+    for line in stdout.strip().splitlines():
+        content = line.strip()
+        if not content or content.startswith("#"):
+            continue
+        fields = content.split(None, 5)
+        jobs.append(
+            {
+                "job_ref": _opaque_ref("cron", content),
+                "schedule": " ".join(fields[:5]) if len(fields) >= 6 else "special",
+            }
+        )
+        if len(jobs) >= _MAX_FILESYSTEM_RESULTS:
+            break
+    return jobs
+
+
+def _partition_crontab_lines(
+    lines: list[str], pattern: str
+) -> tuple[list[str], list[str]]:
+    """Split crontab lines into (matching the reference, to keep)."""
+    removed: list[str] = []
+    kept: list[str] = []
+    for line in lines:
+        target = removed if _opaque_ref("cron", line.strip()) == pattern else kept
+        target.append(line)
+    return removed, kept
+
+
 def _parse_package_metadata(output: str) -> dict[str, str]:
     allowed = {
         "architecture",
@@ -1084,30 +1120,20 @@ def managed_display_path(path: Path) -> str:
     return "." if not relative.parts else relative.as_posix()
 
 
-def atomic_write_managed_text(
-    path: Path | str,
-    payload: str,
-    *,
-    create: bool = False,
-) -> Path:
-    """Write a bounded text file beneath the managed root without following links."""
-    if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
-        raise ValueError("Managed file size limit exceeded")
-    target = resolve_managed_path(str(path))
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target = resolve_managed_path(str(target))
-    if target.is_symlink():
-        raise PermissionError("Symbolic-link file operations are not permitted")
-    if create:
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-        if hasattr(os, "O_NOFOLLOW"):
-            flags |= os.O_NOFOLLOW
-        descriptor = os.open(target, flags, 0o600)
-        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        return target
+def _create_exclusive_managed_file(target: Path, payload: str) -> None:
+    """Create `target` exclusively at 0600, never following a symlink."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(target, flags, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _replace_managed_file(target: Path, payload: str) -> None:
+    """Atomically replace `target` through a 0600 temporary in the same directory."""
     with tempfile.NamedTemporaryFile(
         mode="w",
         encoding="utf-8",
@@ -1126,6 +1152,26 @@ def atomic_write_managed_text(
         os.replace(temporary, target)
     finally:
         temporary.unlink(missing_ok=True)
+
+
+def atomic_write_managed_text(
+    path: Path | str,
+    payload: str,
+    *,
+    create: bool = False,
+) -> Path:
+    """Write a bounded text file beneath the managed root without following links."""
+    if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
+        raise ValueError("Managed file size limit exceeded")
+    target = resolve_managed_path(str(path))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target = resolve_managed_path(str(target))
+    if target.is_symlink():
+        raise PermissionError("Symbolic-link file operations are not permitted")
+    if create:
+        _create_exclusive_managed_file(target, payload)
+    else:
+        _replace_managed_file(target, payload)
     return target
 
 
@@ -1526,6 +1572,28 @@ class FileSystemManager:
         except Exception as e:
             return {"success": False, "error": type(e).__name__}
 
+    @staticmethod
+    def _write_managed_file(action: str, expanded_path: Path, content: str | None):
+        payload = content or ""
+        if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
+            raise ValueError("Managed file size limit exceeded")
+        expanded_path.parent.mkdir(parents=True, exist_ok=True)
+        # Re-resolve after creating parents to catch a raced symlink.
+        target = resolve_managed_path(str(expanded_path))
+        if action == "create":
+            _create_exclusive_managed_file(target, payload)
+        else:
+            _replace_managed_file(target, payload)
+
+    @staticmethod
+    def _read_managed_file(expanded_path: Path) -> dict:
+        if not expanded_path.is_file():
+            return {"success": False, "error": "Managed file not found"}
+        if expanded_path.stat().st_size > _MAX_MANAGED_FILE_BYTES:
+            raise ValueError("Managed file size limit exceeded")
+        with expanded_path.open(encoding="utf-8") as handle:
+            return {"success": True, "content": handle.read()}
+
     def manage_file(self, action: str, path: str, content: str | None = None) -> dict:
         try:
             if action not in {"create", "update", "delete", "read"}:
@@ -1534,57 +1602,15 @@ class FileSystemManager:
             display_path = managed_display_path(expanded_path)
             if expanded_path.is_symlink():
                 raise PermissionError("Symbolic-link file operations are not permitted")
-            if action == "create" or action == "update":
-                payload = content or ""
-                if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
-                    raise ValueError("Managed file size limit exceeded")
-                expanded_path.parent.mkdir(parents=True, exist_ok=True)
-                # Re-resolve after creating parents to catch a raced symlink.
-                expanded_path = resolve_managed_path(str(expanded_path))
-                flags = os.O_WRONLY | os.O_CREAT
-                if hasattr(os, "O_NOFOLLOW"):
-                    flags |= os.O_NOFOLLOW
-                if action == "create":
-                    flags |= os.O_EXCL
-                    descriptor = os.open(expanded_path, flags, 0o600)
-                    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
-                        handle.write(payload)
-                        handle.flush()
-                        os.fsync(handle.fileno())
-                else:
-                    with tempfile.NamedTemporaryFile(
-                        mode="w",
-                        encoding="utf-8",
-                        dir=expanded_path.parent,
-                        prefix=".systems-manager-",
-                        delete=False,
-                    ) as handle:
-                        handle.write(payload)
-                        handle.flush()
-                        os.fsync(handle.fileno())
-                        temporary = Path(handle.name)
-                    try:
-                        temporary.chmod(0o600)
-                        if expanded_path.is_symlink():
-                            raise PermissionError(
-                                "Symbolic-link file operations are not permitted"
-                            )
-                        os.replace(temporary, expanded_path)
-                    finally:
-                        temporary.unlink(missing_ok=True)
-                return {"success": True, "message": f"File {action}d: {display_path}"}
-            elif action == "delete":
-                if expanded_path.is_file():
-                    expanded_path.unlink()
-                    return {"success": True, "message": f"File deleted: {display_path}"}
-                return {"success": False, "error": "Managed file not found"}
-            elif action == "read":
-                if expanded_path.is_file():
-                    if expanded_path.stat().st_size > _MAX_MANAGED_FILE_BYTES:
-                        raise ValueError("Managed file size limit exceeded")
-                    with expanded_path.open(encoding="utf-8") as f:
-                        return {"success": True, "content": f.read()}
-                return {"success": False, "error": "Managed file not found"}
+            if action == "read":
+                return self._read_managed_file(expanded_path)
+            if action == "delete":
+                if not expanded_path.is_file():
+                    return {"success": False, "error": "Managed file not found"}
+                expanded_path.unlink()
+                return {"success": True, "message": f"File deleted: {display_path}"}
+            self._write_managed_file(action, expanded_path, content)
+            return {"success": True, "message": f"File {action}d: {display_path}"}
         except (PermissionError, FileNotFoundError, FileExistsError, ValueError):
             return {"success": False, "error": "Operation failed"}
         except Exception as e:
@@ -2630,42 +2656,33 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _linux_cron_jobs(self, user: str | None) -> dict:
+        result = self.run_command(_crontab_list_command(user), capture_output=True)
+        jobs = (
+            _parse_crontab_jobs(result.get("stdout") or "") if result["success"] else []
+        )
+        return {"success": True, "jobs": jobs, "total": len(jobs)}
+
+    def _windows_scheduled_tasks(self) -> dict:
+        result = self.run_command(
+            ["schtasks", "/query", "/fo", "CSV", "/v"],
+            capture_output=True,
+        )
+        return {
+            "success": result["success"],
+            "total": max(0, len((result.get("stdout") or "").splitlines()) - 1),
+            "details_redacted": True,
+        }
+
     def list_cron_jobs(self, user: str | None = None) -> dict:
         try:
             user = _validated_account_name(user)
-            if platform.system() == "Linux":
-                cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
-                result = self.run_command(cmd, capture_output=True)
-                jobs = []
-                if result["success"]:
-                    for line in (result.get("stdout") or "").strip().splitlines():
-                        if line.strip() and not line.strip().startswith("#"):
-                            content = line.strip()
-                            fields = content.split(None, 5)
-                            jobs.append(
-                                {
-                                    "job_ref": _opaque_ref("cron", content),
-                                    "schedule": (
-                                        " ".join(fields[:5])
-                                        if len(fields) >= 6
-                                        else "special"
-                                    ),
-                                }
-                            )
-                            if len(jobs) >= _MAX_FILESYSTEM_RESULTS:
-                                break
-                return {"success": True, "jobs": jobs, "total": len(jobs)}
-            elif platform.system() == "Windows":
-                result = self.run_command(
-                    ["schtasks", "/query", "/fo", "CSV", "/v"],
-                    capture_output=True,
-                )
-                return {
-                    "success": result["success"],
-                    "total": max(0, len((result.get("stdout") or "").splitlines()) - 1),
-                    "details_redacted": True,
-                }
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            system = platform.system()
+            if system == "Linux":
+                return self._linux_cron_jobs(user)
+            if system == "Windows":
+                return self._windows_scheduled_tasks()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
@@ -2679,49 +2696,43 @@ class SystemsManagerBase(ABC):
             user = _validated_account_name(user)
             if not re.fullmatch(r"cron:[0-9a-f]{16}", pattern):
                 raise ValueError("An exact cron job reference is required")
-            list_cmd = ["crontab", "-l", "-u", user] if user else ["crontab", "-l"]
-            existing = self.run_command(list_cmd, capture_output=True)
+            existing = self.run_command(
+                _crontab_list_command(user), capture_output=True
+            )
             if not existing["success"]:
                 return {"success": False, "error": "Failed to read current crontab"}
             lines = (existing.get("stdout") or "").splitlines()
-            removed = [
-                line_content
-                for line_content in lines
-                if _opaque_ref("cron", line_content.strip()) == pattern
-            ]
-            kept = [
-                line_content
-                for line_content in lines
-                if _opaque_ref("cron", line_content.strip()) != pattern
-            ]
+            removed, kept = _partition_crontab_lines(lines, pattern)
             if not removed:
                 return {
                     "success": False,
                     "error": "Cron job reference was not found",
                 }
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".cron", delete=False
-            ) as tmp:
-                tmp.write("\n".join(kept) + "\n")
-                tmp_path = tmp.name
-            os.chmod(tmp_path, 0o600)
-            try:
-                install_cmd = (
-                    ["crontab", "-u", user, tmp_path] if user else ["crontab", tmp_path]
-                )
-                result = self.run_command(install_cmd, elevated=bool(user))
-                return {
-                    "success": result["success"],
-                    "message": (
-                        f"Removed {len(removed)} cron job(s)"
-                        if result["success"]
-                        else "Failed"
-                    ),
-                }
-            finally:
-                os.remove(tmp_path)
+            result = self._install_crontab(kept, user)
+            return {
+                "success": result["success"],
+                "message": (
+                    f"Removed {len(removed)} cron job(s)"
+                    if result["success"]
+                    else "Failed"
+                ),
+            }
         except Exception:
             return {"success": False, "error": "Operation failed"}
+
+    def _install_crontab(self, kept: list[str], user: str | None) -> dict:
+        """Replace the crontab with `kept` via a 0600 temporary file."""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".cron", delete=False) as tmp:
+            tmp.write("\n".join(kept) + "\n")
+            tmp_path = tmp.name
+        os.chmod(tmp_path, 0o600)
+        try:
+            install_cmd = (
+                ["crontab", "-u", user, tmp_path] if user else ["crontab", tmp_path]
+            )
+            return self.run_command(install_cmd, elevated=bool(user))
+        finally:
+            os.remove(tmp_path)
 
     def get_firewall_status(self) -> dict:
         try:
