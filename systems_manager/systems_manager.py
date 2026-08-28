@@ -19,10 +19,10 @@ import threading
 import time
 from abc import ABC, abstractmethod
 from collections import deque
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, BinaryIO, Literal, NamedTuple
 from urllib.parse import urlsplit
 
 import distro
@@ -955,6 +955,61 @@ class _FilesystemScanBudget:
         return True
 
 
+def _scandir_entries(directory: Path) -> Iterator["os.DirEntry[str]"]:
+    """Yield a directory's entries lazily; an unopenable directory yields nothing."""
+    try:
+        scanner = os.scandir(directory)
+    except OSError:
+        return
+    with scanner:
+        yield from scanner
+
+
+def _scandir_entries_quietly(directory: Path) -> Iterator["os.DirEntry[str]"]:
+    """As `_scandir_entries`, but also swallows errors raised mid-iteration."""
+    try:
+        yield from _scandir_entries(directory)
+    except OSError:
+        return
+
+
+def _take_managed_entry(
+    entry: "os.DirEntry[str]",
+    managed_root: Path,
+    recursive: bool,
+    pending: list[Path],
+) -> Path | None:
+    """Queue a managed subdirectory for later, or return a managed file to yield."""
+    try:
+        if entry.is_symlink():
+            return None
+        candidate = Path(entry.path).resolve(strict=True)
+        candidate.relative_to(managed_root)
+        if recursive and entry.is_dir(follow_symlinks=False):
+            pending.append(candidate)
+        elif entry.is_file(follow_symlinks=False):
+            return candidate
+    except (OSError, ValueError):
+        return None
+    return None
+
+
+def _walk_managed_tree(
+    base: Path, budget: _FilesystemScanBudget, recursive: bool
+) -> Iterator[Path]:
+    """Walk `base` depth-first, bounded by the request-global entry budget."""
+    managed_root = managed_filesystem_root()
+    pending = [base]
+    while pending and not budget.truncated:
+        directory = pending.pop()
+        for entry in _scandir_entries_quietly(directory):
+            if not budget.consume_entry():
+                return
+            candidate = _take_managed_entry(entry, managed_root, recursive, pending)
+            if candidate is not None:
+                yield candidate
+
+
 def _iter_managed_files(
     base: Path, budget: _FilesystemScanBudget, *, recursive: bool = True
 ) -> Iterator[Path]:
@@ -964,28 +1019,210 @@ def _iter_managed_files(
             yield base
         return
 
-    managed_root = managed_filesystem_root()
-    pending = [base]
-    while pending and not budget.truncated:
-        directory = pending.pop()
-        try:
-            with os.scandir(directory) as entries:
-                for entry in entries:
-                    if not budget.consume_entry():
-                        return
-                    try:
-                        if entry.is_symlink():
-                            continue
-                        candidate = Path(entry.path).resolve(strict=True)
-                        candidate.relative_to(managed_root)
-                        if recursive and entry.is_dir(follow_symlinks=False):
-                            pending.append(candidate)
-                        elif entry.is_file(follow_symlinks=False):
-                            yield candidate
-                    except (OSError, ValueError):
-                        continue
-        except OSError:
+    yield from _walk_managed_tree(base, budget, recursive)
+
+
+class _DirectoryListing:
+    """Mutable accumulator for one `list_files` request."""
+
+    def __init__(self, recursive: bool, depth: int) -> None:
+        self.recursive = recursive
+        self.depth = depth
+        self.budget = _FilesystemScanBudget()
+        self.managed_root = managed_filesystem_root()
+        self.items: list[dict[str, str]] = []
+        self.pending: list[tuple[Path, int]] = []
+
+
+def _resolve_listed_entry(
+    entry: "os.DirEntry[str]", managed_root: Path
+) -> tuple[Path, bool] | None:
+    """Resolve a scandir entry to (path, is_directory) inside the managed root."""
+    try:
+        if entry.is_symlink():
+            return None
+        entry_path = Path(entry.path).resolve(strict=True)
+        entry_path.relative_to(managed_root)
+        return entry_path, entry.is_dir(follow_symlinks=False)
+    except (OSError, ValueError):
+        return None
+
+
+def _append_listed_item(
+    listing: _DirectoryListing,
+    entry: "os.DirEntry[str]",
+    entry_path: Path,
+    is_directory: bool,
+) -> bool:
+    """Record one entry; False when the response or result budget says stop."""
+    item_type = "directory" if is_directory else "file"
+    display = managed_display_path(entry_path)
+    if not listing.budget.consume_response(f"{entry.name}\x00{item_type}\x00{display}"):
+        return False
+    listing.items.append({"name": entry.name, "type": item_type, "path": display})
+    if len(listing.items) >= _MAX_FILESYSTEM_RESULTS:
+        listing.budget.truncated = True
+        return False
+    return True
+
+
+def _list_directory_level(
+    listing: _DirectoryListing, directory: Path, current_depth: int
+) -> None:
+    """Append one directory's managed entries, queuing subdirectories to descend."""
+    for entry in _scandir_entries(directory):
+        if not listing.budget.consume_entry():
+            return
+        resolved = _resolve_listed_entry(entry, listing.managed_root)
+        if resolved is None:
             continue
+        entry_path, is_directory = resolved
+        if not _append_listed_item(listing, entry, entry_path, is_directory):
+            return
+        if listing.recursive and is_directory and current_depth + 1 < listing.depth:
+            listing.pending.append((entry_path, current_depth + 1))
+
+
+def _walk_listing(listing: _DirectoryListing, root: Path) -> None:
+    """Drive the listing's pending queue until the scan budget is spent."""
+    listing.pending.append((root, 0))
+    while listing.pending and not listing.budget.truncated:
+        directory, current_depth = listing.pending.pop()
+        _list_directory_level(listing, directory, current_depth)
+        if not listing.recursive:
+            break
+
+
+def _validate_search_pattern(pattern: str, max_length: int) -> None:
+    """Reject empty, over-long, or control-character search patterns."""
+    if (
+        not pattern
+        or len(pattern) > max_length
+        or any(character in pattern for character in ("\x00", "\n", "\r"))
+    ):
+        raise ValueError("Invalid search pattern")
+
+
+class _GrepLine(NamedTuple):
+    """Outcome of scanning one logical line of a candidate file."""
+
+    matched: bool
+    displayed: bytes
+    truncated: bool
+
+
+def _scan_grep_line(
+    handle: BinaryIO, first_fragment: bytes, encoded_pattern: bytes
+) -> _GrepLine:
+    """Scan one logical line, following continuation reads for over-long lines."""
+    displayed = first_fragment[:_MAX_GREP_LINE_BYTES]
+    combined_tail = b""
+    matched = False
+    fragment = first_fragment
+    line_truncated = len(first_fragment) > _MAX_GREP_LINE_BYTES
+    tail_length = len(encoded_pattern) - 1
+    while True:
+        searchable = combined_tail + fragment
+        match_offset = searchable.find(encoded_pattern)
+        if not matched and match_offset >= 0:
+            matched = True
+            snippet_start = max(0, match_offset - 256)
+            displayed = searchable[snippet_start : snippet_start + _MAX_GREP_LINE_BYTES]
+        combined_tail = searchable[-tail_length:] if tail_length else b""
+        if fragment.endswith(b"\n") or len(fragment) <= _MAX_GREP_LINE_BYTES:
+            break
+        line_truncated = True
+        fragment = handle.readline(_MAX_GREP_LINE_BYTES + 1)
+        if not fragment:
+            break
+    return _GrepLine(matched, displayed, line_truncated)
+
+
+def _grep_one_file(
+    handle: BinaryIO,
+    encoded_pattern: bytes,
+    display: str,
+    budget: "_FilesystemScanBudget",
+    matches: list[str],
+) -> None:
+    """Append `display:line:text` matches from one open file until it is exhausted."""
+    line_number = 0
+    while True:
+        first_fragment = handle.readline(_MAX_GREP_LINE_BYTES + 1)
+        if not first_fragment:
+            return
+        line_number += 1
+        scan = _scan_grep_line(handle, first_fragment, encoded_pattern)
+        if scan.truncated:
+            budget.truncated = True
+        if not scan.matched:
+            continue
+        line = scan.displayed.rstrip(b"\r\n").decode("utf-8", errors="replace")
+        match = f"{display}:{line_number}:{line}"
+        if not budget.consume_response(match):
+            return
+        matches.append(match)
+        if len(matches) >= _MAX_FILESYSTEM_RESULTS:
+            budget.truncated = True
+            return
+
+
+def _grep_candidate_size(
+    candidate: Path, budget: "_FilesystemScanBudget"
+) -> int | None:
+    """Return a scannable candidate's size, or None when it must be skipped."""
+    try:
+        size = candidate.stat().st_size
+    except OSError:
+        return None
+    if size > _MAX_MANAGED_FILE_BYTES:
+        budget.truncated = True
+        return None
+    return size
+
+
+def _open_grep_candidate(candidate: Path) -> tuple[str, BinaryIO] | None:
+    """Return (display path, open binary handle) or None when unreadable."""
+    try:
+        display = managed_display_path(candidate.resolve(strict=True))
+        return display, candidate.open("rb")
+    except (OSError, ValueError):
+        return None
+
+
+def _grep_budget_exhausted(budget: "_FilesystemScanBudget", matches: list[str]) -> bool:
+    """True when a truncated request has hit a hard limit and must stop scanning."""
+    if not budget.truncated:
+        return False
+    return (
+        len(matches) >= _MAX_FILESYSTEM_RESULTS
+        or budget.response_bytes >= _MAX_FILESYSTEM_RESPONSE_BYTES
+        or budget.scanned_bytes >= _MAX_FILESYSTEM_SCAN_BYTES
+        or time.monotonic() >= budget.deadline
+    )
+
+
+def _grep_candidates(
+    candidates: Iterable[Path],
+    encoded_pattern: bytes,
+    budget: "_FilesystemScanBudget",
+    matches: list[str],
+) -> None:
+    """Scan every candidate file, honouring the request-global scan budget."""
+    for candidate in candidates:
+        size = _grep_candidate_size(candidate, budget)
+        if size is None:
+            continue
+        if not budget.consume_scan_bytes(size):
+            break
+        opened = _open_grep_candidate(candidate)
+        if opened is None:
+            continue
+        display, handle = opened
+        with handle:
+            _grep_one_file(handle, encoded_pattern, display, budget, matches)
+        if _grep_budget_exhausted(budget, matches):
+            break
 
 
 class FileSystemManager:
@@ -1002,55 +1239,15 @@ class FileSystemManager:
             if not expanded_path.is_dir():
                 return {"success": False, "error": "Managed path is not a directory"}
 
-            items: list[dict[str, str]] = []
-            budget = _FilesystemScanBudget()
-            managed_root = managed_filesystem_root()
-            pending = [(expanded_path, 0)]
-            while pending and not budget.truncated:
-                directory, current_depth = pending.pop()
-                try:
-                    entries = os.scandir(directory)
-                except OSError:
-                    continue
-                with entries:
-                    for entry in entries:
-                        if not budget.consume_entry():
-                            break
-                        try:
-                            if entry.is_symlink():
-                                continue
-                            entry_path = Path(entry.path).resolve(strict=True)
-                            entry_path.relative_to(managed_root)
-                            is_directory = entry.is_dir(follow_symlinks=False)
-                        except (OSError, ValueError):
-                            continue
-                        item_type = "directory" if is_directory else "file"
-                        display = managed_display_path(entry_path)
-                        if not budget.consume_response(
-                            f"{entry.name}\x00{item_type}\x00{display}"
-                        ):
-                            break
-                        items.append(
-                            {
-                                "name": entry.name,
-                                "type": item_type,
-                                "path": display,
-                            }
-                        )
-                        if len(items) >= _MAX_FILESYSTEM_RESULTS:
-                            budget.truncated = True
-                            break
-                        if recursive and is_directory and current_depth + 1 < depth:
-                            pending.append((entry_path, current_depth + 1))
-                if not recursive:
-                    break
+            listing = _DirectoryListing(recursive, depth)
+            _walk_listing(listing, expanded_path)
             return {
                 "success": True,
                 "path": managed_display_path(expanded_path),
-                "items": items,
-                "total": len(items),
-                "truncated": budget.truncated,
-                "visited_entries": budget.visited_entries,
+                "items": listing.items,
+                "total": len(listing.items),
+                "truncated": listing.budget.truncated,
+                "visited_entries": listing.budget.visited_entries,
             }
         except (PermissionError, FileNotFoundError, ValueError):
             return {"success": False, "error": "Operation failed"}
@@ -1059,12 +1256,7 @@ class FileSystemManager:
 
     def search_files(self, path: str, pattern: str) -> dict:
         try:
-            if (
-                not pattern
-                or len(pattern) > 512
-                or any(character in pattern for character in ("\x00", "\n", "\r"))
-            ):
-                raise ValueError("Invalid search pattern")
+            _validate_search_pattern(pattern, 512)
             expanded_path = resolve_managed_path(path, must_exist=True)
             budget = _FilesystemScanBudget()
             matches: list[str] = []
@@ -1092,86 +1284,12 @@ class FileSystemManager:
 
     def grep_files(self, path: str, pattern: str, recursive: bool = False) -> dict:
         try:
-            if (
-                not pattern
-                or len(pattern) > 4_096
-                or any(character in pattern for character in ("\x00", "\n", "\r"))
-            ):
-                raise ValueError("Invalid search pattern")
+            _validate_search_pattern(pattern, 4_096)
             expanded_path = resolve_managed_path(path, must_exist=True)
             budget = _FilesystemScanBudget()
             candidates = _iter_managed_files(expanded_path, budget, recursive=recursive)
             matches: list[str] = []
-            encoded_pattern = pattern.encode("utf-8")
-            for candidate in candidates:
-                try:
-                    size = candidate.stat().st_size
-                except OSError:
-                    continue
-                if size > _MAX_MANAGED_FILE_BYTES:
-                    budget.truncated = True
-                    continue
-                if not budget.consume_scan_bytes(size):
-                    break
-                try:
-                    display = managed_display_path(candidate.resolve(strict=True))
-                    handle = candidate.open("rb")
-                except (OSError, ValueError):
-                    continue
-                with handle:
-                    line_number = 0
-                    while True:
-                        first_fragment = handle.readline(_MAX_GREP_LINE_BYTES + 1)
-                        if not first_fragment:
-                            break
-                        line_number += 1
-                        displayed = first_fragment[:_MAX_GREP_LINE_BYTES]
-                        combined_tail = b""
-                        matched = False
-                        fragment = first_fragment
-                        line_truncated = len(first_fragment) > _MAX_GREP_LINE_BYTES
-                        while True:
-                            searchable = combined_tail + fragment
-                            match_offset = searchable.find(encoded_pattern)
-                            if not matched and match_offset >= 0:
-                                matched = True
-                                snippet_start = max(0, match_offset - 256)
-                                displayed = searchable[
-                                    snippet_start : snippet_start + _MAX_GREP_LINE_BYTES
-                                ]
-                            tail_length = len(encoded_pattern) - 1
-                            combined_tail = (
-                                searchable[-tail_length:] if tail_length else b""
-                            )
-                            if (
-                                fragment.endswith(b"\n")
-                                or len(fragment) <= _MAX_GREP_LINE_BYTES
-                            ):
-                                break
-                            line_truncated = True
-                            fragment = handle.readline(_MAX_GREP_LINE_BYTES + 1)
-                            if not fragment:
-                                break
-                        if line_truncated:
-                            budget.truncated = True
-                        if matched:
-                            line = displayed.rstrip(b"\r\n").decode(
-                                "utf-8", errors="replace"
-                            )
-                            match = f"{display}:{line_number}:{line}"
-                            if not budget.consume_response(match):
-                                break
-                            matches.append(match)
-                            if len(matches) >= _MAX_FILESYSTEM_RESULTS:
-                                budget.truncated = True
-                                break
-                if budget.truncated and (
-                    len(matches) >= _MAX_FILESYSTEM_RESULTS
-                    or budget.response_bytes >= _MAX_FILESYSTEM_RESPONSE_BYTES
-                    or budget.scanned_bytes >= _MAX_FILESYSTEM_SCAN_BYTES
-                    or time.monotonic() >= budget.deadline
-                ):
-                    break
+            _grep_candidates(candidates, pattern.encode("utf-8"), budget, matches)
             return {
                 "success": True,
                 "matches": "\n".join(matches),
