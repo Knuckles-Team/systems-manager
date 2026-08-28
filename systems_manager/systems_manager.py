@@ -4089,8 +4089,8 @@ def detect_and_create_manager(silent: bool | None = False) -> SystemsManagerBase
         raise NotImplementedError(f"Unsupported OS: {sys_name}")
 
 
-def systems_manager():
-    print(f"systems_manager v{__version__}")
+def _systems_manager_parser() -> argparse.ArgumentParser:
+    """Build the systems-manager command-line parser."""
     parser = argparse.ArgumentParser(
         add_help=False, description="System Manager Utility"
     )
@@ -4148,76 +4148,74 @@ def systems_manager():
     )
 
     parser.add_argument("--help", action="store_true", help="Show usage")
+    return parser
 
+
+def _run_package_actions(manager, args: argparse.Namespace) -> None:
+    """Apply the package-lifecycle flags in their documented order."""
+    if args.update:
+        manager.update()
+    if args.install:
+        manager.install_applications(args.install.split(","))
+    if args.python:
+        manager.install_python_modules(args.python.split(","))
+    if args.clean:
+        manager.clean()
+    if args.optimize:
+        manager.optimize()
+
+
+def _run_repository_actions(manager, args: argparse.Namespace) -> None:
+    """Apply the repository and local-package flags."""
+    if args.add_repo:
+        parts = args.add_repo.split(":")
+        manager.add_repository(parts[0], parts[1] if len(parts) > 1 else None)
+    if args.install_local:
+        for candidate in args.install_local.split(","):
+            manager.install_local_package(candidate.strip())
+
+
+def _run_statistics_actions(manager, args: argparse.Namespace) -> None:
+    """Print the requested statistics reports."""
+    if args.os_stats:
+        print(json.dumps(manager.get_os_statistics(), indent=2))
+    if args.hw_stats:
+        print(json.dumps(manager.get_hardware_statistics(), indent=2))
+
+
+def _windows_features_available(manager, action: str) -> bool:
+    """True on a Windows manager; otherwise explain why the flag was ignored."""
+    if isinstance(manager, WindowsManager):
+        return True
+    print(f"Feature {action} is only available on Windows.")
+    return False
+
+
+def _run_feature_actions(manager, args: argparse.Namespace) -> None:
+    """Apply the Windows-only feature flags."""
+    if args.list_features and _windows_features_available(manager, "listing"):
+        print(json.dumps(manager.list_windows_features(), indent=2))
+    if args.enable_features and _windows_features_available(manager, "enabling"):
+        manager.enable_windows_features(args.enable_features.split(","))
+    if args.disable_features and _windows_features_available(manager, "disabling"):
+        manager.disable_windows_features(args.disable_features.split(","))
+
+
+def systems_manager():
+    print(f"systems_manager v{__version__}")
+    parser = _systems_manager_parser()
     args = parser.parse_args()
 
     if hasattr(args, "help") and args.help:
         parser.print_help()
         sys.exit(0)
 
-    apps = args.install.split(",") if args.install else []
-    python_modules = args.python.split(",") if args.python else []
-    enable_features_list = (
-        args.enable_features.split(",") if args.enable_features else []
-    )
-    disable_features_list = (
-        args.disable_features.split(",") if args.disable_features else []
-    )
-    install = bool(args.install)
-    update = args.update
-    clean = args.clean
-    optimize = args.optimize
-    install_python = bool(args.python)
-    os_stats = args.os_stats
-    hw_stats = args.hw_stats
-    silent = args.silent
-    list_features = args.list_features
-    enable_features = bool(args.enable_features)
-    disable_features = bool(args.disable_features)
-    add_repo = args.add_repo
-    install_local = args.install_local
+    manager = detect_and_create_manager(args.silent)
 
-    manager = detect_and_create_manager(silent)
-
-    if update:
-        manager.update()
-    if install:
-        manager.install_applications(apps)
-    if install_python:
-        manager.install_python_modules(python_modules)
-    if clean:
-        manager.clean()
-    if optimize:
-        manager.optimize()
-    if add_repo:
-        parts = add_repo.split(":")
-        url = parts[0]
-        name = parts[1] if len(parts) > 1 else None
-        manager.add_repository(url, name)
-    if install_local:
-        files = [f.strip() for f in install_local.split(",")]
-        for f in files:
-            manager.install_local_package(f)
-    if os_stats:
-        print(json.dumps(manager.get_os_statistics(), indent=2))
-    if hw_stats:
-        print(json.dumps(manager.get_hardware_statistics(), indent=2))
-    if list_features:
-        if isinstance(manager, WindowsManager):
-            features = manager.list_windows_features()
-            print(json.dumps(features, indent=2))
-        else:
-            print("Feature listing is only available on Windows.")
-    if enable_features:
-        if isinstance(manager, WindowsManager):
-            manager.enable_windows_features(enable_features_list)
-        else:
-            print("Feature enabling is only available on Windows.")
-    if disable_features:
-        if isinstance(manager, WindowsManager):
-            manager.disable_windows_features(disable_features_list)
-        else:
-            print("Feature disabling is only available on Windows.")
+    _run_package_actions(manager, args)
+    _run_repository_actions(manager, args)
+    _run_statistics_actions(manager, args)
+    _run_feature_actions(manager, args)
 
     print("Done!")
 
