@@ -159,8 +159,41 @@ def _validated_timeout_seconds(
     return max(1, min(value, _MAX_COMMAND_TIMEOUT_SECONDS))
 
 
-def _validated_command_argv(command: list[str] | tuple[str, ...]) -> list[str]:
-    """Validate a fixed argv vector and reject arbitrary executables."""
+_MANAGED_BASH_PROGRAMS = frozenset(
+    {
+        'source "$1"; nvm install "$2"',
+        'source "$1"; nvm use "$2"',
+    }
+)
+_WINDOWS_FEATURE_VERBS = frozenset(
+    {"Enable-WindowsOptionalFeature", "Disable-WindowsOptionalFeature"}
+)
+_FIXED_POWERSHELL_SCRIPTS = frozenset(
+    {
+        "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3",
+        "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Json -Depth 3",
+        "Get-LocalGroup | Select-Object Name | ConvertTo-Json -Depth 3",
+        "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action | ConvertTo-Json -Depth 3",
+        "Get-WindowsOptionalFeature -Online | ConvertTo-Json -Depth 3",
+        "Optimize-Volume -DriveLetter C",
+        r"Remove-Item -Path $env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_*\LocalState\DiagOutputDir\* -Recurse -Force -ErrorAction SilentlyContinue",
+    }
+)
+_MANAGED_SERVICE_NAME_PATTERN = r"[A-Za-z0-9_.@:-]{1,256}"
+_PERMITTED_POWERSHELL_PATTERNS = frozenset(
+    {
+        rf"Get-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}' \| Select-Object Name,Status,DisplayName,StartType \| ConvertTo-Json",
+        rf"Start-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}'",
+        rf"Stop-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}' -Force",
+        rf"Restart-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}' -Force",
+        rf"Set-Service -Name '{_MANAGED_SERVICE_NAME_PATTERN}' -StartupType (?:Automatic|Disabled)",
+        r"Get-EventLog -LogName System -Newest (?:[1-9]\d{0,2}|1000) \| Format-List \| Out-String",
+    }
+)
+
+
+def _validated_argv_strings(command: list[str] | tuple[str, ...]) -> list[str]:
+    """Validate argv shape plus the per-argument and total byte budgets."""
     if not isinstance(command, (list, tuple)) or not command:
         raise ValueError("A non-empty argument vector is required")
     if len(command) > _MAX_COMMAND_ARGS:
@@ -177,86 +210,90 @@ def _validated_command_argv(command: list[str] | tuple[str, ...]) -> list[str]:
         argv.append(argument)
     if total > _MAX_COMMAND_BYTES:
         raise ValueError("Managed command size limit exceeded")
+    return argv
 
+
+def _is_current_python(candidate: Path) -> bool:
+    """True when `candidate` resolves to the interpreter running this process."""
+    try:
+        return candidate.resolve(strict=True) == Path(sys.executable).resolve(
+            strict=True
+        )
+    except OSError:
+        return False
+
+
+def _validated_executable_name(argv: list[str]) -> str:
+    """Reject caller-supplied paths and executables outside the allowlist."""
     supplied_executable = Path(argv[0])
     executable = supplied_executable.name.casefold()
     python_executable = Path(sys.executable).name.casefold()
     if supplied_executable != Path(supplied_executable.name):
-        try:
-            is_current_python = supplied_executable.resolve(strict=True) == Path(
-                sys.executable
-            ).resolve(strict=True)
-        except OSError:
-            is_current_python = False
-        if not is_current_python:
+        if not _is_current_python(supplied_executable):
             raise PermissionError("Caller-supplied executable paths are not permitted")
     if executable not in _MANAGED_EXECUTABLES and executable != python_executable:
         if not re.fullmatch(r"python(?:\d+(?:\.\d+)*)?(?:\.exe)?", executable):
             raise PermissionError("Executable is outside the managed allowlist")
-    _validate_interpreter_policy(argv, executable)
+    return executable
+
+
+def _validated_command_argv(command: list[str] | tuple[str, ...]) -> list[str]:
+    """Validate a fixed argv vector and reject arbitrary executables."""
+    argv = _validated_argv_strings(command)
+    _validate_interpreter_policy(argv, _validated_executable_name(argv))
     return argv
+
+
+def _validate_bash_program(argv: list[str]) -> None:
+    """Only the two fixed nvm bootstrap programs may run under bash."""
+    if (
+        len(argv) != 6
+        or argv[1] != "-c"
+        or argv[2] not in _MANAGED_BASH_PROGRAMS
+        or argv[3] != "nvm"
+        or resolve_managed_path(argv[4], must_exist=True).name != "nvm.sh"
+    ):
+        raise PermissionError("Bash program is outside the managed allowlist")
+
+
+def _validate_python_program(argv: list[str]) -> None:
+    """Only `-m pip install ...` may run under a Python interpreter."""
+    if len(argv) < 5 or argv[1:3] != ["-m", "pip"] or argv[3] != "install":
+        raise PermissionError("Python program is outside the managed allowlist")
+
+
+def _is_managed_feature_command(argv: list[str]) -> bool:
+    """True for the two fixed Windows optional-feature invocations."""
+    if len(argv) != 6 or argv[1] not in _WINDOWS_FEATURE_VERBS:
+        return False
+    if argv[2] != "-Online" or argv[3] != "-FeatureName" or argv[5] != "-NoRestart":
+        return False
+    return bool(re.fullmatch(_MANAGED_SERVICE_NAME_PATTERN, argv[4]))
+
+
+def _validate_powershell_program(argv: list[str]) -> None:
+    """Only the fixed scripts and parameterised patterns may run under PowerShell."""
+    if _is_managed_feature_command(argv):
+        return
+    if argv[1:4] != ["-NoProfile", "-NonInteractive", "-Command"] or len(argv) != 5:
+        raise PermissionError("PowerShell program is outside the managed allowlist")
+    script = argv[4]
+    if script in _FIXED_POWERSHELL_SCRIPTS:
+        return
+    if not any(
+        re.fullmatch(pattern, script) for pattern in _PERMITTED_POWERSHELL_PATTERNS
+    ):
+        raise PermissionError("PowerShell program is outside the managed allowlist")
 
 
 def _validate_interpreter_policy(argv: list[str], executable: str) -> None:
     """Constrain interpreter-capable executables to fixed internal programs."""
     if executable == "bash":
-        if (
-            len(argv) != 6
-            or argv[1] != "-c"
-            or argv[2]
-            not in {
-                'source "$1"; nvm install "$2"',
-                'source "$1"; nvm use "$2"',
-            }
-            or argv[3] != "nvm"
-            or resolve_managed_path(argv[4], must_exist=True).name != "nvm.sh"
-        ):
-            raise PermissionError("Bash program is outside the managed allowlist")
-        return
-
-    if executable.startswith("python"):
-        if len(argv) < 5 or argv[1:3] != ["-m", "pip"] or argv[3] != "install":
-            raise PermissionError("Python program is outside the managed allowlist")
-        return
-
-    if executable not in {"powershell", "powershell.exe"}:
-        return
-    if len(argv) == 6 and argv[1] in {
-        "Enable-WindowsOptionalFeature",
-        "Disable-WindowsOptionalFeature",
-    }:
-        if (
-            argv[2] == "-Online"
-            and argv[3] == "-FeatureName"
-            and argv[5] == "-NoRestart"
-        ):
-            if re.fullmatch(r"[A-Za-z0-9_.@:-]{1,256}", argv[4]):
-                return
-    if argv[1:4] != ["-NoProfile", "-NonInteractive", "-Command"] or len(argv) != 5:
-        raise PermissionError("PowerShell program is outside the managed allowlist")
-    script = argv[4]
-    fixed_scripts = {
-        "Get-Service | Select-Object Name,Status,DisplayName | ConvertTo-Json -Depth 3",
-        "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Json -Depth 3",
-        "Get-LocalGroup | Select-Object Name | ConvertTo-Json -Depth 3",
-        "Get-NetFirewallRule | Select-Object Name,DisplayName,Enabled,Direction,Action | ConvertTo-Json -Depth 3",
-        "Get-WindowsOptionalFeature -Online | ConvertTo-Json -Depth 3",
-        "Optimize-Volume -DriveLetter C",
-        r"Remove-Item -Path $env:LOCALAPPDATA\Packages\Microsoft.DesktopAppInstaller_*\LocalState\DiagOutputDir\* -Recurse -Force -ErrorAction SilentlyContinue",
-    }
-    if script in fixed_scripts:
-        return
-    service = r"[A-Za-z0-9_.@:-]{1,256}"
-    permitted_patterns = {
-        rf"Get-Service -Name '{service}' \| Select-Object Name,Status,DisplayName,StartType \| ConvertTo-Json",
-        rf"Start-Service -Name '{service}'",
-        rf"Stop-Service -Name '{service}' -Force",
-        rf"Restart-Service -Name '{service}' -Force",
-        rf"Set-Service -Name '{service}' -StartupType (?:Automatic|Disabled)",
-        r"Get-EventLog -LogName System -Newest (?:[1-9]\d{0,2}|1000) \| Format-List \| Out-String",
-    }
-    if not any(re.fullmatch(pattern, script) for pattern in permitted_patterns):
-        raise PermissionError("PowerShell program is outside the managed allowlist")
+        _validate_bash_program(argv)
+    elif executable.startswith("python"):
+        _validate_python_program(argv)
+    elif executable in {"powershell", "powershell.exe"}:
+        _validate_powershell_program(argv)
 
 
 def _bounded_stream_reader(stream, output: bytearray, limit: int) -> None:
@@ -1003,6 +1040,63 @@ def _partition_crontab_lines(
         target = removed if _opaque_ref("cron", line.strip()) == pattern else kept
         target.append(line)
     return removed, kept
+
+
+_LOG_PRIORITIES = frozenset(
+    {"emerg", "alert", "crit", "err", "warning", "notice", "info", "debug"}
+)
+
+
+def _journalctl_command(
+    lines: int, unit: str | None, priority: str | None
+) -> list[str]:
+    """The journalctl argv for a bounded, optionally filtered log read."""
+    command = ["journalctl", "--no-pager", "-n", str(lines)]
+    if unit:
+        command.extend(["-u", unit])
+    if priority:
+        command.extend(["-p", priority])
+    return command
+
+
+def _powershell_json_records(result: dict) -> list[Any]:
+    """Bounded records from a PowerShell ConvertTo-Json payload."""
+    records = json.loads(result.get("stdout", "[]"))
+    if isinstance(records, dict):
+        records = [records]
+    return records[:_MAX_FILESYSTEM_RESULTS]
+
+
+def _parse_passwd_entries(stream: Iterable[str]) -> list[dict[str, Any]]:
+    """Opaque account records parsed from an /etc/passwd stream."""
+    users: list[dict[str, Any]] = []
+    for line in stream:
+        parts = line.strip().split(":")
+        if len(parts) >= 7:
+            users.append(
+                {
+                    "user_ref": _opaque_ref("user", parts[0]),
+                    "uid": int(parts[2]),
+                    "gid": int(parts[3]),
+                }
+            )
+    return users
+
+
+def _parse_group_entries(stream: Iterable[str]) -> list[dict[str, Any]]:
+    """Opaque group records parsed from an /etc/group stream."""
+    groups: list[dict[str, Any]] = []
+    for line in stream:
+        parts = line.strip().split(":")
+        if len(parts) >= 4:
+            groups.append(
+                {
+                    "group_ref": _opaque_ref("group", parts[0]),
+                    "gid": int(parts[2]),
+                    "member_count": len(parts[3].split(",")) if parts[3] else 0,
+                }
+            )
+    return groups
 
 
 def _parse_package_metadata(output: str) -> dict[str, str]:
@@ -2389,110 +2483,78 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _windows_local_users(self) -> dict:
+        result = self.run_command(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Json -Depth 3",
+            ],
+            capture_output=True,
+        )
+        if not result["success"]:
+            return {"success": False, "error": "User inventory failed"}
+        try:
+            records = _powershell_json_records(result)
+        except json.JSONDecodeError:
+            return {"success": False, "error": "Failed to parse user list"}
+        users = [
+            {
+                "user_ref": _opaque_ref("user", str(user.get("Name", "unknown"))),
+                "enabled": bool(user.get("Enabled", False)),
+            }
+            for user in records
+        ]
+        return {"success": True, "users": users, "total": len(users)}
+
     def list_users(self) -> dict:
         try:
-            if platform.system() == "Linux":
-                users = []
-                with open("/etc/passwd") as f:
-                    for line in f:
-                        parts = line.strip().split(":")
-                        if len(parts) >= 7:
-                            users.append(
-                                {
-                                    "user_ref": _opaque_ref("user", parts[0]),
-                                    "uid": int(parts[2]),
-                                    "gid": int(parts[3]),
-                                }
-                            )
+            system = platform.system()
+            if system == "Linux":
+                with open("/etc/passwd") as handle:
+                    users = _parse_passwd_entries(handle)
                 return {"success": True, "users": users, "total": len(users)}
-            elif platform.system() == "Windows":
-                result = self.run_command(
-                    [
-                        "powershell.exe",
-                        "-NoProfile",
-                        "-NonInteractive",
-                        "-Command",
-                        "Get-LocalUser | Select-Object Name,Enabled | ConvertTo-Json -Depth 3",
-                    ],
-                    capture_output=True,
-                )
-                if result["success"]:
-                    try:
-                        users = json.loads(result.get("stdout", "[]"))
-                        if isinstance(users, dict):
-                            users = [users]
-                        redacted_users = [
-                            {
-                                "user_ref": _opaque_ref(
-                                    "user", str(user.get("Name", "unknown"))
-                                ),
-                                "enabled": bool(user.get("Enabled", False)),
-                            }
-                            for user in users[:_MAX_FILESYSTEM_RESULTS]
-                        ]
-                        return {
-                            "success": True,
-                            "users": redacted_users,
-                            "total": len(redacted_users),
-                        }
-                    except json.JSONDecodeError:
-                        return {"success": False, "error": "Failed to parse user list"}
-                return {"success": False, "error": "User inventory failed"}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            if system == "Windows":
+                return self._windows_local_users()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    def _windows_local_groups(self) -> dict:
+        result = self.run_command(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Get-LocalGroup | Select-Object Name | ConvertTo-Json -Depth 3",
+            ],
+            capture_output=True,
+        )
+        if not result["success"]:
+            return {"success": False, "error": "Group inventory failed"}
+        try:
+            records = _powershell_json_records(result)
+        except json.JSONDecodeError:
+            return {"success": False, "error": "Failed to parse group list"}
+        groups = [
+            {"group_ref": _opaque_ref("group", str(group.get("Name", "unknown")))}
+            for group in records
+        ]
+        return {"success": True, "groups": groups, "total": len(groups)}
+
     def list_groups(self) -> dict:
         try:
-            if platform.system() == "Linux":
-                groups = []
-                with open("/etc/group") as f:
-                    for line in f:
-                        parts = line.strip().split(":")
-                        if len(parts) >= 4:
-                            groups.append(
-                                {
-                                    "group_ref": _opaque_ref("group", parts[0]),
-                                    "gid": int(parts[2]),
-                                    "member_count": (
-                                        len(parts[3].split(",")) if parts[3] else 0
-                                    ),
-                                }
-                            )
+            system = platform.system()
+            if system == "Linux":
+                with open("/etc/group") as handle:
+                    groups = _parse_group_entries(handle)
                 return {"success": True, "groups": groups, "total": len(groups)}
-            elif platform.system() == "Windows":
-                result = self.run_command(
-                    [
-                        "powershell.exe",
-                        "-NoProfile",
-                        "-NonInteractive",
-                        "-Command",
-                        "Get-LocalGroup | Select-Object Name | ConvertTo-Json -Depth 3",
-                    ],
-                    capture_output=True,
-                )
-                if result["success"]:
-                    try:
-                        groups = json.loads(result.get("stdout", "[]"))
-                        if isinstance(groups, dict):
-                            groups = [groups]
-                        redacted_groups = [
-                            {
-                                "group_ref": _opaque_ref(
-                                    "group", str(group.get("Name", "unknown"))
-                                )
-                            }
-                            for group in groups[:_MAX_FILESYSTEM_RESULTS]
-                        ]
-                        return {
-                            "success": True,
-                            "groups": redacted_groups,
-                            "total": len(redacted_groups),
-                        }
-                    except json.JSONDecodeError:
-                        return {"success": False, "error": "Failed to parse group list"}
-                return {"success": False, "error": "Group inventory failed"}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            if system == "Windows":
+                return self._windows_local_groups()
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
@@ -2503,28 +2565,15 @@ class SystemsManagerBase(ABC):
             lines = max(1, min(int(lines), 1_000))
             if unit:
                 unit = self._validated_service_name(unit)
-            if priority and priority not in {
-                "emerg",
-                "alert",
-                "crit",
-                "err",
-                "warning",
-                "notice",
-                "info",
-                "debug",
-            }:
+            if priority and priority not in _LOG_PRIORITIES:
                 raise ValueError("Invalid log priority")
-            if platform.system() == "Linux":
-                cmd = ["journalctl", "--no-pager", "-n", str(lines)]
-                if unit:
-                    cmd.extend(["-u", unit])
-                if priority:
-                    cmd.extend(["-p", priority])
-                result = self.run_command(cmd, capture_output=True)
-                logs = result.get("stdout", "") if result["success"] else ""
-                return {"success": result["success"], "logs": logs}
-            elif platform.system() == "Windows":
-                result = self.run_command(
+            system = platform.system()
+            if system == "Linux":
+                return self._log_result(
+                    _journalctl_command(lines, unit, priority),
+                )
+            if system == "Windows":
+                return self._log_result(
                     [
                         "powershell.exe",
                         "-NoProfile",
@@ -2532,13 +2581,16 @@ class SystemsManagerBase(ABC):
                         "-Command",
                         f"Get-EventLog -LogName System -Newest {lines} | Format-List | Out-String",
                     ],
-                    capture_output=True,
                 )
-                logs = result.get("stdout", "") if result["success"] else ""
-                return {"success": result["success"], "logs": logs}
-            return {"success": False, "error": f"Unsupported OS: {platform.system()}"}
+            return {"success": False, "error": f"Unsupported OS: {system}"}
         except Exception:
             return {"success": False, "error": "Operation failed"}
+
+    def _log_result(self, command: list[str]) -> dict:
+        """Run a log-reading command and return its stdout only on success."""
+        result = self.run_command(command, capture_output=True)
+        logs = result.get("stdout", "") if result["success"] else ""
+        return {"success": result["success"], "logs": logs}
 
     def tail_log_file(self, path: str, lines: int = 50) -> dict:
         try:
