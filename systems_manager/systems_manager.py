@@ -1985,8 +1985,12 @@ class FileSystemManager:
         if len(payload.encode("utf-8")) > _MAX_MANAGED_FILE_BYTES:
             raise ValueError("Managed file size limit exceeded")
         expanded_path.parent.mkdir(parents=True, exist_ok=True)
-        # Re-resolve after creating parents to catch a raced symlink.
+        # Re-resolve after creating parents to catch a raced symlink -- and,
+        # like `atomic_write_managed_text`, actually check the re-resolved
+        # result (BUG-CX-082): the comment alone caught nothing.
         target = resolve_managed_path(str(expanded_path))
+        if target.is_symlink():
+            raise PermissionError("Symbolic-link file operations are not permitted")
         if action == "create":
             _create_exclusive_managed_file(target, payload)
         else:

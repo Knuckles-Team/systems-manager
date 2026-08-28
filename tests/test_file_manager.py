@@ -108,3 +108,78 @@ def test_file_system_manager_manage_file(file_manager, temp_home):
         "success": False,
         "error": "Operation failed",
     }
+
+
+def test_write_managed_file_rejects_raced_symlink(tmp_path, monkeypatch):
+    """BUG-CX-082: `_write_managed_file` re-resolves the target after
+    creating parent directories (the comment says "to catch a raced
+    symlink") but never actually checked the re-resolved result -- unlike
+    the near-identical `atomic_write_managed_text`. Simulate the race with
+    a mock (a real concurrent symlink swap can't be produced deterministically
+    in-process): the re-resolve call returns a stand-in for "the path a
+    concurrent attacker just replaced with a symlink". `_write_managed_file`
+    must refuse before ever reaching a write primitive."""
+    import systems_manager.systems_manager as sm
+
+    target = tmp_path / "target.txt"
+
+    class _RacedSymlink:
+        """Stands in for what `resolve_managed_path` would return if the
+        path had just been swapped for a symlink."""
+
+        def is_symlink(self) -> bool:
+            return True
+
+    monkeypatch.setattr(sm, "resolve_managed_path", lambda *a, **k: _RacedSymlink())
+
+    def _must_not_be_called(*_a, **_k):
+        raise AssertionError(
+            "a raced symlink must never reach a write primitive unchecked"
+        )
+
+    monkeypatch.setattr(sm, "_create_exclusive_managed_file", _must_not_be_called)
+    monkeypatch.setattr(sm, "_replace_managed_file", _must_not_be_called)
+
+    with pytest.raises(PermissionError, match="Symbolic-link"):
+        sm.FileSystemManager._write_managed_file("update", target, "malicious")
+
+
+def test_replace_managed_file_refuses_an_actual_symlink(tmp_path):
+    """`_replace_managed_file` -- the "update" write primitive -- already
+    re-checks `target.is_symlink()` immediately before `os.replace()`,
+    independent of `_write_managed_file`'s own (previously missing) guard.
+    This is why the BUG-CX-082 gap was hardening rather than an
+    independently-exploitable write-through-symlink hole for "update": a
+    real symlink at the target is refused here even with no caller-side
+    check at all, and POSIX `rename()` never dereferences the destination
+    name in the first place, so even a same-instant swap can only clobber
+    the symlink, never write through it."""
+    from systems_manager.systems_manager import _replace_managed_file
+
+    victim = tmp_path / "victim.txt"
+    victim.write_text("do-not-touch", encoding="utf-8")
+    target = tmp_path / "target.txt"
+    target.symlink_to(victim)
+
+    with pytest.raises(PermissionError, match="Symbolic-link"):
+        _replace_managed_file(target, "attacker payload")
+
+    assert victim.read_text(encoding="utf-8") == "do-not-touch"
+
+
+def test_create_exclusive_managed_file_refuses_existing_symlink(tmp_path):
+    """The "create" action's write primitive is O_CREAT|O_EXCL|O_NOFOLLOW --
+    already refuses a symlink (or anything else) sitting at the target,
+    independent of `_write_managed_file`'s own guard. Confirms the other
+    half of the BUG-CX-082 "not independently exploitable" finding."""
+    from systems_manager.systems_manager import _create_exclusive_managed_file
+
+    victim = tmp_path / "victim.txt"
+    victim.write_text("do-not-touch", encoding="utf-8")
+    target = tmp_path / "target.txt"
+    target.symlink_to(victim)
+
+    with pytest.raises(OSError):
+        _create_exclusive_managed_file(target, "attacker payload")
+
+    assert victim.read_text(encoding="utf-8") == "do-not-touch"
