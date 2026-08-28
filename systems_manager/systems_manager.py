@@ -488,8 +488,18 @@ def _elevate_argv(argv: list[str]) -> list[str]:
 def _managed_executable_name(
     argv: list[str], command: list[str] | tuple[str, ...], elevated: bool
 ) -> str:
-    """Name of the executable actually being run, seeing through a sudo prefix."""
-    if elevated and argv[0] == "sudo":
+    """Name of the executable actually being run, seeing through a sudo prefix.
+
+    BUG-CX-081: this used to gate on ``argv[0] == "sudo"`` in addition to
+    ``elevated``, but `_elevate_argv` always puts
+    `_resolve_trusted_executable("sudo")` -- an ABSOLUTE resolved path, e.g.
+    ``/usr/bin/sudo`` -- at argv[0], never the bare string "sudo". That
+    condition could never match, so an elevated run's audit-log line always
+    named sudo's own basename instead of the wrapped executable. The caller
+    already tells us definitively whether elevation was applied via
+    ``elevated``; no argv[0] sniffing is needed at all.
+    """
+    if elevated:
         return Path(argv[-len(command)]).name
     return Path(argv[0]).name
 
