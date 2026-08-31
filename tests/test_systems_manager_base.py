@@ -1365,6 +1365,4 @@ class TestManagedExecutableName:
         argv = ["/usr/bin/systemctl", "status", "foo"]
         command = ["systemctl", "status", "foo"]
 
-        assert (
-            _managed_executable_name(argv, command, elevated=False) == "systemctl"
-        )
+        assert _managed_executable_name(argv, command, elevated=False) == "systemctl"

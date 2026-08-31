@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from fastmcp import FastMCP
+from fastmcp.resources import FileResource
 
 from systems_manager import mcp_server as server
 
@@ -154,15 +155,28 @@ def test_blocking_limiter_does_not_leak_across_event_loops(monkeypatch):
     assert asyncio.run(exercise()) == list(range(6))
 
 
-def test_startup_invariant_rejects_unclassified_tool():
+def test_startup_invariant_ignores_file_resources_but_rejects_unclassified_tool():
     mcp = FastMCP("policy-test")
+    prompts_dir = Path(server.__file__).parent / "prompts"
+    for name in ("main_agent", "infrastructure_specialist"):
+        mcp.add_resource(
+            FileResource(
+                uri=f"prompt://systems-manager/{name}",
+                path=prompts_dir / f"{name}.json",
+                name=name,
+                mime_type="application/json",
+            )
+        )
 
     @mcp.tool()
     def unclassified_tool() -> str:
         return "unsafe"
 
-    with pytest.raises(RuntimeError, match="Unclassified MCP tools"):
+    with pytest.raises(RuntimeError, match="Unclassified MCP tools") as exc_info:
         server._assert_registered_tools_are_classified(mcp)
+    assert "unclassified_tool" in str(exc_info.value)
+    assert "main_agent" not in str(exc_info.value)
+    assert "infrastructure_specialist" not in str(exc_info.value)
 
 
 def test_registered_policy_is_complete():

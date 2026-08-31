@@ -130,7 +130,7 @@ def test_write_managed_file_rejects_raced_symlink(tmp_path, monkeypatch):
         def is_symlink(self) -> bool:
             return True
 
-    monkeypatch.setattr(sm, "resolve_managed_path", lambda *a, **k: _RacedSymlink())
+    monkeypatch.setattr(sm, "resolve_managed_path", lambda *a, **_k: _RacedSymlink())
 
     def _must_not_be_called(*_a, **_k):
         raise AssertionError(

@@ -192,6 +192,10 @@ Agent Utilities contract.
 | `SYSTEMS_MANAGER_NODE_REF` | — | Runtime node alias; only a keyed digest persists |
 | `SYSTEMS_MANAGER_NODE_REFS` | — | Runtime aliases for governed derivation |
 | `SYSTEMS_MANAGER_NOTIFY_URL` | — | Optional credential-free HTTPS notification target |
+| `SYSTEMS_MANAGER_NOTIFY_TLS_PROFILE` | — | Optional inline mandatory-verification notification TLS profile |
+| `SYSTEMS_MANAGER_NOTIFY_TLS_PROFILE_REF` | — | Runtime reference to the notification TLS profile |
+| `SYSTEMS_MANAGER_MCP_IMAGE_DIGEST` | — | Required immutable MCP image digest |
+| `SYSTEMS_MANAGER_AGENT_IMAGE_DIGEST` | — | Required immutable agent image digest |
 | `SYSTEMS_MANAGER_REPOSITORY_ALLOWLIST_JSON` | `[]` | Approved credential-free repositories |
 | `SYSTEMS_MANAGER_LOCAL_PACKAGE_SHA256_MAP` | `{}` | Approved package paths and digests |
 | `SYSTEMS_MANAGER_COMMAND_TIMEOUT_SECONDS` | `120` | Default command timeout |
@@ -246,7 +250,7 @@ Agent Utilities contract.
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_47 package + 19 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_51 package + 19 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 ## Development and release gates
