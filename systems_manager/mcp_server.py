@@ -486,8 +486,8 @@ def _assert_registered_tools_are_classified(mcp: FastMCP) -> None:
         return
     registered = {
         str(getattr(component, "name", "") or "")
-        for component in components.values()
-        if getattr(component, "name", None)
+        for key, component in components.items()
+        if str(key).startswith("tool:") and getattr(component, "name", None)
     }
     unclassified = registered - _ALL_CLASSIFIED_TOOLS
     if unclassified:
