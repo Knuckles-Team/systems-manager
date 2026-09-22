@@ -775,7 +775,15 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
 
     @mcp.tool(description="Operations for managing system services")
     async def sm_service_operations(
-        action: str = Field(
+        action: Literal[
+            "disable_service",
+            "enable_service",
+            "get_service_status",
+            "list_services",
+            "restart_service",
+            "start_service",
+            "stop_service",
+        ] = Field(
             ...,
             description="Action to perform. Must be one of: "
             + ", ".join(f"'{a}'" for a in SERVICE_ACTIONS),

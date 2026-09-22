@@ -173,7 +173,7 @@ sync:
   updated_field: null
   pagination: null
   doc_type: system-service
-  tool_schema_sha256: d2b92e0e421b1a727c42ec0eabc99415f3f27f455073e1e2eba96ac6bcde15ac
+  tool_schema_sha256: d8a6d327be99e46f823a2201367e15a00bd217abd9dcf26760bf78f12e1d7c81
   raw:
     server: systems-manager-mcp
     tool: sm_service_operations
