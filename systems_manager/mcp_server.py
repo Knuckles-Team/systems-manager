@@ -773,7 +773,18 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for managing system services")
+    @mcp.tool(
+        description="Operations for managing system services",
+        annotations={
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+        meta={
+            "eg.annotations": {"modalities_in": ["text"], "modalities_out": ["text"]}
+        },
+    )
     async def sm_service_operations(
         action: Literal[
             "disable_service",
