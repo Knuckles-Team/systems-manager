@@ -10,7 +10,7 @@ import weakref
 from collections.abc import Callable
 from typing import Any, Literal, TypeVar, cast
 
-from agent_utilities.base_utilities import to_boolean
+from agent_connector_sdk.utilities import to_boolean
 from fastmcp import Context, FastMCP
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.utilities.logging import get_logger
@@ -33,13 +33,13 @@ warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 # Filter AuthlibDeprecationWarning
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="authlib.*")
 
-from agent_utilities.core.config import load_config, setting
-from agent_utilities.mcp.action_dispatch import resolve_action
-from agent_utilities.mcp.concurrency import run_blocking as _agent_run_blocking
-from agent_utilities.mcp.context_helpers import ctx_log
+from agent_connector_sdk.config import load_config, setting
+from agent_connector_sdk.mcp.action_dispatch import resolve_action
+from agent_connector_sdk.mcp.concurrency import run_blocking as _agent_run_blocking
+from agent_connector_sdk.mcp.context import ctx_log
+from agent_connector_sdk.mcp.server import create_mcp_server
 from agent_utilities.mcp.server_factory import (
-    create_mcp_server,
-    mcp_network_run_kwargs,
+    mcp_network_run_kwargs,  # SDK-GAPS.md: no SDK equivalent
 )
 from agent_utilities.mcp.verbose_tools import register_tool_surface
 from agent_utilities.security.request_identity import apply_served_security_profile

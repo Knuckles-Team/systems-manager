@@ -18,9 +18,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from agent_utilities.core.config import setting
-from agent_utilities.mcp.action_dispatch import resolve_action
-from agent_utilities.mcp.context_helpers import ctx_confirm_destructive
+from agent_connector_sdk.config import setting
+from agent_connector_sdk.mcp.action_dispatch import resolve_action
+from agent_connector_sdk.mcp.context import ctx_confirm_destructive
 from pydantic import Field
 
 logger = logging.getLogger(__name__)

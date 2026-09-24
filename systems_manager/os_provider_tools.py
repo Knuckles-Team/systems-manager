@@ -1,4 +1,4 @@
-from agent_utilities.mcp.context_helpers import ctx_confirm_destructive, ctx_log
+from agent_connector_sdk.mcp.context import ctx_confirm_destructive, ctx_log
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field

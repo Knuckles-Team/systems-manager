@@ -17,7 +17,7 @@ import logging
 import socket
 from typing import Any
 
-from agent_utilities.core.config import setting
+from agent_connector_sdk.config import setting
 
 logger = logging.getLogger("systems_manager.kg")
 
