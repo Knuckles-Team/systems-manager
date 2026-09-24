@@ -26,9 +26,12 @@ def _enabled_test_policy(monkeypatch):
     async def inline_run_blocking(function, *args, **kwargs):
         return function(*args, **kwargs)
 
+    async def noop_ctx_log(*_args, **_kwargs):
+        return None
+
     monkeypatch.setattr("systems_manager.mcp_server._mutation_approved", approved)
     monkeypatch.setattr("systems_manager.mcp_server.run_blocking", inline_run_blocking)
-    monkeypatch.setattr("systems_manager.mcp_server.ctx_log", lambda *_args: None)
+    monkeypatch.setattr("systems_manager.mcp_server.ctx_log", noop_ctx_log)
 
 
 def parse_mcp_result(res):

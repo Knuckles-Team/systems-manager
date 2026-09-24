@@ -37,13 +37,13 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
-        ctx_log(ctx, logger, "debug", f"Fetching process details for PID: {pid}")
+        await ctx_log(ctx, f"Fetching process details for PID: {pid}", logger=logger, level="debug")
         try:
             provider = get_os_provider()
             processes = provider.get_process_details(pid)
             return {"success": True, "processes": processes}
         except Exception:
-            ctx_log(ctx, logger, "error", "Process discovery failed")
+            await ctx_log(ctx, "Process discovery failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -64,13 +64,13 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
-        ctx_log(ctx, logger, "debug", "Fetching network connections")
+        await ctx_log(ctx, "Fetching network connections", logger=logger, level="debug")
         try:
             provider = get_os_provider()
             connections = provider.get_network_connections()
             return {"success": True, "connections": connections}
         except Exception:
-            ctx_log(ctx, logger, "error", "Network discovery failed")
+            await ctx_log(ctx, "Network discovery failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -91,13 +91,13 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
-        ctx_log(ctx, logger, "debug", "Capturing system snapshot")
+        await ctx_log(ctx, "Capturing system snapshot", logger=logger, level="debug")
         try:
             provider = get_os_provider()
             snapshot = provider.capture_system_snapshot()
             return {"success": True, "snapshot": snapshot}
         except Exception:
-            ctx_log(ctx, logger, "error", "Snapshot capture failed")
+            await ctx_log(ctx, "Snapshot capture failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -118,13 +118,13 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.package-service-mutation: Package & Service Mutation
         """
-        ctx_log(ctx, logger, "debug", "Listing services")
+        await ctx_log(ctx, "Listing services", logger=logger, level="debug")
         try:
             provider = get_os_provider()
             services = provider.list_services()
             return {"success": True, "services": services}
         except Exception:
-            ctx_log(ctx, logger, "error", "Service discovery failed")
+            await ctx_log(ctx, "Service discovery failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -149,7 +149,7 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.package-service-mutation: Package & Service Mutation
         """
-        ctx_log(ctx, logger, "debug", f"Managing service: {service_name} ({action})")
+        await ctx_log(ctx, f"Managing service: {service_name} ({action})", logger=logger, level="debug")
 
         if not await ctx_confirm_destructive(
             ctx, f"{action.upper()} the service: {service_name}"
@@ -161,7 +161,7 @@ def register_os_provider_tools(mcp: FastMCP):
             result = provider.manage_service(service_name, action)
             return {"success": True, "result": result}
         except Exception:
-            ctx_log(ctx, logger, "error", "Service operation failed")
+            await ctx_log(ctx, "Service operation failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -182,13 +182,13 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
-        ctx_log(ctx, logger, "debug", "Listing kernel modules")
+        await ctx_log(ctx, "Listing kernel modules", logger=logger, level="debug")
         try:
             provider = get_os_provider()
             modules = provider.list_kernel_modules()
             return {"success": True, "modules": modules}
         except Exception:
-            ctx_log(ctx, logger, "error", "Kernel module discovery failed")
+            await ctx_log(ctx, "Kernel module discovery failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -210,13 +210,13 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
-        ctx_log(ctx, logger, "debug", f"Querying system logs (limit: {limit})")
+        await ctx_log(ctx, f"Querying system logs (limit: {limit})", logger=logger, level="debug")
         try:
             provider = get_os_provider()
             logs = provider.query_system_logs(limit)
             return {"success": True, "logs": logs}
         except Exception:
-            ctx_log(ctx, logger, "error", "System log query failed")
+            await ctx_log(ctx, "System log query failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -234,7 +234,7 @@ def register_os_provider_tools(mcp: FastMCP):
         ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """Start a kernel-level event trace (ETW on Windows, or strace on Linux)."""
-        ctx_log(ctx, logger, "debug", f"Starting system trace: {session_name}")
+        await ctx_log(ctx, f"Starting system trace: {session_name}", logger=logger, level="debug")
 
         if not await ctx_confirm_destructive(
             ctx, f"START tracing session: {session_name}"
@@ -246,7 +246,7 @@ def register_os_provider_tools(mcp: FastMCP):
             result = provider.start_system_trace(session_name)
             return {"success": True, "result": result}
         except Exception:
-            ctx_log(ctx, logger, "error", "Trace start failed")
+            await ctx_log(ctx, "Trace start failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -264,7 +264,7 @@ def register_os_provider_tools(mcp: FastMCP):
         ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """Stop a kernel-level event trace."""
-        ctx_log(ctx, logger, "debug", f"Stopping system trace: {session_name}")
+        await ctx_log(ctx, f"Stopping system trace: {session_name}", logger=logger, level="debug")
         if not await ctx_confirm_destructive(
             ctx, f"STOP tracing session: {session_name}"
         ):
@@ -274,5 +274,5 @@ def register_os_provider_tools(mcp: FastMCP):
             result = provider.stop_system_trace(session_name)
             return {"success": True, "result": result}
         except Exception:
-            ctx_log(ctx, logger, "error", "Trace stop failed")
+            await ctx_log(ctx, "Trace stop failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}

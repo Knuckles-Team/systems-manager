@@ -19,14 +19,12 @@ text = "MIT"
 
 [project.optional-dependencies]
 mcp = [ "agent-utilities[mcp]>=2.0.0,<3.0.0",]
-agent = [ "agent-utilities[agent-runtime,logfire]>=2.0.0,<3.0.0",]
-all = [ "agent-utilities[mcp,agent-runtime,logfire]>=2.0.0,<3.0.0",]
+all = [ "agent-utilities[mcp]>=2.0.0,<3.0.0",]
 test = [ "pytest>=9.1.1", "pytest-asyncio>=1.4.0",]
 
 [project.scripts]
 systems-manager = "systems_manager.systems_manager:main"
 systems-manager-mcp = "systems_manager.mcp_server:mcp_server"
-systems-manager-agent = "systems_manager.agent_server:agent_server"
 systems-manager-helper = "systems_manager.sudo_helper:main"
 systems-manager-health = "systems_manager.os_health:main_sample"
 systems-manager-health-derive = "systems_manager.os_health:main_derive"

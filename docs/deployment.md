@@ -44,42 +44,24 @@ service identity through the client boundary.
 
 ## Containers
 
-The repository ships two hardened Compose definitions:
+The repository ships a hardened Compose definition, `docker/mcp.compose.yml`, for
+the MCP server.
 
-- `docker/mcp.compose.yml` for the MCP server;
-- `docker/agent.compose.yml` for an agent plus MCP sidecar.
-
-Both require operator-selected image variables, bind published ports to loopback by
-default, run as UID/GID 10001, drop all Linux capabilities, enable
-`no-new-privileges`, use read-only filesystems, bound memory/CPU/PIDs, and use a
+It requires operator-selected image variables, binds published ports to loopback by
+default, runs as UID/GID 10001, drops all Linux capabilities, enables
+`no-new-privileges`, uses a read-only filesystem, bounds memory/CPU/PIDs, and uses a
 bounded `tmpfs`. Network authentication and TLS boundary inputs are required.
 
-Build the two image targets with explicit registry tags:
+Build the image with an explicit registry tag:
 
 ```bash
-docker build --target mcp -t "${SYSTEMS_MANAGER_MCP_IMAGE}" -f docker/Dockerfile .
-docker build --target agent -t "${SYSTEMS_MANAGER_AGENT_IMAGE}" -f docker/Dockerfile .
+docker build -t "${SYSTEMS_MANAGER_MCP_IMAGE}" -f docker/Dockerfile .
 ```
 
 The Dockerfile pins base and uv images by digest and installs into a multi-stage,
 non-root runtime. Deployment pipelines should additionally sign the resulting image,
 produce an SBOM/provenance attestation, scan it, and enforce the approved digest at
 admission.
-
-## Agent server
-
-A non-loopback agent listener requires all of:
-
-- `SYSTEMS_MANAGER_ALLOW_REMOTE_AGENT_SERVER=true`;
-- direct TLS or an explicitly trusted TLS proxy boundary;
-- JWT authentication through `AUTH_JWT_JWKS_URI`, `AUTH_JWT_ISSUER`, and
-  `AUTH_JWT_AUDIENCE`;
-- debug mode disabled.
-
-Remote MCP children require an outbound service identity. Model, MCP, and OTLP
-endpoints must be credential-free HTTPS or loopback HTTP. Certificate verification
-is mandatory; private trust is selected from the AgentConfig TLS-profile catalog,
-not a source-code switch.
 
 ## Host permissions
 

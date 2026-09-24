@@ -75,11 +75,9 @@ python -m systems_manager.systems_manager
 python -m systems_manager.mcp_server
 
 # systems-manager Agent
-python -m systems_manager.agent_server
 
 ## Project Structure Quick Reference
 - MCP Entry Point → `mcp_server.py`
-- Agent Entry Point → `agent_server.py`
 - Core Systems Manager → `systems_manager.py`
 - Source Code → `systems_manager/`
 - Agent Data → `agent_data/`
@@ -87,7 +85,7 @@ python -m systems_manager.agent_server
 
 ### File Tree
 ```text
-├── .bumpversion.cfg\n├── .dockerignore\n├── .env\n├── .gitattributes\n├── .github\n│   └── workflows\n│       └── pipeline.yml\n├── .gitignore\n├── .pre-commit-config.yaml\n├── AGENTS.md\n├── Dockerfile\n├── LICENSE\n├── MANIFEST.in\n├── README.md\n├── compose.yml\n├── debug.Dockerfile\n├── mcp.compose.yml\n├── pyproject.toml\n├── pytest.ini\n├── requirements.txt\n├── scripts\n│   └── validate_a2a_agent.py\n├── systems_manager\n│   ├── __init__.py\n│   ├── __main__.py\n│   ├── agent_server.py\n│   ├── mcp_server.py\n│   └── systems_manager.py\n├── test_ag_ui.py\n└── tests\n    ├── health_check2.py\n    ├── test_ag_ui.py\n    ├── test_fastmcp_server.py\n    ├── test_fastmcp_error.py\n    └── test_get_system_logs.py
+├── .bumpversion.cfg\n├── .dockerignore\n├── .env\n├── .gitattributes\n├── .github\n│   └── workflows\n│       └── pipeline.yml\n├── .gitignore\n├── .pre-commit-config.yaml\n├── AGENTS.md\n├── Dockerfile\n├── LICENSE\n├── MANIFEST.in\n├── README.md\n├── compose.yml\n├── debug.Dockerfile\n├── mcp.compose.yml\n├── pyproject.toml\n├── pytest.ini\n├── requirements.txt\n├── systems_manager\n│   ├── __init__.py\n│   ├── __main__.py\n│   ├── mcp_server.py\n│   └── systems_manager.py\n├── test_ag_ui.py\n└── tests\n    ├── health_check2.py\n    ├── test_ag_ui.py\n    ├── test_fastmcp_server.py\n    ├── test_fastmcp_error.py\n    └── test_get_system_logs.py
 ```
 
 ## Code Style & Conventions
@@ -135,7 +133,7 @@ async def my_tool(param: str = Field(description="Tool parameter")) -> str:
 - Validate user inputs before executing system commands.
 
 **Ask first:**
-- Major refactors of `mcp_server.py` or `agent_server.py`.
+- Major refactors of `mcp_server.py`.
 - Deleting or renaming public tool functions.
 - Changes to platform detection logic.
 - Modifications to the graph orchestration architecture.
@@ -149,7 +147,7 @@ async def my_tool(param: str = Field(description="Tool parameter")) -> str:
 ## Testing
 **Test Coverage:**
 - Overall coverage: 62% (355 tests passing)
-- Key modules with 95%+ coverage: `__init__.py` (96%), `agent_server.py` (96%)
+- Key modules with 95%+ coverage: `__init__.py` (96%)
 - Platform-specific code tested with extensive mocking
 - MCP server functionality validated through integration tests
 

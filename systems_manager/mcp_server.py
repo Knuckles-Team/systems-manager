@@ -661,12 +661,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_system_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_system_operations: {action}", logger=logger, level="info")
         if action in _SYSTEM_MUTATIONS and not await _mutation_approved(
             ctx, action, "configured host"
         ):
@@ -807,12 +802,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_service_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_service_operations: {action}", logger=logger, level="info")
         if action in _SERVICE_MUTATIONS and not await _mutation_approved(
             ctx, action, service_name
         ):
@@ -854,12 +844,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_process_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_process_operations: {action}", logger=logger, level="info")
         if action == "kill_process" and not await _mutation_approved(
             ctx, action, f"process {pid}" if pid is not None else None
         ):
@@ -896,12 +881,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_network_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_network_operations: {action}", logger=logger, level="info")
         try:
             if action == "list_network_interfaces":
                 return await run_blocking(
@@ -933,12 +913,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_disk_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_disk_operations: {action}", logger=logger, level="info")
         try:
             if action == "list_disks":
                 return await run_blocking(
@@ -967,12 +942,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_user_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_user_operations: {action}", logger=logger, level="info")
         try:
             if action == "list_users":
                 return await run_blocking(
@@ -1008,12 +978,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_file_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_file_operations: {action}", logger=logger, level="info")
         if (
             action == "manage_file"
             and file_action
@@ -1074,12 +1039,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_cron_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_cron_operations: {action}", logger=logger, level="info")
         if action == "remove_cron_job" and not await _mutation_approved(
             ctx, action, "configured schedule"
         ):
@@ -1109,12 +1069,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_firewall_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_firewall_operations: {action}", logger=logger, level="info")
         if action in {
             "add_firewall_rule",
             "remove_firewall_rule",
@@ -1156,12 +1111,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            f"sm_advanced_operations: {action}",
-        )
+        await ctx_log(ctx, f"sm_advanced_operations: {action}", logger=logger, level="info")
         if not await _mutation_approved(ctx, action, "configured host"):
             return {"success": False, "error": "Operation approval is required"}
         try:
@@ -1208,12 +1158,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         from systems_manager.kg_ingest import ingest_host_inventory
 
         manager = detect_and_create_manager()
-        ctx_log(
-            ctx,
-            logger,
-            "info",
-            "systems_ingest_host",
-        )
+        await ctx_log(ctx, "systems_ingest_host", logger=logger, level="info")
 
         def _as_dict(value: Any) -> Any:
             if hasattr(value, "model_dump"):

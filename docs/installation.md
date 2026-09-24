@@ -50,16 +50,16 @@ uv run systems-manager-mcp
 ## Prebuilt Docker image
 
 A multi-stage runtime image is published on every release (installs
-`systems-manager[all]`):
+`systems-manager[mcp]`):
 
 ```bash
-docker pull "${SYSTEMS_MANAGER_AGENT_IMAGE}"
+docker pull "${SYSTEMS_MANAGER_MCP_IMAGE}"
 
 docker run --rm -i \
-  "${SYSTEMS_MANAGER_AGENT_IMAGE}" systems-manager-mcp
+  "${SYSTEMS_MANAGER_MCP_IMAGE}" systems-manager-mcp
 ```
 
-For an HTTP server with a published port and the agent, see
+For an HTTP server with a published port, see
 [Deployment](deployment.md).
 
 ## Verify the install
