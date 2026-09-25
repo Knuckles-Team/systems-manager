@@ -234,7 +234,7 @@ def test_authenticated_network_transport_can_start():
     mcp = Mock(auth=object())
     args = SimpleNamespace(
         transport="streamable-http",
-        auth_type="static",
+        auth_type="jwt",
         host="localhost",
         port=8000,
     )
