@@ -474,6 +474,10 @@ _ALL_CLASSIFIED_TOOLS = frozenset(
         "sm_firewall_operations",
         "sm_advanced_operations",
         "systems_ingest_host",
+        # Agent-utilities intent verbs: find/ask read; act routes governed writes.
+        "find",
+        "ask",
+        "act",
     }
 )
 
