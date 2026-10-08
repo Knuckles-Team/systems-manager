@@ -33,7 +33,7 @@ constructs an arbitrary shell command or an interactive elevation flow.
 
 The package contains no embedded message broker or broadcast control plane.
 GraphOS may delegate to independently authenticated per-host instances, and a
-separately reviewed tunnel provider may supply remote transport. Fleet size,
+separately reviewed tunnel provider may provide remote transport. Fleet size,
 concurrency, retries, routing, and aggregation are deployment responsibilities.
 
 See [Host lifecycle coverage](../host-lifecycle-coverage.md) for the implemented

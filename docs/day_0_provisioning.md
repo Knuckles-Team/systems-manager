@@ -13,9 +13,9 @@ credential, host key, endpoint, username, or sudoers rule.
 3. Keep host mutation, filesystem mutation, sensitive-read, and network-probe
    gates disabled.
 4. Configure stdio locally, or authenticated TLS for every network listener.
-5. Configure verified certificate trust through an AgentConfig TLS profile when the
+5. Configure checked certificate trust through an AgentConfig TLS profile when the
    deployment uses a private CA.
-6. Configure observability to capture metadata only and verify that trace
+6. Configure observability to capture metadata only and check that trace
    redaction is active.
 7. If elevation is required, provision it outside the agent through a reviewed
    service account or a narrowly scoped helper policy.
@@ -41,7 +41,7 @@ CLI arguments, environment, logs, or traces.
 
 Use GraphOS to delegate to an authenticated systems-manager service on each host,
 or use tunnel-manager's governed fleet workflows. Tunnel configuration must use
-verified host keys and secret references. There is no accept-unknown host-key mode
+checked host keys and secret references. There is no accept-unknown host-key mode
 and no plaintext inventory password.
 
 ```mermaid
@@ -63,11 +63,11 @@ sequenceDiagram
 - The package version, ontology, source preset, mapping, skill schema, and MCP tool
   schemas agree; any release attestations were produced by the release system.
 - A non-loopback MCP or agent listener refuses to start without authentication
-  and a verified TLS boundary.
+  and a checked TLS boundary.
 - The helper refuses every service or package absent from its deployment
   allowlist.
 - Sensitive reads and mutations fail while their gates are disabled.
-- One approved typed mutation succeeds and is verified by a separate read.
+- One approved typed mutation succeeds and is checked by a separate read.
 - Traces contain opaque run/tenant references and status only—no prompt, tool
   body, command output, hostname, username, path, or credential.
 - Rollback and recovery ownership are documented before autonomous maintenance is

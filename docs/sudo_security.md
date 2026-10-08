@@ -60,7 +60,7 @@ updates and reboot.
 3. Confirm an allowlisted no-op/status operation succeeds without returning raw
    stdout or stderr.
 4. Confirm a non-allowlisted name fails and no child process starts.
-5. Confirm timeout terminates the child process group.
+5. Confirm timeout stop the child process group.
 6. Audit sudoers ownership, exact path, environment handling, and arguments.
 7. Record only sanitized pass/fail evidence.
 

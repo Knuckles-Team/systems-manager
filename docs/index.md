@@ -32,7 +32,7 @@ deterministic MCP tool surface. It provides:
 
 <div class="grid cards" markdown>
 
-- :material-rocket-launch: **[Installation](installation.md)** — pip, source, extras, and the prebuilt Docker image.
+- :material-rocket-start: **[Installation](installation.md)** — pip, source, extras, and the prebuilt Docker image.
 - :material-server-network: **[Deployment](deployment.md)** — run authenticated MCP and agent services with verified TLS.
 - :material-console: **[Usage](usage.md)** — the MCP tools, the `SystemsManager` API, and the CLI.
 - :material-sitemap: **[Overview](overview.md)** — ecosystem role and the concept map.

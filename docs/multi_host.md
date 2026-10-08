@@ -1,7 +1,7 @@
 # Multi-host orchestration
 
 `systems-manager` intentionally does not build SSH command strings or disable host-key
-verification. Its typed host operations execute on the host where the process runs.
+verification. Its typed host operations run on the host where the process runs.
 This keeps operating-system detection, executable trust, elevation, filesystem
 confinement, and process-tree termination inside one local security boundary.
 
@@ -47,7 +47,7 @@ aliases should be opaque and non-personal.
 2. Confirm the target by opaque inventory alias without logging its connection data.
 3. Run read-only discovery under the sensitive-read gate.
 4. For a mutation, obtain the deployment-policy gate and request-channel approval.
-5. Execute the typed operation locally on the target security boundary.
+5. Run the typed operation locally on the target security boundary.
 6. Verify through a separate read and record only sanitized status evidence.
 
 The MCP tools in this package expose no remote-host selector. Remote behavior

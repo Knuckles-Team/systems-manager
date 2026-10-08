@@ -1,7 +1,7 @@
 # Usage — API / CLI / MCP
 
-`systems-manager` exposes the same capability several ways: as **MCP tools** an agent
-calls, as a **Python API** you import, and as a **CLI** for direct package
+`systems-manager` exposes the same capability multiple ways: as **MCP tools** an agent
+calls, as a **Python API** the operator import, and as a **CLI** for direct package
 management. The full ecosystem role and concept map are in [Overview](overview.md).
 
 ## As an MCP server
