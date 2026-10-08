@@ -1189,7 +1189,7 @@ secrets, trust paths, or host identities.</p>
 <p>For <code>streamable-http</code> or <code>sse</code>, configure:</p>
 <ul>
 <li>an authentication provider through the current Agent Utilities MCP settings;</li>
-<li>direct TLS certificate/key settings, or a verified TLS-terminating proxy and
+<li>direct TLS certificate/key settings, or a verified TLS-stop proxy and
   trusted proxy CIDRs;</li>
 <li>an explicit host allowlist;</li>
 <li>a deliberate bind address.</li>
@@ -1221,7 +1221,7 @@ bounded <code>tmpfs</code>. Network authentication and TLS boundary inputs are r
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>agent<span class="w"> </span>-t<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">SYSTEMS_MANAGER_AGENT_IMAGE</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
 </span></code></pre></div>
 <p>The Dockerfile pins base and uv images by digest and installs into a multi-stage,
-non-root runtime. Deployment pipelines should additionally sign the resulting image,
+non-root runtime. Deployment pipelines should also sign the resulting image,
 produce an SBOM/provenance attestation, scan it, and enforce the approved digest at
 admission.</p>
 <h2 id="agent-server">Agent server<a class="headerlink" href="#agent-server" title="Permanent link">&para;</a></h2>
