@@ -13,7 +13,7 @@ The current contract is validated by focused suites for:
 - Linux and Windows provider behavior;
 - managed-root path confinement, symlink rejection, scan budgets, and
   privacy-safe result paths;
-- repository allowlists and SHA-256-verified local packages;
+- repository allowlists and SHA-256-checked local packages;
 - BMC credential projection and storage-health correlation;
 - opaque knowledge-graph projection and native ingestion;
 - current Agent OS public authorities;

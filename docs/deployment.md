@@ -21,7 +21,7 @@ secrets, trust paths, or host identities.
 For `streamable-http` or `sse`, configure:
 
 - an authentication provider through the current Agent Utilities MCP settings;
-- direct TLS certificate/key settings, or a verified TLS-terminating proxy and
+- direct TLS certificate/key settings, or a verified TLS-stop proxy and
   trusted proxy CIDRs;
 - an explicit host allowlist;
 - a deliberate bind address.
@@ -62,7 +62,7 @@ docker build --target agent -t "${SYSTEMS_MANAGER_AGENT_IMAGE}" -f docker/Docker
 ```
 
 The Dockerfile pins base and uv images by digest and installs into a multi-stage,
-non-root runtime. Deployment pipelines should additionally sign the resulting image,
+non-root runtime. Deployment pipelines should also sign the resulting image,
 produce an SBOM/provenance attestation, scan it, and enforce the approved digest at
 admission.
 

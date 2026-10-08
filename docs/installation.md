@@ -1,7 +1,7 @@
 # Installation
 
 `systems-manager` is a standard Python package and a prebuilt container image. Pick
-the path that matches how you want to run it.
+the path that matches how the operator want to run it.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ pip install systems-manager
 ### Optional extras
 
 The base install ships the CLI and the cross-platform package managers. Install the
-extra for the interface you need:
+extra for the interface the operator need:
 
 | Extra | Install | Pulls in |
 |---|---|---|

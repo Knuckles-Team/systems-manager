@@ -12,7 +12,7 @@ The current package requires Python 3.11–3.14 and
 
 ## Install and run
 
-Install only the interface you need:
+Install only the interface the operator need:
 
 ```bash
 pip install "systems-manager[mcp]"
@@ -28,7 +28,7 @@ The optional extras are:
 | `all` | MCP plus agent runtime |
 | `test` | Test dependencies |
 
-For an ephemeral MCP launch:
+For an ephemeral MCP start:
 
 ```bash
 uvx --from "systems-manager[mcp]" systems-manager-mcp --transport stdio
@@ -42,11 +42,11 @@ belong in AgentConfig or the process launcher.
 ## Security contract
 
 - Network MCP listeners require configured authentication. Non-loopback listeners also
-  require direct TLS or a trusted TLS-terminating proxy, exact allowed hosts, and the
+  require direct TLS or a trusted TLS-stop proxy, exact allowed hosts, and the
   current Agent Utilities transport checks.
 - Host mutations are denied unless `SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS=true` and the
   individual request receives destructive-operation approval.
-- Managed-file writes additionally require
+- Managed-file writes also require
   `SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS=true`.
 - Sensitive reads and active probes have independent default-deny gates.
 - Managed paths are confined beneath an explicit
@@ -57,7 +57,7 @@ belong in AgentConfig or the process launcher.
 
 ## AgentConfig, secrets, and TLS
 
-Use `TLS_PROFILE` / `TLS_PROFILE_REF` with `TLS_PROFILES_REF` for shared verified
+Use `TLS_PROFILE` / `TLS_PROFILE_REF` with `TLS_PROFILES_REF` for shared checked
 outbound trust. Service-specific profiles such as `OIDC_TLS_PROFILE_REF`,
 `MODEL_TLS_PROFILE_REF`, and `LANGFUSE_TLS_PROFILE_REF` may select entries from the
 same runtime catalog. Do not hardcode CA paths or verification flags in application
@@ -65,7 +65,7 @@ code, and do not disable verification for incomplete certificate chains.
 
 Out-of-band BMC health reads consume one runtime secret projection from
 `SYSTEMS_MANAGER_BMC_CREDENTIALS`. AgentConfig resolves the checked `env://` or secret
-reference before launch; the provider accepts exactly a JSON object with `host`, `user`,
+reference before start; the provider accepts exactly a JSON object with `host`, `user`,
 and `password`. No secret-store vendor, secret path, token, or credential value is
 embedded in this package.
 
@@ -140,7 +140,7 @@ content, and unavailable ingestion fail explicitly; they are not silent no-ops.
 
 ## GraphOS delegation
 
-Host operations execute inside the service's local operating-system boundary. For
+Host operations run inside the service's local operating-system boundary. For
 fleet work, GraphOS delegates to an authenticated systems-manager service on the target
 boundary. Inventory, endpoints, credentials, TLS profiles, and target aliases remain
 external deployment configuration. Persist only opaque, non-personal references.
@@ -151,7 +151,7 @@ surfaces are not part of the typed current contract.
 
 ## Agent server
 
-Install the agent extra and launch:
+Install the agent extra and start:
 
 ```bash
 pip install "systems-manager[agent]"
