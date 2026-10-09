@@ -3,10 +3,10 @@
 CONCEPT:AU-KG.ingest.enterprise-source-extractor. The package natively pushes the
 infrastructure state it discovers over its manager seam into the epistemic-graph knowledge
 graph as **typed OWL nodes** (``:HardwareNode``, ``:NetworkInterface``, ``:DiskVolume``) +
-containment links through the shared governed ChangeEnvelope ingestion boundary. There is
-one write path: connectors never access raw engine transactions and ingestion failures are
-explicit. Nodes carry shared provenance (``domain``/``source``) and match the classes
-federated by ``systems_manager.ontology``.
+links through ``agent_connector_sdk.ingest`` -- the generated ``SourceIngest`` client, not
+a local ingestion helper. There is one write path: connectors never access raw engine
+transactions and ingestion failures are explicit. Nodes carry provenance via the request's
+``IngestBinding`` and match the classes federated by ``systems_manager.ontology``.
 """
 
 from __future__ import annotations
@@ -17,12 +17,20 @@ import logging
 import socket
 from typing import Any
 
-from agent_utilities.core.config import setting
+from agent_connector_sdk.config import setting
+from agent_connector_sdk.ingest import (
+    ChangeSet,
+    Entity,
+    IngestBinding,
+    KnowledgeIngest,
+    Relationship,
+    current_ingest,
+)
 
 logger = logging.getLogger("systems_manager.kg")
 
-_SOURCE = "systems-manager"
-_DOMAIN = "systems"
+_BINDING = IngestBinding(connector="systems-manager", stream="systems")
+
 _ENTITY_FIELDS = {
     "HardwareNode": frozenset(
         {
@@ -63,28 +71,41 @@ _ENTITY_FIELDS = {
 _RELATIONSHIPS = frozenset({"hasInterface", "hasVolume"})
 
 
-def _native_ingest(*args: Any, **kwargs: Any) -> dict[str, int]:
-    """Resolve the governed engine boundary only for an authorized write."""
+def _to_entity(record: dict[str, Any]) -> Entity:
+    return Entity(
+        id=record.get("id"),
+        node_type=record.get("node_type"),
+        properties={
+            key: value for key, value in record.items() if key not in ("id", "node_type")
+        },
+    )
 
-    from agent_utilities.knowledge_graph.memory.native_ingest import ingest_entities
 
-    return ingest_entities(*args, **kwargs)
+def _to_relationship(record: dict[str, Any]) -> Relationship:
+    properties = {
+        key: value
+        for key, value in record.items()
+        if key not in ("source", "target", "relationship")
+    }
+    return Relationship(
+        source=record["source"],
+        target=record["target"],
+        relationship=record["relationship"],
+        properties=properties or None,
+    )
 
 
-def ingest_entities(
+async def ingest_entities(
     entities: list[dict[str, Any]],
     relationships: list[dict[str, Any]] | None = None,
     *,
-    source: str = _SOURCE,
-    domain: str = _DOMAIN,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
-    """Write typed nodes and edges through the governed native ingestion boundary.
+    """Write typed nodes and edges through the SDK ingest facade.
 
     ``entities`` use canonical ``node_type`` and relationships use canonical
-    ``relationship``. ``client`` and ``graph`` are accepted only for the shared
-    boundary's authorized test seam; production graph authority comes from the session.
+    ``relationship``. Provenance (connector/stream) comes from ``_BINDING``, not a
+    stamped node property.
     """
     sanitized: list[dict[str, Any]] = []
     node_ids: set[str] = set()
@@ -132,14 +153,15 @@ def ingest_entities(
                 "Systems Manager projection contains an invalid relationship"
             )
         sanitized_relationships.append(dict(relationship))
-    return _native_ingest(
-        entities,
-        sanitized_relationships,
-        source=source,
-        domain=domain,
-        client=client,
-        graph=graph,
+    change_set = ChangeSet(
+        entities=tuple(_to_entity(entity) for entity in entities),
+        relationships=tuple(
+            _to_relationship(relationship) for relationship in sanitized_relationships
+        ),
     )
+    service = ingest or current_ingest()
+    receipt = await service.submit(_BINDING, change_set)
+    return {"nodes": receipt.affected_count, "edges": receipt.relationship_count}
 
 
 def _opaque_ref(namespace: str, value: str) -> str:
@@ -229,11 +251,10 @@ def _disk_entities(
     return entities, rels
 
 
-def ingest_host_inventory(
+async def ingest_host_inventory(
     report: dict[str, Any],
     *,
-    client: Any | None = None,
-    graph: str | None = None,
+    ingest: KnowledgeIngest | None = None,
 ) -> dict[str, int]:
     """Map a host-telemetry report → :HardwareNode + :NetworkInterface + :DiskVolume.
 
@@ -289,4 +310,4 @@ def ingest_host_inventory(
     relationships.extend(nic_rels)
     relationships.extend(disk_rels)
 
-    return ingest_entities(entities, relationships, client=client, graph=graph)
+    return await ingest_entities(entities, relationships, ingest=ingest)

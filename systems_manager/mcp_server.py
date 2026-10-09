@@ -10,7 +10,7 @@ import weakref
 from collections.abc import Callable
 from typing import Any, Literal, TypeVar, cast
 
-from agent_utilities.base_utilities import to_boolean
+from agent_connector_sdk.utilities import to_boolean
 from fastmcp import Context, FastMCP
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.utilities.logging import get_logger
@@ -33,15 +33,17 @@ warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 # Filter AuthlibDeprecationWarning
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="authlib.*")
 
-from agent_utilities.core.config import load_config, setting
-from agent_utilities.mcp.action_dispatch import resolve_action
-from agent_utilities.mcp.concurrency import run_blocking as _agent_run_blocking
-from agent_utilities.mcp.context_helpers import ctx_log
-from agent_utilities.mcp.server_factory import (
-    create_mcp_server,
-    mcp_network_run_kwargs,
-)
-from agent_utilities.mcp.verbose_tools import register_tool_surface
+from agent_connector_sdk.config import load_config, setting
+from agent_connector_sdk.mcp.action_dispatch import resolve_action
+from agent_connector_sdk.mcp.concurrency import run_blocking as _agent_run_blocking
+from agent_connector_sdk.mcp.context import ctx_log
+from agent_connector_sdk.mcp.server import create_mcp_server
+from agent_connector_sdk.mcp.tool_surface import register_tool_surface
+
+# No agent_connector_sdk equivalent yet (SDK-CONNECTOR-CONTROL gap, like
+# agent_utilities.security.entitlements.identity_scoped_resources on
+# objectstore-mcp): fail-closed identity + tenant/ACL/session enforcement for
+# a served network transport. Keep this import.
 from agent_utilities.security.request_identity import apply_served_security_profile
 
 from systems_manager.os_provider_tools import register_os_provider_tools
@@ -665,11 +667,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_system_operations: {action}",
+            logger=logger,
         )
         if action in _SYSTEM_MUTATIONS and not await _mutation_approved(
             ctx, action, "configured host"
@@ -792,11 +793,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_service_operations: {action}",
+            logger=logger,
         )
         if action in _SERVICE_MUTATIONS and not await _mutation_approved(
             ctx, action, service_name
@@ -839,11 +839,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_process_operations: {action}",
+            logger=logger,
         )
         if action == "kill_process" and not await _mutation_approved(
             ctx, action, f"process {pid}" if pid is not None else None
@@ -881,11 +880,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_network_operations: {action}",
+            logger=logger,
         )
         try:
             if action == "list_network_interfaces":
@@ -918,11 +916,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_disk_operations: {action}",
+            logger=logger,
         )
         try:
             if action == "list_disks":
@@ -952,11 +949,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_user_operations: {action}",
+            logger=logger,
         )
         try:
             if action == "list_users":
@@ -993,11 +989,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_file_operations: {action}",
+            logger=logger,
         )
         if (
             action == "manage_file"
@@ -1059,11 +1054,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_cron_operations: {action}",
+            logger=logger,
         )
         if action == "remove_cron_job" and not await _mutation_approved(
             ctx, action, "configured schedule"
@@ -1094,11 +1088,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_firewall_operations: {action}",
+            logger=logger,
         )
         if action in {
             "add_firewall_rule",
@@ -1141,11 +1134,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             return resolved
         action = resolved
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             f"sm_advanced_operations: {action}",
+            logger=logger,
         )
         if not await _mutation_approved(ctx, action, "configured host"):
             return {"success": False, "error": "Operation approval is required"}
@@ -1193,11 +1185,10 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         from systems_manager.kg_ingest import ingest_host_inventory
 
         manager = detect_and_create_manager()
-        ctx_log(
+        await ctx_log(
             ctx,
-            logger,
-            "info",
             "systems_ingest_host",
+            logger=logger,
         )
 
         def _as_dict(value: Any) -> Any:
@@ -1223,7 +1214,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             "disks": (disks or {}).get("disks") if isinstance(disks, dict) else None,
         }
         try:
-            result = await run_blocking(ingest_host_inventory, report)
+            result = await ingest_host_inventory(report)
         except Exception:  # noqa: BLE001 - do not disclose engine/session details
             return {
                 "target": "local",
@@ -1267,14 +1258,12 @@ def mcp_server() -> None:
             transport="streamable-http",
             host=args.host,
             port=args.port,
-            **mcp_network_run_kwargs(args),
         )
     elif args.transport == "sse":
         mcp.run(
             transport="sse",
             host=args.host,
             port=args.port,
-            **mcp_network_run_kwargs(args),
         )
     else:
         logger.error("Invalid transport", extra={"transport": args.transport})

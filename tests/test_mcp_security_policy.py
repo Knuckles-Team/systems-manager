@@ -255,18 +255,13 @@ def test_authenticated_network_transport_can_start():
     with (
         patch.object(server, "get_mcp_instance", return_value=(args, mcp, [])),
         patch.object(server, "apply_served_security_profile") as apply_profile,
-        patch.object(
-            server, "mcp_network_run_kwargs", return_value={"ssl_verify": True}
-        ) as network_kwargs,
     ):
         server.mcp_server()
     apply_profile.assert_called_once_with(
         "streamable-http", transport_auth_configured=True
     )
-    network_kwargs.assert_called_once_with(args)
     mcp.run.assert_called_once_with(
         transport="streamable-http",
         host="localhost",
         port=8000,
-        ssl_verify=True,
     )

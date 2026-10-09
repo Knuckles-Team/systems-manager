@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import re
 
-from agent_utilities.core.config import setting
+from agent_connector_sdk.config import setting
 
 _HOST = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,252}\Z")
 
