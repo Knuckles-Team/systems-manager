@@ -18,9 +18,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from agent_utilities.core.config import setting
-from agent_utilities.mcp.action_dispatch import resolve_action
-from agent_utilities.mcp.context_helpers import ctx_confirm_destructive
+from agent_connector_sdk.config import setting
+from agent_connector_sdk.mcp.action_dispatch import resolve_action
+from agent_connector_sdk.mcp.context import ctx_confirm_destructive
 from pydantic import Field
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,10 @@ SPECIALIST_ACTIONS = ("install", "uninstall", "list", "search")
 SCHEDULER_ACTIONS = ("get_stats", "list_processes", "preempt")
 WATCHDOG_ACTIONS = ("check_change", "list_watchers", "drain_triggers")
 
+# No agent_connector_sdk equivalent (SDK-CONNECTOR-CONTROL gap): these are the
+# agent-orchestration-plane kernels (cognitive scheduling, the agent registry,
+# the permissions kernel, the file watcher), which is agent_utilities's job, not
+# the SDK's -- the same split that keeps agent_server.py on agent_utilities.
 from agent_utilities.automation.file_watcher import FileWatcher
 from agent_utilities.core.cognitive_scheduler import CognitiveScheduler
 from agent_utilities.core.registry.package_adapter import AgentRegistry

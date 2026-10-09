@@ -1,30 +1,52 @@
-"""Governed, privacy-preserving host telemetry ingestion coverage."""
+"""Governed, privacy-preserving host telemetry ingestion coverage.
+
+Exercises the real ``ingest_entities``/``ingest_host_inventory`` seam against a fake
+``agent_connector_sdk.ingest`` transport (no engine required). The real SDK request
+builder still runs underneath systems-manager's own node/relationship allow-list, so
+both layers of validation are exercised.
+"""
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+from typing import Any
+
 import pytest
+from agent_connector_sdk.ingest import KnowledgeIngest
+from epistemic_graph.generated.source_ingestion import SourceIngestionRequest
 
 import systems_manager.kg_ingest as kg
 
 
-def _capture_native(monkeypatch):
-    captured: dict = {}
+class _FakeTransport:
+    """Records every submitted request; no epistemic-graph engine required."""
 
-    def ingest(entities, relationships, **kwargs):
-        captured.update(
-            entities=entities,
-            relationships=relationships,
-            kwargs=kwargs,
+    def __init__(self) -> None:
+        self.requests: list[SourceIngestionRequest] = []
+
+    async def source_status(self, _connector: str, _stream: str) -> Any:
+        return SimpleNamespace(accepted_checkpoint=None)
+
+    async def submit(self, request: SourceIngestionRequest) -> Any:
+        self.requests.append(request)
+        return SimpleNamespace(
+            affected_count=len(request.records),
+            relationship_count=len(request.relationships),
         )
-        return {"nodes": len(entities), "edges": len(relationships or [])}
 
-    monkeypatch.setattr(kg, "_native_ingest", ingest)
-    return captured
+    async def store_blob(self, _data: bytes) -> str:
+        raise AssertionError("systems-manager host telemetry carries no media")
 
 
-def test_ingest_entities_uses_canonical_native_boundary(monkeypatch):
-    captured = _capture_native(monkeypatch)
-    result = kg.ingest_entities(
+@pytest.fixture
+def ingest() -> tuple[KnowledgeIngest, _FakeTransport]:
+    transport = _FakeTransport()
+    return KnowledgeIngest(transport, loop=None), transport
+
+
+async def test_ingest_entities_uses_canonical_native_boundary(ingest):
+    service, transport = ingest
+    result = await kg.ingest_entities(
         [
             {"id": "systems:host:host:example", "node_type": "HardwareNode"},
             {"id": "systems:nic:interface:example", "node_type": "NetworkInterface"},
@@ -36,17 +58,23 @@ def test_ingest_entities_uses_canonical_native_boundary(monkeypatch):
                 "relationship": "hasInterface",
             }
         ],
+        ingest=service,
     )
 
     assert result == {"nodes": 2, "edges": 1}
-    assert captured["kwargs"]["source"] == "systems-manager"
-    assert captured["kwargs"]["domain"] == "systems"
-    assert captured["entities"][0]["node_type"] == "HardwareNode"
-    assert captured["relationships"][0]["relationship"] == "hasInterface"
+    request = transport.requests[0]
+    record_ids = {record.record_id for record in request.records}
+    assert record_ids == {
+        "systems:host:host:example",
+        "systems:nic:interface:example",
+    }
+    assert request.relationships[0].relation_reference.endswith(
+        "resources/HardwareNode/relations/hasInterface"
+    )
 
 
-def test_ingest_host_inventory_maps_only_opaque_identifiers(monkeypatch):
-    captured = _capture_native(monkeypatch)
+async def test_ingest_host_inventory_maps_only_opaque_identifiers(ingest):
+    service, transport = ingest
     report = {
         "host": "deployment-local-name",
         "os": {
@@ -78,22 +106,25 @@ def test_ingest_host_inventory_maps_only_opaque_identifiers(monkeypatch):
         ],
     }
 
-    result = kg.ingest_host_inventory(report)
+    result = await kg.ingest_host_inventory(report, ingest=service)
 
     assert result == {"nodes": 3, "edges": 2}
-    entities = captured["entities"]
-    relationships = captured["relationships"]
-    host = next(entity for entity in entities if entity["node_type"] == "HardwareNode")
-    nic = next(
-        entity for entity in entities if entity["node_type"] == "NetworkInterface"
+    request = transport.requests[0]
+    host = next(
+        r for r in request.records if r.mapping_reference.endswith("HardwareNode")
     )
-    disk = next(entity for entity in entities if entity["node_type"] == "DiskVolume")
-    assert host["externalToolId"].startswith("host:")
-    assert nic["externalToolId"].startswith("interface:")
-    assert disk["externalToolId"].startswith("disk:")
-    assert all("relationship" in relationship for relationship in relationships)
+    nic = next(
+        r for r in request.records if r.mapping_reference.endswith("NetworkInterface")
+    )
+    disk = next(
+        r for r in request.records if r.mapping_reference.endswith("DiskVolume")
+    )
+    assert host.payload["externalToolId"].startswith("host:")
+    assert nic.payload["externalToolId"].startswith("interface:")
+    assert disk.payload["externalToolId"].startswith("disk:")
+    assert all(rel.relation_reference for rel in request.relationships)
 
-    rendered = repr(captured)
+    rendered = repr(request)
     for sensitive in (
         "deployment-local-name",
         "hostname",
@@ -104,34 +135,35 @@ def test_ingest_host_inventory_maps_only_opaque_identifiers(monkeypatch):
         assert sensitive not in rendered
 
 
-def test_ingest_host_inventory_defaults_to_opaque_local_ref(monkeypatch):
-    captured = _capture_native(monkeypatch)
-    result = kg.ingest_host_inventory({"host": None})
+async def test_ingest_host_inventory_defaults_to_opaque_local_ref(ingest):
+    service, transport = ingest
+    result = await kg.ingest_host_inventory({"host": None}, ingest=service)
 
     assert result == {"nodes": 1, "edges": 0}
-    host = captured["entities"][0]
-    assert host["id"].startswith("systems:host:host:")
+    host = transport.requests[0].records[0]
+    assert host.record_id.startswith("systems:host:host:")
     assert "localhost" not in repr(host)
 
 
-def test_empty_projection_is_an_explicit_zero_write(monkeypatch):
-    captured = _capture_native(monkeypatch)
-    assert kg.ingest_entities([]) == {"nodes": 0, "edges": 0}
-    assert captured == {}
+async def test_empty_projection_is_an_explicit_zero_write(ingest):
+    service, transport = ingest
+    assert await kg.ingest_entities([], ingest=service) == {"nodes": 0, "edges": 0}
+    assert transport.requests == []
     with pytest.raises(ValueError, match="report must be an object"):
-        kg.ingest_host_inventory("not-a-dict")
+        await kg.ingest_host_inventory("not-a-dict", ingest=service)
 
 
-def test_native_boundary_rejects_unclassified_content(monkeypatch):
-    captured = _capture_native(monkeypatch)
+async def test_native_boundary_rejects_unclassified_content(ingest):
+    service, transport = ingest
     with pytest.raises(ValueError, match="invalid node"):
-        kg.ingest_entities(
+        await kg.ingest_entities(
             [
                 {
                     "id": "systems:host:opaque",
                     "node_type": "HardwareNode",
                     "hostname": "must-not-persist",
                 }
-            ]
+            ],
+            ingest=service,
         )
-    assert captured == {}
+    assert transport.requests == []
