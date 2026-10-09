@@ -35,9 +35,9 @@ from typing import Any, Protocol, runtime_checkable
 from urllib.parse import urlsplit
 
 import psutil
-from agent_utilities.core.config import setting
+from agent_connector_sdk.config import setting
+from agent_connector_sdk.tls.resolve import resolve_tls_profile
 from agent_utilities.core.http_client import create_http_client
-from agent_utilities.core.transport_security import resolve_configured_tls_profile
 from agent_utilities.observability.health import (
     HealthTrendBuffer,
     compute_baseline,
@@ -369,7 +369,7 @@ def _notify(message: str) -> None:
     tls_profile = None
     try:
         url = _validated_notify_url(raw_url)
-        tls_profile = resolve_configured_tls_profile("systems-manager-notify")
+        tls_profile = resolve_tls_profile("systems-manager-notify")
         with create_http_client(
             timeout=5,
             **tls_profile.httpx_kwargs(),
