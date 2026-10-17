@@ -20,7 +20,7 @@ credential, host key, endpoint, username, or sudoers rule.
 7. If elevation is required, provision it outside the agent through a reviewed
    service account or a narrowly scoped helper policy.
 8. Run the ecosystem doctor and capability/schema validation before exposing the
-   service to GraphOS.
+   service to Arbora.
 
 ## Elevation helper
 
@@ -39,7 +39,7 @@ CLI arguments, environment, logs, or traces.
 
 ## Fleet provisioning
 
-Use GraphOS to delegate to an authenticated systems-manager service on each host,
+Use Arbora to delegate to an authenticated systems-manager service on each host,
 or use tunnel-manager's governed fleet workflows. Tunnel configuration must use
 checked host keys and secret references. There is no accept-unknown host-key mode
 and no plaintext inventory password.
@@ -48,14 +48,14 @@ and no plaintext inventory password.
 sequenceDiagram
     participant Operator
     participant Doctor
-    participant GraphOS
+    participant Arbora
     participant Host
     Operator->>Host: Install signed package and least-privilege identity
     Operator->>Host: Configure managed root, auth, TLS, and policy gates
     Operator->>Doctor: Validate configuration without printing secrets
     Doctor-->>Operator: Sanitized readiness status
-    GraphOS->>Host: Authenticated capability discovery
-    Host-->>GraphOS: Sanitized tool schemas and health
+    Arbora->>Host: Authenticated capability discovery
+    Host-->>Arbora: Sanitized tool schemas and health
 ```
 
 ## Acceptance checks

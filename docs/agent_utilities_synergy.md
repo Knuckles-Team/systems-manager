@@ -21,7 +21,7 @@ into a shell command.
 
 ## Delegated operation
 
-GraphOS can delegate a typed operation to an authenticated systems-manager
+Arbora can delegate a typed operation to an authenticated systems-manager
 instance on the target host. Target inventory, credentials, endpoints, TLS
 profiles, and policy are deployment configuration; none is packaged here.
 

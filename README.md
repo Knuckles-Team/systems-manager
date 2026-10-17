@@ -3,7 +3,7 @@
 Version: 2.1.0
 
 `systems-manager` is the typed host-operations provider for Agent Connector SDK and
-GraphOS. It exposes cross-platform package, service, process, network, disk,
+Arbora. It exposes cross-platform package, service, process, network, disk,
 managed-file, firewall, physical-storage, Agent OS, and privacy-safe host-ingestion
 capabilities without exposing a raw command tool.
 
@@ -138,10 +138,10 @@ Hostnames, network addresses, hardware addresses, usernames, local paths, creden
 and arbitrary extra fields are rejected or excluded. Missing graph authority, invalid
 content, and unavailable ingestion fail explicitly; they are not silent no-ops.
 
-## GraphOS delegation
+## Arbora delegation
 
 Host operations run inside the service's local operating-system boundary. For
-fleet work, GraphOS delegates to an authenticated systems-manager service on the target
+fleet work, Arbora delegates to an authenticated systems-manager service on the target
 boundary. Inventory, endpoints, credentials, TLS profiles, and target aliases remain
 external deployment configuration. Persist only opaque, non-personal references.
 
@@ -286,5 +286,5 @@ historical per-task skill wrappers.
 Runtime endpoints, credentials, certificate trust, tenant identity, retention,
 and observability policy are deployment inputs and are never packaged values.
 See [Configuration, trust, and privacy](docs/configuration.md) before enabling a
-network transport, connector ingestion, GraphOS delegation, or trace export.
+network transport, connector ingestion, Arbora delegation, or trace export.
 <!-- GOVERNED-CAPABILITY:END -->

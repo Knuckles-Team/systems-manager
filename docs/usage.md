@@ -56,7 +56,7 @@ logs = manager.get_system_logs(lines=100)      # recent journal / system logs
 ```
 
 For fleet operations, delegate to an authenticated instance on the target host or
-compose the governed tunnel-manager capability through GraphOS. See
+compose the governed tunnel-manager capability through Arbora. See
 [Multi-Host](multi_host.md).
 
 ## As a CLI

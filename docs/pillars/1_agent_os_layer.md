@@ -1,7 +1,7 @@
 # Agent OS layer
 
 `systems-manager` is the local execution provider for a reviewed set of host
-operations. Agent Connector SDK and GraphOS provide configuration, policy,
+operations. Agent Connector SDK and Arbora provide configuration, policy,
 delegation, and lifecycle coordination around that local boundary.
 
 ## Platform provider
@@ -32,7 +32,7 @@ constructs an arbitrary shell command or an interactive elevation flow.
 ## Fleet composition
 
 The package contains no embedded message broker or broadcast control plane.
-GraphOS may delegate to independently authenticated per-host instances, and a
+Arbora may delegate to independently authenticated per-host instances, and a
 separately reviewed tunnel provider may provide remote transport. Fleet size,
 concurrency, retries, routing, and aggregation are deployment responsibilities.
 

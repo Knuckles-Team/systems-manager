@@ -3,7 +3,7 @@ name: systems-manager-operations
 skill_type: skill
 description: >-
   Operate hosts and Agent OS services through the governed systems-manager MCP provider and
-  GraphOS delegation. Use for OS and package lifecycle, services, processes, network and disk
+  Arbora delegation. Use for OS and package lifecycle, services, processes, network and disk
   inspection, storage or BMC health, firewall and managed-file work, agent identity,
   specialist registry, scheduler, watchdog, host telemetry ingestion, troubleshooting, and
   evidence-backed verification.
@@ -11,7 +11,7 @@ description: >-
 
 # Systems Manager Operations
 
-Use the provider's governed MCP tools through GraphOS delegation.
+Use the provider's governed MCP tools through Arbora delegation.
 
 ## Workflow
 

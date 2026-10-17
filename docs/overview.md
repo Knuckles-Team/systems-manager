@@ -1,6 +1,6 @@
 # Systems Manager concept overview
 
-**Ecosystem role:** a typed local-host operations provider for GraphOS and
+**Ecosystem role:** a typed local-host operations provider for Arbora and
 agent-connector-sdk.
 
 ## Capability model
@@ -42,19 +42,19 @@ bundles are never embedded.
 
 ## Fleet composition
 
-Host operations run where the process runs. GraphOS can delegate to an
+Host operations run where the process runs. Arbora can delegate to an
 authenticated systems-manager instance on each target or compose tunnel-manager's
 host-key-verified SSH capabilities. The package does not embed inventory profiles,
 connection endpoints, identities, or workstation paths.
 
 ```mermaid
 flowchart LR
-    Caller[Authenticated caller] --> GraphOS[GraphOS delegation]
-    GraphOS --> MCP[Systems Manager MCP]
+    Caller[Authenticated caller] --> Arbora[Arbora delegation]
+    Arbora --> MCP[Systems Manager MCP]
     MCP --> Policy[Policy and approval gates]
     Policy --> Manager[Typed local platform manager]
     Manager --> Host[Local host boundary]
-    GraphOS --> Tunnel[Governed tunnel-manager capability]
+    Arbora --> Tunnel[Governed tunnel-manager capability]
 ```
 
 ## Knowledge-graph integration
