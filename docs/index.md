@@ -1,7 +1,7 @@
 # systems-manager
 
 A cross-platform **CLI, API, MCP Server, and Agent** for system maintenance,
-package management, and governed fleet delegation in the agent-utilities
+package management, and governed fleet delegation in the agent-connector-sdk
 ecosystem.
 
 !!! info "Official documentation"

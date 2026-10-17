@@ -155,28 +155,6 @@ def test_blocking_limiter_does_not_leak_across_event_loops(monkeypatch):
     assert asyncio.run(exercise()) == list(range(6))
 
 
-def test_startup_invariant_ignores_file_resources_but_rejects_unclassified_tool():
-    mcp = FastMCP("policy-test")
-    prompts_dir = Path(server.__file__).parent / "prompts"
-    for name in ("main_agent", "infrastructure_specialist"):
-        mcp.add_resource(
-            FileResource(
-                uri=f"prompt://systems-manager/{name}",
-                path=prompts_dir / f"{name}.json",
-                name=name,
-                mime_type="application/json",
-            )
-        )
-
-    @mcp.tool()
-    def unclassified_tool() -> str:
-        return "unsafe"
-
-    with pytest.raises(RuntimeError, match="Unclassified MCP tools") as exc_info:
-        server._assert_registered_tools_are_classified(mcp)
-    assert "unclassified_tool" in str(exc_info.value)
-    assert "main_agent" not in str(exc_info.value)
-    assert "infrastructure_specialist" not in str(exc_info.value)
 
 
 def test_registered_policy_is_complete():
@@ -233,15 +211,11 @@ def test_network_transport_requires_authentication_even_on_loopback():
         host="localhost",
         port=8000,
     )
-    with (
-        patch.object(server, "get_mcp_instance", return_value=(args, mcp, [])),
-        patch.object(server, "apply_served_security_profile") as apply_profile,
-    ):
+    with patch.object(server, "get_mcp_instance", return_value=(args, mcp, [])):
         with pytest.raises(SystemExit) as exc:
             server.mcp_server()
     assert exc.value.code == 2
     mcp.run.assert_not_called()
-    apply_profile.assert_not_called()
 
 
 def test_authenticated_network_transport_can_start():
@@ -252,14 +226,8 @@ def test_authenticated_network_transport_can_start():
         host="localhost",
         port=8000,
     )
-    with (
-        patch.object(server, "get_mcp_instance", return_value=(args, mcp, [])),
-        patch.object(server, "apply_served_security_profile") as apply_profile,
-    ):
+    with patch.object(server, "get_mcp_instance", return_value=(args, mcp, [])):
         server.mcp_server()
-    apply_profile.assert_called_once_with(
-        "streamable-http", transport_auth_configured=True
-    )
     mcp.run.assert_called_once_with(
         transport="streamable-http",
         host="localhost",

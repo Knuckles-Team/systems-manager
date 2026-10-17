@@ -11,6 +11,24 @@ def deployment_pseudonymization_key(monkeypatch):
     monkeypatch.setenv("SYSTEMS_MANAGER_PSEUDONYMIZATION_KEY", "test-key-" * 4)
 
 
+@pytest.fixture(autouse=True)
+def private_umask():
+    """Managed roots reject group/world-writable dirs; do not depend on the caller's umask."""
+    import os
+
+    previous = os.umask(0o022)
+    yield
+    os.umask(previous)
+
+
+@pytest.fixture(autouse=True)
+def not_a_kubernetes_node(monkeypatch):
+    """Keep tests hermetic: the machine running them may itself be a k8s node."""
+    monkeypatch.setattr(
+        "systems_manager.systems_manager.is_k8s_node", lambda *a, **k: (False, "test")
+    )
+
+
 @pytest.fixture
 def mock_logger():
     """Mock logger fixture."""

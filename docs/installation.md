@@ -22,8 +22,7 @@ extra for the interface the operator need:
 
 | Extra | Install | Pulls in |
 |---|---|---|
-| `mcp` | `pip install "systems-manager[mcp]"` | FastMCP MCP-server runtime (`agent-utilities[mcp]`) |
-| `agent` | `pip install "systems-manager[agent]"` | Pydantic-AI agent + Logfire tracing |
+| `mcp` | `pip install "systems-manager[mcp]"` | FastMCP MCP-server runtime (`agent-connector-sdk`) |
 | `all` | `pip install "systems-manager[all]"` | The MCP server, the agent, and tracing |
 | `test` | `pip install "systems-manager[test]"` | `pytest` and `pytest-asyncio` |
 

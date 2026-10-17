@@ -19,7 +19,7 @@
 ## Functional Requirements
 
 - **FR-001**: Minor update: pytest-xdist 3.6.0 (constraint — not installed) -> 3.8.0
-- **FR-002**: Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0
+- **FR-002**: Minor update: agent-connector-sdk 0.2.40 (installed) -> 0.16.0
 - **FR-003**: Minor update: psutil 7.1.0 (installed) -> 7.2.2
 - **FR-004**: 2 functions exceed 200 lines (actionable refactoring targets): get_mcp_instance (398L), register_os_provider_tools (266L)
 - **FR-005**: Monolithic: systems_manager.py (2898L) — 9 functions with high complexity (worst: systems_manager at 140L, CC=21); Low cohesion: 16 distinct concepts in one file
@@ -58,7 +58,7 @@
 - **FR-038**: Only 29% of env vars documented in README.md
 - **FR-039**: Undocumented env vars: AGENT_POLICIES_PATH, AUTH_TYPE, EUNOMIA_POLICY_FILE, EUNOMIA_TYPE, MAINTENANCE_PRIORITY, MAINTENANCE_TOKEN_BUDGET, MAX_CONCURRENT_AGENTS, MCP_CONFIG_PATH, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_PROTOCOL
 - **FR-040**: 8 Python env vars not in .env.example: AGENT_POLICIES_PATH, MAINTENANCE_PRIORITY, MAINTENANCE_TOKEN_BUDGET, MAX_CONCURRENT_AGENTS, MCP_CONFIG_PATH
-- **FR-041**: Analysis error: No module named 'agent_utilities.knowledge_graph'
+- **FR-041**: Analysis error: No module named 'agent_connector_sdk.knowledge_graph'
 
 ## Success Criteria
 

@@ -1,5 +1,5 @@
 [build-system]
-requires = [ "setuptools>=80.9.0", "wheel",]
+requires = [ "setuptools>=84.0.0", "wheel",]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,7 +9,7 @@ description = "Systems Manager will update your system and install/upgrade appli
 readme = "README.md"
 classifiers = [ "Development Status :: 5 - Production/Stable", "License :: Public Domain", "Environment :: Console", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3",]
 requires-python = ">=3.12,<3.15"
-dependencies = [ "agent-connector-sdk>=0.1.0,<1.0.0", "agent-utilities>=2.0.0,<3.0.0", "pydantic>=2.13.4", "psutil>=7.2.2", "distro>=1.9.0",]
+dependencies = [ "agent-connector-sdk>=0.2.0,<1.0.0", "pydantic>=2.14.1", "psutil>=7.2.2", "distro>=1.9.0", "requests>=2.34.2",]
 [[project.authors]]
 name = "Project Maintainers"
 email = "maintainers@users.noreply.github.com"
@@ -18,30 +18,23 @@ email = "maintainers@users.noreply.github.com"
 text = "MIT"
 
 [project.optional-dependencies]
-mcp = [ "agent-utilities[mcp]>=2.0.0,<3.0.0",]
-agent = [ "agent-utilities[agent-runtime,logfire]>=2.0.0,<3.0.0",]
-all = [ "agent-utilities[mcp,agent-runtime,logfire]>=2.0.0,<3.0.0",]
+mcp = [ "agent-connector-sdk>=0.2.0,<1.0.0",]
+all = [ "agent-connector-sdk>=0.2.0,<1.0.0",]
 test = [ "pytest>=9.1.1", "pytest-asyncio>=1.4.0",]
 
 [project.scripts]
 systems-manager = "systems_manager.systems_manager:main"
 systems-manager-mcp = "systems_manager.mcp_server:mcp_server"
-systems-manager-agent = "systems_manager.agent_server:agent_server"
 systems-manager-helper = "systems_manager.sudo_helper:main"
-systems-manager-health = "systems_manager.os_health:main_sample"
-systems-manager-health-derive = "systems_manager.os_health:main_derive"
 
-[project.entry-points."agent_utilities.skill_providers"]
+[project.entry-points."agent_connector_sdk.skill_providers"]
 systems-manager = "systems_manager.skills"
 
-[project.entry-points."agent_utilities.ontology_providers"]
+[project.entry-points."agent_connector_sdk.ontology_providers"]
 systems-manager = "systems_manager.ontology"
 
-[project.entry-points."agent_utilities.source_connector_providers"]
+[project.entry-points."agent_connector_sdk.source_connector_providers"]
 systems-manager = "systems_manager.connectors"
-
-[project.entry-points."agent_utilities.prompt_providers"]
-systems-manager = "systems_manager.prompts"
 
 [tool.uv.workspace]
 members = ["."]
@@ -79,12 +72,8 @@ ignore_names = ["request", "config"]
 
 [tool.uv]
 override-dependencies = [
-    "fastmcp-slim[client,server]>=4.0.0b1",
+    "fastmcp-slim[client,server]>=4.1.0",
 ]
-
-[tool.uv.sources]
-agent-connector-sdk = { path = ".uv-workspace-siblings/agent-connector-sdk", editable = true }
-agent-utilities = { path = ".uv-workspace-siblings/agent-utilities", editable = true }
 
 [tool.pipelines_hooks.ste]
 exempt = ["specs/*", "specs/**/*"]

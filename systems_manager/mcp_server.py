@@ -40,12 +40,6 @@ from agent_connector_sdk.mcp.context import ctx_log
 from agent_connector_sdk.mcp.server import create_mcp_server
 from agent_connector_sdk.mcp.tool_surface import register_tool_surface
 
-# No agent_connector_sdk equivalent yet (SDK-CONNECTOR-CONTROL gap, like
-# agent_utilities.security.entitlements.identity_scoped_resources on
-# objectstore-mcp): fail-closed identity + tenant/ACL/session enforcement for
-# a served network transport. Keep this import.
-from agent_utilities.security.request_identity import apply_served_security_profile
-
 from systems_manager.os_provider_tools import register_os_provider_tools
 from systems_manager.storage_tools import register_storage_health_tools
 from systems_manager.systems_manager import (
@@ -613,13 +607,6 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
     if bool(setting("MISCTOOL", True)):
         register_misc_tools(mcp)
 
-    from systems_manager.agent_os_tools import (
-        register_agent_health_tools,
-        register_identity_tools,
-        register_specialist_registry_tools,
-        register_watchdog_tools,
-    )
-
     register_tool_surface(
         mcp,
         client_cls=SystemsManagerBase,
@@ -628,10 +615,6 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
         registrars=[
             register_os_provider_tools,
             register_storage_health_tools,
-            register_agent_health_tools,
-            register_identity_tools,
-            register_specialist_registry_tools,
-            register_watchdog_tools,
         ],
     )
 
@@ -1243,14 +1226,9 @@ def mcp_server() -> None:
         logger.error("Refusing MCP network transport without configured authentication")
         raise SystemExit(2)
 
-    apply_served_security_profile(
-        args.transport,
-        transport_auth_configured=not unauthenticated and auth_provider is not None,
-    )
-
     if args.transport == "stdio":
         # Stdout purity is owned fd-level by the MCP SDK's own stdio_server()
-        # (agent-utilities B-19): it claims fd 1 exclusively and dup2()s stderr
+        # (agent-connector-sdk B-19): it claims fd 1 exclusively and dup2()s stderr
         # over it for every other writer, so no process-wide patch is needed.
         mcp.run(transport="stdio")
     elif args.transport == "streamable-http":

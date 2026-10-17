@@ -5,7 +5,7 @@ Skipped informational: 4
 
 - [ ] [P] **T001** [Dependency Audit] Minor update: pytest-xdist 3.6.0 (constraint — not installed) -> 3.8.0
   - Priority: P3-Low | Effort: Small
-- [ ] [P] **T002** [Dependency Audit] Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0
+- [ ] [P] **T002** [Dependency Audit] Minor update: agent-connector-sdk 0.2.40 (installed) -> 0.16.0
   - Priority: P3-Low | Effort: Small
 - [ ] [P] **T003** [Dependency Audit] Minor update: psutil 7.1.0 (installed) -> 7.2.2
   - Priority: P3-Low | Effort: Small
@@ -83,5 +83,5 @@ Skipped informational: 4
   - Priority: P2-Medium | Effort: Medium
 - [ ] [P] **T040** [Environment Variables] 8 Python env vars not in .env.example: AGENT_POLICIES_PATH, MAINTENANCE_PRIORITY
   - Priority: P2-Medium | Effort: Medium
-- [ ] [P] **T041** [analyze_xdg_kg] Analysis error: No module named 'agent_utilities.knowledge_graph'
+- [ ] [P] **T041** [analyze_xdg_kg] Analysis error: No module named 'agent_connector_sdk.knowledge_graph'
   - Priority: P1-High | Effort: Medium

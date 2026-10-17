@@ -5,7 +5,7 @@
 
 ## Tech Stack & Architecture
 - Language/Version: Python 3.11–3.14
-- Core Libraries: `agent-utilities`, `fastmcp`, `pydantic-ai`, `psutil`, `distro`
+- Core Libraries: `agent-connector-sdk`, `fastmcp`, `pydantic-ai`, `psutil`, `distro`
 - Key principles: Functional patterns, Pydantic for data validation, asynchronous tool execution.
 - Architecture:
     - `mcp_server.py`: Main MCP server entry point and tool registration.
@@ -92,7 +92,7 @@ python -m systems_manager.agent_server
 
 ## Code Style & Conventions
 **Always:**
-- Use current direct `agent-utilities` modules for shared patterns.
+- Use current direct `agent-connector-sdk` modules for shared patterns.
 - Define input/output models using Pydantic.
 - Include descriptive docstrings for all tools (they are used as tool descriptions for LLMs).
 - Check for optional dependencies using `try/except ImportError`.
@@ -100,7 +100,7 @@ python -m systems_manager.agent_server
 
 **Good example:**
 ```python
-from agent_utilities.mcp.server_factory import create_mcp_server
+from agent_connector_sdk.mcp.server_factory import create_mcp_server
 from fastmcp import FastMCP
 from pydantic import Field
 
@@ -115,7 +115,7 @@ async def my_tool(param: str = Field(description="Tool parameter")) -> str:
 ## Dos and Don'ts
 **Do:**
 - Run `pre-commit` before pushing changes.
-- Use existing patterns from `agent-utilities`.
+- Use existing patterns from `agent-connector-sdk`.
 - Keep tools focused and idempotent where possible.
 - Run pytest with coverage before committing.
 - Mock platform-specific operations in tests for cross-platform compatibility.
@@ -130,7 +130,7 @@ async def my_tool(param: str = Field(description="Tool parameter")) -> str:
 ## Safety & Boundaries
 **Always do:**
 - Run lint/test via `pre-commit`.
-- Use `agent-utilities` base classes.
+- Use `agent-connector-sdk` base classes.
 - Test package manager operations with mocking to avoid accidental system modifications.
 - Validate user inputs before running system commands.
 
@@ -142,7 +142,7 @@ async def my_tool(param: str = Field(description="Tool parameter")) -> str:
 
 **Never do:**
 - Commit `.env` files or secrets.
-- Modify `agent-utilities` or `universal-skills` files from within this package.
+- Modify `agent-connector-sdk` or `universal-skills` files from within this package.
 - Run destructive operations (package installs, system updates) in tests without proper mocking.
 - Hardcode platform-specific paths; use cross-platform path handling.
 
@@ -162,7 +162,7 @@ async def my_tool(param: str = Field(description="Tool parameter")) -> str:
 
 ## When Stuck
 - Propose a plan first before making large changes.
-- Check `agent-utilities` documentation for existing helpers.
+- Check `agent-connector-sdk` documentation for existing helpers.
 - Review existing test patterns for platform-specific mocking.
 - Check the `systems_manager.py` implementation for platform-specific patterns.
 
@@ -314,10 +314,10 @@ alone).
 Working in parallel with other sessions/worktrees? **Reserve a concept id before you write its `CONCEPT:` marker** so two sessions never collide:
 
 ```bash
-agent-utilities --json concept reserve --ns EG-KG.compute.backend   # or a package prefix, e.g. KEY
+agent-connector-sdk --json concept reserve --ns EG-KG.compute.backend   # or a package prefix, e.g. KEY
 ```
 
-Full protocol (ledger, merge=union, reconcile, MCP/REST): <https://knuckles-team.github.io/agent-utilities/concept_coordination/>
+Full protocol (ledger, merge=union, reconcile, MCP/REST): <https://knuckles-team.github.io/agent-connector-sdk/concept_coordination/>
 <!-- END concept-coordination (generated) -->
 
 ## Version & lockfile drift edict (keep the version mirrors AND the lock in sync)
@@ -345,14 +345,14 @@ is what Dependabot flags. Rules:
 ## Upstream currency edict — target the newest release; a pin is a hypothesis, not a fact (READ BEFORE capping, deferring, or opt-in-gating an upgrade)
 
 This governs how this repository treat **other people's** releases, deprecations, and version caps in
-this repo (fleet-wide edict, propagated from `agent-utilities/AGENTS.md`).
+this repo (fleet-wide edict, propagated from `agent-connector-sdk/AGENTS.md`).
 
 1. **Latest by default.** Target the newest upstream release -- including a pre-release
    where the ecosystem has already moved onto it. Sitting on an old major because the
    upgrade is work is not a reason to defer it.
 2. **A conservative upstream pin is a hypothesis, not a fact -- test it, don't inherit
    it.** Upstream maintainers cap defensively (an unreleased major, an untested surface)
-   as often as they cap for a known break. Worked example (from `agent-utilities`):
+   as often as they cap for a known break. Worked example (from `agent-connector-sdk`):
    `pydantic-ai-slim` 2.18.0 declared `fastmcp-slim[client]>=3.3.0` with no upper bound;
    2.19.0 added `<4` purely as a defensive guard while fastmcp 4 was still pre-release --
    not because of an observed incompatibility. Blocking an upgrade on that kind of cap

@@ -2,13 +2,13 @@
 
 Version: 2.1.0
 
-`systems-manager` is the typed host-operations provider for Agent Utilities and
+`systems-manager` is the typed host-operations provider for Agent Connector SDK and
 GraphOS. It exposes cross-platform package, service, process, network, disk,
 managed-file, firewall, physical-storage, Agent OS, and privacy-safe host-ingestion
 capabilities without exposing a raw command tool.
 
 The current package requires Python 3.11–3.14 and
-`agent-utilities>=2.0.0,<3.0.0`.
+`agent-connector-sdk>=2.0.0,<3.0.0`.
 
 ## Install and run
 
@@ -43,7 +43,7 @@ belong in AgentConfig or the process launcher.
 
 - Network MCP listeners require configured authentication. Non-loopback listeners also
   require direct TLS or a trusted TLS-stop proxy, exact allowed hosts, and the
-  current Agent Utilities transport checks.
+  current Agent Connector SDK transport checks.
 - Host mutations are denied unless `SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS=true` and the
   individual request receives destructive-operation approval.
 - Managed-file writes also require
@@ -127,7 +127,7 @@ tool.
 ## Knowledge-graph ingestion
 
 `systems_ingest_host` reads local typed telemetry and submits an allowlisted projection
-through the Agent Utilities native governed ingestion boundary. It emits only:
+through the Agent Connector SDK native governed ingestion boundary. It emits only:
 
 - `HardwareNode`, `NetworkInterface`, and `DiskVolume` nodes;
 - `hasInterface` and `hasVolume` relationships;
@@ -154,7 +154,6 @@ surfaces are not part of the typed current contract.
 Install the agent extra and start:
 
 ```bash
-pip install "systems-manager[agent]"
 systems-manager-agent --help
 ```
 
@@ -166,7 +165,7 @@ JWT issuer/JWKS/audience configuration, and debug mode disabled.
 ## Environment variables
 
 The generated table is sourced from the value-free `.env.example` plus the inherited
-Agent Utilities contract.
+Agent Connector SDK contract.
 
 <!-- ENV-VARS-TABLE:START -->
 
@@ -226,7 +225,7 @@ Agent Utilities contract.
 | `LANGFUSE_CAPTURE_CONTENT` | `false` | Never capture host/tool content |
 | `SERVER_TRUSTED_PROXY_CIDRS` | — | Trusted proxy networks for a remotely served agent |
 
-#### Inherited agent-utilities variables (apply to every connector)
+#### Inherited agent-connector-sdk variables (apply to every connector)
 
 | Variable | Example | Description |
 |----------|---------|-------------|
@@ -250,7 +249,7 @@ Agent Utilities contract.
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_51 package + 19 inherited variable(s). Auto-generated from `.env.example` + the shared agent-utilities set — do not edit._
+_51 package + 19 inherited variable(s). Auto-generated from `.env.example` + the shared agent-connector-sdk set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 ## Development and release gates
@@ -265,7 +264,7 @@ pre-commit run --all-files
 
 Run host operations only through mocks during tests. Do not run native builds or live
 host mutations as a validation shortcut. The source dependency floor is intentionally
-`agent-utilities>=2.0.0`; regenerate and commit a neutral lock only after that release
+`agent-connector-sdk>=2.0.0`; regenerate and commit a neutral lock only after that release
 is available from the configured package index. Never commit an editable local source
 or a stale dependency resolution.
 
@@ -273,27 +272,6 @@ See [the documentation](docs/index.md) for installation, deployment, configurati
 usage, multi-host delegation, and security details.
 
 
-<!-- BEGIN agent-utilities-deployment (generated; do not edit between markers) -->
-
-## Deploy with `agent-utilities-deployment`
-
-Provision this package with the consolidated **`agent-utilities-deployment`**
-workflow. It selects an installed-package, editable-source, or immutable-container
-path; records only runtime secret and TLS-profile references in `AgentConfig`; and
-runs doctor, registration, policy, observability, and rollback gates. Ask your agent
-to **"deploy `systems-manager` with agent-utilities-deployment"**.
-
-| Install mode | Command |
-|------|---------|
-| Installed package | `uv tool install "systems-manager[mcp]"`, then run `systems-manager-mcp` |
-| Editable source | `uv pip install -e ".[agent]"`, then run `systems-manager-mcp` |
-| Immutable container | deploy `registry.example.invalid/systems-manager@sha256:<digest>` through the operator-selected orchestrator |
-
-The repository embeds no deployment profile, credential value, certificate path, or
-environment-specific endpoint. Supply those at runtime through `AgentConfig` and the
-configured secret provider.
-
-<!-- END agent-utilities-deployment -->
 
 <!-- GOVERNED-CAPABILITY:START -->
 ## Governed capability contract

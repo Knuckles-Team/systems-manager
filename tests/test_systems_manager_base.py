@@ -316,15 +316,9 @@ class TestSystemsManagerBase:
 
     def test_install_python_modules_success(self, concrete_manager, monkeypatch):
         """Test successful Python module installation."""
-
-        def mock_run(*args, **kwargs):
-            result = Mock()
-            result.returncode = 0
-            result.stdout = "success"
-            result.stderr = ""
-            return result
-
-        monkeypatch.setattr("subprocess.run", mock_run)
+        monkeypatch.setattr(
+            concrete_manager, "run_command", lambda *a, **k: {"success": True}
+        )
         result = concrete_manager.install_python_modules(["requests", "pytest"])
         assert result["success"] is True
         assert len(result["installed"]) == 2

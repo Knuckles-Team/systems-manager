@@ -20,7 +20,7 @@ secrets, trust paths, or host identities.
 
 For `streamable-http` or `sse`, configure:
 
-- an authentication provider through the current Agent Utilities MCP settings;
+- an authentication provider through the current Agent Connector SDK MCP settings;
 - direct TLS certificate/key settings, or a verified TLS-stop proxy and
   trusted proxy CIDRs;
 - an explicit host allowlist;
@@ -47,7 +47,6 @@ service identity through the client boundary.
 The repository ships two hardened Compose definitions:
 
 - `docker/mcp.compose.yml` for the MCP server;
-- `docker/agent.compose.yml` for an agent plus MCP sidecar.
 
 Both require operator-selected image variables, bind published ports to loopback by
 default, run as UID/GID 10001, drop all Linux capabilities, enable
@@ -58,7 +57,6 @@ Build the two image targets with explicit registry tags:
 
 ```bash
 docker build --target mcp -t "${SYSTEMS_MANAGER_MCP_IMAGE}" -f docker/Dockerfile .
-docker build --target agent -t "${SYSTEMS_MANAGER_AGENT_IMAGE}" -f docker/Dockerfile .
 ```
 
 The Dockerfile pins base and uv images by digest and installs into a multi-stage,

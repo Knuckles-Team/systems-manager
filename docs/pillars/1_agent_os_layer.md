@@ -1,7 +1,7 @@
 # Agent OS layer
 
 `systems-manager` is the local execution provider for a reviewed set of host
-operations. Agent Utilities and GraphOS provide configuration, policy,
+operations. Agent Connector SDK and GraphOS provide configuration, policy,
 delegation, and lifecycle coordination around that local boundary.
 
 ## Platform provider

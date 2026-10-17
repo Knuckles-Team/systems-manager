@@ -34,7 +34,7 @@ Example agent prompts that map onto these tools:
 - *"Which processes are using the most memory?"* → `sm_process_operations`
 
 Tool modules are individually togglable with environment switches (for example,
-`MISCTOOL`) and can be filtered through the current Agent Utilities visibility
+`MISCTOOL`) and can be filtered through the current Agent Connector SDK visibility
 configuration. A denied or unavailable capability must not be translated into a raw
 command or generic file mutation.
 
