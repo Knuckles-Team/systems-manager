@@ -1218,14 +1218,8 @@ def mcp_server() -> None:
     print(f"  Transport: {args.transport.upper()}", file=sys.stderr)
     print(f"  Auth: {args.auth_type}", file=sys.stderr)
 
-    network_transport = args.transport in {"streamable-http", "sse"}
-    auth_type = str(getattr(args, "auth_type", "") or "").strip().casefold()
-    unauthenticated = auth_type in {"", "none", "no-auth", "disabled"}
-    auth_provider = getattr(mcp, "auth", None)
-    if network_transport and (unauthenticated or auth_provider is None):
-        logger.error("Refusing MCP network transport without configured authentication")
-        raise SystemExit(2)
-
+    # Network transports are fail-closed by the SDK served security profile,
+    # applied inside create_mcp_server; nothing to re-check here.
     if args.transport == "stdio":
         # Stdout purity is owned fd-level by the MCP SDK's own stdio_server()
         # (agent-connector-sdk B-19): it claims fd 1 exclusively and dup2()s stderr

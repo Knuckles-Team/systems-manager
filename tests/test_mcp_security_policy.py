@@ -2,13 +2,13 @@
 
 import ast
 import asyncio
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pytest
 from fastmcp import FastMCP
-from fastmcp.resources import FileResource
 
 from systems_manager import mcp_server as server
 
@@ -155,8 +155,6 @@ def test_blocking_limiter_does_not_leak_across_event_loops(monkeypatch):
     assert asyncio.run(exercise()) == list(range(6))
 
 
-
-
 def test_registered_policy_is_complete():
     tree = ast.parse(Path(server.__file__).read_text(encoding="utf-8"))
     decorated_tools = {
@@ -203,19 +201,16 @@ async def test_capability_report_discloses_status_not_paths(monkeypatch, tmp_pat
     assert "policy" in result and "transport_boundary" in result
 
 
-def test_network_transport_requires_authentication_even_on_loopback():
-    mcp = Mock(auth=None)
-    args = SimpleNamespace(
-        transport="streamable-http",
-        auth_type="none",
-        host="localhost",
-        port=8000,
+def test_network_transport_requires_authentication_even_on_loopback(monkeypatch):
+    """The SDK served security profile refuses an unauthenticated network server."""
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["systems-manager", "--transport", "streamable-http", "--host", "localhost"],
     )
-    with patch.object(server, "get_mcp_instance", return_value=(args, mcp, [])):
-        with pytest.raises(SystemExit) as exc:
-            server.mcp_server()
-    assert exc.value.code == 2
-    mcp.run.assert_not_called()
+    with pytest.raises(SystemExit) as exc:
+        server.get_mcp_instance()
+    assert exc.value.code == 1
 
 
 def test_authenticated_network_transport_can_start():
