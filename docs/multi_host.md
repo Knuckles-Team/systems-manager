@@ -7,13 +7,13 @@ confinement, and process-tree termination inside one local security boundary.
 
 ## Fleet pattern
 
-Use GraphOS delegation to compose the ecosystem services:
+Use Arbora delegation to compose the ecosystem services:
 
 ```mermaid
 flowchart LR
-    Client[MCP client] --> GraphOS[GraphOS delegation]
-    GraphOS --> LocalSM[Authenticated systems-manager on target]
-    GraphOS --> Tunnel[tunnel-manager]
+    Client[MCP client] --> Arbora[Arbora delegation]
+    Arbora --> LocalSM[Authenticated systems-manager on target]
+    Arbora --> Tunnel[tunnel-manager]
     Tunnel --> SSH[Host-key-verified SSH]
     LocalSM --> Host[Local typed host operations]
 ```
@@ -21,7 +21,7 @@ flowchart LR
 Choose one of two reviewed deployment patterns:
 
 1. Run an authenticated `systems-manager` service on each managed host and delegate
-   to that service through GraphOS.
+   to that service through Arbora.
 2. Use `tunnel-manager` for its governed, host-key-verified remote capabilities.
    Do not translate arbitrary model text into a remote shell command.
 
@@ -43,7 +43,7 @@ aliases should be opaque and non-personal.
 
 ## Delegation workflow
 
-1. Discover the target service or governed tunnel capability through GraphOS.
+1. Discover the target service or governed tunnel capability through Arbora.
 2. Confirm the target by opaque inventory alias without logging its connection data.
 3. Run read-only discovery under the sensitive-read gate.
 4. For a mutation, obtain the deployment-policy gate and request-channel approval.

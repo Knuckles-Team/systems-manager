@@ -1,7 +1,7 @@
 # systems-manager
 
 A cross-platform **CLI, API, MCP Server, and Agent** for system maintenance,
-package management, and governed fleet delegation in the agent-utilities
+package management, and governed fleet delegation in the agent-connector-sdk
 ecosystem.
 
 !!! info "Official documentation"
@@ -25,7 +25,7 @@ deterministic MCP tool surface. It provides:
   service, process, network, disk, user, file, cron, and firewall operations.
 - **An integrated Pydantic AI graph agent** — reachable over the Agent Control
   Protocol (ACP) and the Agent Web UI (AG-UI).
-- **Fleet composition** — GraphOS can delegate to authenticated per-host services or
+- **Fleet composition** — Arbora can delegate to authenticated per-host services or
   compose host-key-verified tunnel-manager capabilities.
 
 ## Explore the documentation

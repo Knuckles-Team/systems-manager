@@ -40,7 +40,7 @@ xychart-beta
 `██████████████░░░░░░` 74/100
 
 > [!NOTE]
-> Detected ecosystem marker: agent-utilities → Agent-Utilities Ecosystem
+> Detected ecosystem marker: agent-connector-sdk → Agent-Utilities Ecosystem
 
 | Criterion | Points | Evidence | Reasoning |
 |-----------|--------|----------|-----------|
@@ -72,7 +72,7 @@ xychart-beta
 | dependency_freshness | 91 | `source=${WORKSPACE_ROOT}/agent-packages/agents/systems-ma` | Audited 7 deps (5 installed, 2 constraint-only). 0 major, 3 minor, 0 patch updates |
 
 **Findings:**
-- Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0
+- Minor update: agent-connector-sdk 0.2.40 (installed) -> 0.16.0
 - Minor update: psutil 7.1.0 (installed) -> 7.2.2
 
 ---
@@ -260,7 +260,7 @@ xychart-beta
 `░░░░░░░░░░░░░░░░░░░░` 0/100
 
 > [!CAUTION]
-> Analysis error: No module named 'agent_utilities.knowledge_graph'
+> Analysis error: No module named 'agent_connector_sdk.knowledge_graph'
 
 ---
 
@@ -272,7 +272,7 @@ xychart-beta
 | 2 | 🔴 High | Concept Traceability | 8 orphaned concepts (only in one source) | High | High |
 | 3 | 🔴 High | Concept Traceability | 85 test functions missing concept markers | High | High |
 | 4 | 🔴 High | Concept Traceability | 146 significant functions (>10 lines) missing concept markers in docstrings | High | High |
-| 5 | 🔴 High | analyze_xdg_kg | Analysis error: No module named 'agent_utilities.knowledge_graph' | High | High |
+| 5 | 🔴 High | analyze_xdg_kg | Analysis error: No module named 'agent_connector_sdk.knowledge_graph' | High | High |
 | 6 | 🔴 High | Codebase Optimization | 2 functions exceed 200 lines (actionable refactoring targets): get_mcp_instance  | High | Medium |
 | 7 | 🔴 High | Codebase Optimization | Monolithic: systems_manager.py (2898L) — 9 functions with high complexity (worst | High | Medium |
 | 8 | 🔴 High | Codebase Optimization | Needs attention: agent_os_tools.py (735L) — Low cohesion: 14 distinct concepts i | High | Medium |
@@ -287,7 +287,7 @@ xychart-beta
 | 17 | 🔴 High | Environment Variables | Only 29% of env vars documented in README.md | High | Medium |
 | 18 | 🔴 High | Environment Variables | Undocumented env vars: AGENT_POLICIES_PATH, AUTH_TYPE, EUNOMIA_POLICY_FILE, EUNO | High | Medium |
 | 19 | 🔴 High | Environment Variables | 8 Python env vars not in .env.example: AGENT_POLICIES_PATH, MAINTENANCE_PRIORITY | High | Medium |
-| 20 | 🟡 Medium | Project Analysis | Detected ecosystem marker: agent-utilities → Agent-Utilities Ecosystem | Medium | Low |
+| 20 | 🟡 Medium | Project Analysis | Detected ecosystem marker: agent-connector-sdk → Agent-Utilities Ecosystem | Medium | Low |
 | 21 | 🟡 Medium | Project Analysis | Protocol support: MCP | Medium | Low |
 | 22 | 🟡 Medium | Test Coverage | Test suite lacks intent diversity (only one type) | Medium | Low |
 | 23 | 🟡 Medium | Test Coverage | 12 potential doc-test drift items | Medium | Low |
@@ -297,7 +297,7 @@ xychart-beta
 | 27 | 🟡 Medium | Changelog Audit | CHANGELOG.md is missing — create one following Keep a Changelog format | Medium | Low |
 | 28 | 🟡 Medium | Changelog Audit | CHANGELOG.md is missing | Medium | Low |
 | 29 | 🟢 Low | Dependency Audit | Minor update: pytest-xdist 3.6.0 (constraint — not installed) -> 3.8.0 | Low | Low |
-| 30 | 🟢 Low | Dependency Audit | Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0 | Low | Low |
+| 30 | 🟢 Low | Dependency Audit | Minor update: agent-connector-sdk 0.2.40 (installed) -> 0.16.0 | Low | Low |
 
 ---
 

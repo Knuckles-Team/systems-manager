@@ -30,7 +30,7 @@ WORKDIR /app
 COPY . /app
 
 # Compile and install package in-place
-RUN uv pip install --system --upgrade --verbose --no-cache --break-system-packages --prerelease=allow .[agent]
+RUN uv pip install --system --upgrade --verbose --no-cache --break-system-packages .[mcp]
 
 RUN groupadd --system --gid 10001 systems-manager \
     && useradd --system --uid 10001 --gid 10001 --home-dir /home/systems-manager --create-home systems-manager \

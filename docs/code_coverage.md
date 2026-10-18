@@ -18,7 +18,7 @@ The current contract is validated by focused suites for:
 - opaque knowledge-graph projection and native ingestion;
 - current Agent OS public authorities;
 - remote authentication and TLS startup invariants; and
-- skill metadata and direct GraphOS-compatible tool invocation.
+- skill metadata and direct Arbora-compatible tool invocation.
 
 Run tests in bounded groups on constrained WSL or CI workers so each Python
 process releases its imported server state before the next group. The CI

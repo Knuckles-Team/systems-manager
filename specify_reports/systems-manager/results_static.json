@@ -7,7 +7,7 @@
       "score": 74,
       "grade": "C",
       "findings": [
-        "Detected ecosystem marker: agent-utilities \u2192 Agent-Utilities Ecosystem",
+        "Detected ecosystem marker: agent-connector-sdk \u2192 Agent-Utilities Ecosystem",
         "Protocol support: MCP"
       ],
       "justifications": [
@@ -88,7 +88,7 @@
       "grade": "A",
       "findings": [
         "Minor update: pytest-xdist 3.6.0 (constraint \u2014 not installed) -> 3.8.0",
-        "Minor update: agent-utilities 0.2.40 (installed) -> 0.16.0",
+        "Minor update: agent-connector-sdk 0.2.40 (installed) -> 0.16.0",
         "Minor update: psutil 7.1.0 (installed) -> 7.2.2"
       ],
       "justifications": [
@@ -145,14 +145,14 @@
           "version_source": "constraint",
           "summary": "Pytest support for asyncio"
         },
-        "agent-utilities": {
+        "agent-connector-sdk": {
           "current": "0.2.40",
           "constraint": "0.16.0",
           "installed": "0.2.40",
           "latest": "0.16.0",
           "status": "minor",
           "version_source": "installed",
-          "summary": "Agent Utilities for Pydantic AI Agents"
+          "summary": "Agent Connector SDK for Pydantic AI Agents"
         },
         "psutil": {
           "current": "7.1.0",
@@ -915,7 +915,7 @@
           "files": [
             "docs/code_coverage.md",
             "docs/legacy_readme.md",
-            "docs/agent_utilities_synergy.md",
+            "docs/agent_connector_sdk_synergy.md",
             "docs/overview.md",
             "docs/deployment.md",
             "docs/index.md",
@@ -1951,7 +1951,7 @@
       "score": 0,
       "grade": "F",
       "findings": [
-        "Analysis error: No module named 'agent_utilities.knowledge_graph'"
+        "Analysis error: No module named 'agent_connector_sdk.knowledge_graph'"
       ],
       "justifications": []
     }
