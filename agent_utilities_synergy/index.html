@@ -6,17 +6,13 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-utilities ecosystem.">
+        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-connector-sdk ecosystem.">
       
       
       
         <link rel="canonical" href="https://knuckles-team.github.io/systems-manager/agent_utilities_synergy/">
       
       
-        <link rel="prev" href="../concepts/">
-      
-      
-        <link rel="next" href="../code_coverage/">
       
       
         
@@ -27,7 +23,7 @@
     
     
       
-        <title>Agent Utilities Integration - systems-manager</title>
+        <title>Agent Connector SDK integration - systems-manager</title>
       
     
     
@@ -78,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#agent-utilities-integration" class="md-skip">
+        <a href="#agent-connector-sdk-integration" class="md-skip">
           Skip to content
         </a>
       
@@ -114,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Agent Utilities Integration
+              Agent Connector SDK integration
             
           </span>
         </div>
@@ -443,17 +439,15 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../agent_connector_sdk_synergy.md" class="md-tabs__link">
         
   
   
     
   
-  Agent Utilities Integration
+  Agent Connector SDK Integration
 
       </a>
     </li>
@@ -850,44 +844,17 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Agent Utilities Integration
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../agent_connector_sdk_synergy.md" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent Utilities Integration
+    Agent Connector SDK Integration
   
 
     
@@ -896,59 +863,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#current-integration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Current integration
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#delegated-operation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Delegated operation
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#explicit-non-capabilities" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Explicit non-capabilities
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1086,14 +1000,14 @@
   
 
 
-<h1 id="agent-utilities-integration">Agent Utilities integration<a class="headerlink" href="#agent-utilities-integration" title="Permanent link">&para;</a></h1>
-<p><code>systems-manager</code> is a typed, local host-operation provider. Agent Utilities
+<h1 id="agent-connector-sdk-integration">Agent Connector SDK integration<a class="headerlink" href="#agent-connector-sdk-integration" title="Permanent link">&para;</a></h1>
+<p><code>systems-manager</code> is a typed, local host-operation provider. Agent Connector SDK
 supplies the MCP server, configuration, transport security, approval prompts,
 delegation, and observability boundaries. Neither component turns model output
 into a shell command.</p>
 <h2 id="current-integration">Current integration<a class="headerlink" href="#current-integration" title="Permanent link">&para;</a></h2>
 <ul>
-<li>The package uses the current Agent Utilities server factory and intent-first
+<li>The package uses the current Agent Connector SDK server factory and intent-first
   tool surface.</li>
 <li>Sensitive reads, active network probes, host mutations, and generic file
   mutations have separate default-deny administrator gates.</li>
@@ -1106,7 +1020,7 @@ into a shell command.</p>
 <li>Remote MCP and agent transports require authentication and verified TLS.</li>
 </ul>
 <h2 id="delegated-operation">Delegated operation<a class="headerlink" href="#delegated-operation" title="Permanent link">&para;</a></h2>
-<p>GraphOS can delegate a typed operation to an authenticated systems-manager
+<p>Arbora can delegate a typed operation to an authenticated systems-manager
 instance on the target host. Target inventory, credentials, endpoints, TLS
 profiles, and policy are deployment configuration; none is packaged here.</p>
 <p>A safe delegated workflow is:</p>
@@ -1157,44 +1071,6 @@ security policies.</p>
       
         <footer class="md-footer">
   
-    
-      
-      <nav class="md-footer__inner md-grid" aria-label="Footer" >
-        
-          
-          <a href="../concepts/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Concepts">
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
-            </div>
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              <div class="md-ellipsis">
-                Concepts
-              </div>
-            </div>
-          </a>
-        
-        
-          
-          <a href="../code_coverage/" class="md-footer__link md-footer__link--next" aria-label="Next: Validation">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Validation
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
-            </div>
-          </a>
-        
-      </nav>
     
   
   <div class="md-footer-meta md-typeset">

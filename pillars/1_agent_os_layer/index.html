@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-utilities ecosystem.">
+        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-connector-sdk ecosystem.">
       
       
       
@@ -443,13 +443,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../agent_utilities_synergy/" class="md-tabs__link">
+      <a href="../../agent_connector_sdk_synergy.md" class="md-tabs__link">
         
   
   
     
   
-  Agent Utilities Integration
+  Agent Connector SDK Integration
 
       </a>
     </li>
@@ -851,14 +851,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../agent_utilities_synergy/" class="md-nav__link">
+      <a href="../../agent_connector_sdk_synergy.md" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent Utilities Integration
+    Agent Connector SDK Integration
   
 
     
@@ -1108,7 +1108,7 @@
 
 <h1 id="agent-os-layer">Agent OS layer<a class="headerlink" href="#agent-os-layer" title="Permanent link">&para;</a></h1>
 <p><code>systems-manager</code> is the local execution provider for a reviewed set of host
-operations. Agent Utilities and GraphOS provide configuration, policy,
+operations. Agent Connector SDK and Arbora provide configuration, policy,
 delegation, and lifecycle coordination around that local boundary.</p>
 <h2 id="platform-provider">Platform provider<a class="headerlink" href="#platform-provider" title="Permanent link">&para;</a></h2>
 <p><code>get_os_provider()</code> selects Linux or Windows explicitly. Unsupported platforms
@@ -1130,7 +1130,7 @@ gate. A request still needs destructive-action approval. The package never
 constructs an arbitrary shell command or an interactive elevation flow.</p>
 <h2 id="fleet-composition">Fleet composition<a class="headerlink" href="#fleet-composition" title="Permanent link">&para;</a></h2>
 <p>The package contains no embedded message broker or broadcast control plane.
-GraphOS may delegate to independently authenticated per-host instances, and a
+Arbora may delegate to independently authenticated per-host instances, and a
 separately reviewed tunnel provider may provide remote transport. Fleet size,
 concurrency, retries, routing, and aggregation are deployment responsibilities.</p>
 <p>See <a href="../../host-lifecycle-coverage/">Host lifecycle coverage</a> for the implemented

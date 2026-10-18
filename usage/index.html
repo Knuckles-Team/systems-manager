@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-utilities ecosystem.">
+        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-connector-sdk ecosystem.">
       
       
       
@@ -447,13 +447,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../agent_utilities_synergy/" class="md-tabs__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-tabs__link">
         
   
   
     
   
-  Agent Utilities Integration
+  Agent Connector SDK Integration
 
       </a>
     </li>
@@ -933,14 +933,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../agent_utilities_synergy/" class="md-nav__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent Utilities Integration
+    Agent Connector SDK Integration
   
 
     
@@ -1157,7 +1157,7 @@ domains are also registered when their current provider toggles are enabled.</p>
 <li><em>"Which processes are using the most memory?"</em> → <code>sm_process_operations</code></li>
 </ul>
 <p>Tool modules are individually togglable with environment switches (for example,
-<code>MISCTOOL</code>) and can be filtered through the current Agent Utilities visibility
+<code>MISCTOOL</code>) and can be filtered through the current Agent Connector SDK visibility
 configuration. A denied or unavailable capability must not be translated into a raw
 command or generic file mutation.</p>
 <h2 id="as-a-python-api">As a Python API<a class="headerlink" href="#as-a-python-api" title="Permanent link">&para;</a></h2>
@@ -1174,7 +1174,7 @@ Windows), so the same calls work across distributions.</p>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">logs</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_system_logs</span><span class="p">(</span><span class="n">lines</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>      <span class="c1"># recent journal / system logs</span>
 </span></code></pre></div>
 <p>For fleet operations, delegate to an authenticated instance on the target host or
-compose the governed tunnel-manager capability through GraphOS. See
+compose the governed tunnel-manager capability through Arbora. See
 <a href="../multi_host/">Multi-Host</a>.</p>
 <h2 id="as-a-cli">As a CLI<a class="headerlink" href="#as-a-cli" title="Permanent link">&para;</a></h2>
 <p>The <code>systems-manager</code> console script drives package management and host maintenance

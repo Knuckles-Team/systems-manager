@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-utilities ecosystem.">
+        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-connector-sdk ecosystem.">
       
       
       
@@ -447,13 +447,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../agent_utilities_synergy/" class="md-tabs__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-tabs__link">
         
   
   
     
   
-  Agent Utilities Integration
+  Agent Connector SDK Integration
 
       </a>
     </li>
@@ -955,14 +955,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../agent_utilities_synergy/" class="md-nav__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent Utilities Integration
+    Agent Connector SDK Integration
   
 
     
@@ -1131,8 +1131,8 @@
 
 
 <h1 id="systems-manager-concept-overview">Systems Manager concept overview<a class="headerlink" href="#systems-manager-concept-overview" title="Permanent link">&para;</a></h1>
-<p><strong>Ecosystem role:</strong> a typed local-host operations provider for GraphOS and
-agent-utilities.</p>
+<p><strong>Ecosystem role:</strong> a typed local-host operations provider for Arbora and
+agent-connector-sdk.</p>
 <h2 id="capability-model">Capability model<a class="headerlink" href="#capability-model" title="Permanent link">&para;</a></h2>
 <p><code>systems-manager</code> selects one local platform implementation at runtime:</p>
 <ul>
@@ -1166,17 +1166,17 @@ agent listeners require the explicit allow gate, TLS boundary configuration, and
 authentication. Certificate trust comes from AgentConfig TLS profiles; private CA
 bundles are never embedded.</p>
 <h2 id="fleet-composition">Fleet composition<a class="headerlink" href="#fleet-composition" title="Permanent link">&para;</a></h2>
-<p>Host operations run where the process runs. GraphOS can delegate to an
+<p>Host operations run where the process runs. Arbora can delegate to an
 authenticated systems-manager instance on each target or compose tunnel-manager's
 host-key-verified SSH capabilities. The package does not embed inventory profiles,
 connection endpoints, identities, or workstation paths.</p>
 <pre class="mermaid"><code>flowchart LR
-    Caller[Authenticated caller] --&gt; GraphOS[GraphOS delegation]
-    GraphOS --&gt; MCP[Systems Manager MCP]
+    Caller[Authenticated caller] --&gt; Arbora[Arbora delegation]
+    Arbora --&gt; MCP[Systems Manager MCP]
     MCP --&gt; Policy[Policy and approval gates]
     Policy --&gt; Manager[Typed local platform manager]
     Manager --&gt; Host[Local host boundary]
-    GraphOS --&gt; Tunnel[Governed tunnel-manager capability]</code></pre>
+    Arbora --&gt; Tunnel[Governed tunnel-manager capability]</code></pre>
 <h2 id="knowledge-graph-integration">Knowledge-graph integration<a class="headerlink" href="#knowledge-graph-integration" title="Permanent link">&para;</a></h2>
 <p><code>systems_ingest_host</code> collects the local typed telemetry surface and hands an
 allowlisted report to the native governed knowledge-graph ingestion seam. The provider

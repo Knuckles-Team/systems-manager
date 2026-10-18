@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-utilities ecosystem.">
+        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-connector-sdk ecosystem.">
       
       
       
@@ -447,13 +447,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../agent_utilities_synergy/" class="md-tabs__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-tabs__link">
         
   
   
     
   
-  Agent Utilities Integration
+  Agent Connector SDK Integration
 
       </a>
     </li>
@@ -977,14 +977,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../agent_utilities_synergy/" class="md-nav__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent Utilities Integration
+    Agent Connector SDK Integration
   
 
     
@@ -1188,7 +1188,7 @@ secrets, trust paths, or host identities.</p>
 <h2 id="network-mcp">Network MCP<a class="headerlink" href="#network-mcp" title="Permanent link">&para;</a></h2>
 <p>For <code>streamable-http</code> or <code>sse</code>, configure:</p>
 <ul>
-<li>an authentication provider through the current Agent Utilities MCP settings;</li>
+<li>an authentication provider through the current Agent Connector SDK MCP settings;</li>
 <li>direct TLS certificate/key settings, or a verified TLS-stop proxy and
   trusted proxy CIDRs;</li>
 <li>an explicit host allowlist;</li>
@@ -1210,7 +1210,6 @@ service identity through the client boundary.</p>
 <p>The repository ships two hardened Compose definitions:</p>
 <ul>
 <li><code>docker/mcp.compose.yml</code> for the MCP server;</li>
-<li><code>docker/agent.compose.yml</code> for an agent plus MCP sidecar.</li>
 </ul>
 <p>Both require operator-selected image variables, bind published ports to loopback by
 default, run as UID/GID 10001, drop all Linux capabilities, enable
@@ -1218,7 +1217,6 @@ default, run as UID/GID 10001, drop all Linux capabilities, enable
 bounded <code>tmpfs</code>. Network authentication and TLS boundary inputs are required.</p>
 <p>Build the two image targets with explicit registry tags:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>mcp<span class="w"> </span>-t<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">SYSTEMS_MANAGER_MCP_IMAGE</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--target<span class="w"> </span>agent<span class="w"> </span>-t<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">SYSTEMS_MANAGER_AGENT_IMAGE</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span>-f<span class="w"> </span>docker/Dockerfile<span class="w"> </span>.
 </span></code></pre></div>
 <p>The Dockerfile pins base and uv images by digest and installs into a multi-stage,
 non-root runtime. Deployment pipelines should also sign the resulting image,

@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-utilities ecosystem.">
+        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-connector-sdk ecosystem.">
       
       
       
@@ -447,13 +447,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../agent_utilities_synergy/" class="md-tabs__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-tabs__link">
         
   
   
     
   
-  Agent Utilities Integration
+  Agent Connector SDK Integration
 
       </a>
     </li>
@@ -933,14 +933,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../agent_utilities_synergy/" class="md-nav__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent Utilities Integration
+    Agent Connector SDK Integration
   
 
     
@@ -1092,17 +1092,17 @@ verification. Its typed host operations run on the host where the process runs.
 This keeps operating-system detection, executable trust, elevation, filesystem
 confinement, and process-tree termination inside one local security boundary.</p>
 <h2 id="fleet-pattern">Fleet pattern<a class="headerlink" href="#fleet-pattern" title="Permanent link">&para;</a></h2>
-<p>Use GraphOS delegation to compose the ecosystem services:</p>
+<p>Use Arbora delegation to compose the ecosystem services:</p>
 <pre class="mermaid"><code>flowchart LR
-    Client[MCP client] --&gt; GraphOS[GraphOS delegation]
-    GraphOS --&gt; LocalSM[Authenticated systems-manager on target]
-    GraphOS --&gt; Tunnel[tunnel-manager]
+    Client[MCP client] --&gt; Arbora[Arbora delegation]
+    Arbora --&gt; LocalSM[Authenticated systems-manager on target]
+    Arbora --&gt; Tunnel[tunnel-manager]
     Tunnel --&gt; SSH[Host-key-verified SSH]
     LocalSM --&gt; Host[Local typed host operations]</code></pre>
 <p>Choose one of two reviewed deployment patterns:</p>
 <ol>
 <li>Run an authenticated <code>systems-manager</code> service on each managed host and delegate
-   to that service through GraphOS.</li>
+   to that service through Arbora.</li>
 <li>Use <code>tunnel-manager</code> for its governed, host-key-verified remote capabilities.
    Do not translate arbitrary model text into a remote shell command.</li>
 </ol>
@@ -1123,7 +1123,7 @@ aliases should be opaque and non-personal.</p>
 </ul>
 <h2 id="delegation-workflow">Delegation workflow<a class="headerlink" href="#delegation-workflow" title="Permanent link">&para;</a></h2>
 <ol>
-<li>Discover the target service or governed tunnel capability through GraphOS.</li>
+<li>Discover the target service or governed tunnel capability through Arbora.</li>
 <li>Confirm the target by opaque inventory alias without logging its connection data.</li>
 <li>Run read-only discovery under the sensitive-read gate.</li>
 <li>For a mutation, obtain the deployment-policy gate and request-channel approval.</li>

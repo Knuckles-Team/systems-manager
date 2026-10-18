@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-utilities ecosystem.">
+        <meta name="description" content="Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-connector-sdk ecosystem.">
       
       
       
@@ -447,13 +447,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../agent_utilities_synergy/" class="md-tabs__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-tabs__link">
         
   
   
     
   
-  Agent Utilities Integration
+  Agent Connector SDK Integration
 
       </a>
     </li>
@@ -944,14 +944,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../agent_utilities_synergy/" class="md-nav__link">
+      <a href="../agent_connector_sdk_synergy.md" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Agent Utilities Integration
+    Agent Connector SDK Integration
   
 
     
@@ -1128,7 +1128,7 @@ credential, host key, endpoint, username, or sudoers rule.</p>
 <li>If elevation is required, provision it outside the agent through a reviewed
    service account or a narrowly scoped helper policy.</li>
 <li>Run the ecosystem doctor and capability/schema validation before exposing the
-   service to GraphOS.</li>
+   service to Arbora.</li>
 </ol>
 <h2 id="elevation-helper">Elevation helper<a class="headerlink" href="#elevation-helper" title="Permanent link">&para;</a></h2>
 <p>The optional <code>systems-manager-helper</code> accepts only typed service and package
@@ -1144,21 +1144,21 @@ interpreter, shell, wildcard path, package-manager binary, or the systems-manage
 process blanket passwordless sudo. Do not pass an elevation password through MCP,
 CLI arguments, environment, logs, or traces.</p>
 <h2 id="fleet-provisioning">Fleet provisioning<a class="headerlink" href="#fleet-provisioning" title="Permanent link">&para;</a></h2>
-<p>Use GraphOS to delegate to an authenticated systems-manager service on each host,
+<p>Use Arbora to delegate to an authenticated systems-manager service on each host,
 or use tunnel-manager's governed fleet workflows. Tunnel configuration must use
 checked host keys and secret references. There is no accept-unknown host-key mode
 and no plaintext inventory password.</p>
 <pre class="mermaid"><code>sequenceDiagram
     participant Operator
     participant Doctor
-    participant GraphOS
+    participant Arbora
     participant Host
     Operator-&gt;&gt;Host: Install signed package and least-privilege identity
     Operator-&gt;&gt;Host: Configure managed root, auth, TLS, and policy gates
     Operator-&gt;&gt;Doctor: Validate configuration without printing secrets
     Doctor--&gt;&gt;Operator: Sanitized readiness status
-    GraphOS-&gt;&gt;Host: Authenticated capability discovery
-    Host--&gt;&gt;GraphOS: Sanitized tool schemas and health</code></pre>
+    Arbora-&gt;&gt;Host: Authenticated capability discovery
+    Host--&gt;&gt;Arbora: Sanitized tool schemas and health</code></pre>
 <h2 id="acceptance-checks">Acceptance checks<a class="headerlink" href="#acceptance-checks" title="Permanent link">&para;</a></h2>
 <ul>
 <li>The package version, ontology, source preset, mapping, skill schema, and MCP tool
