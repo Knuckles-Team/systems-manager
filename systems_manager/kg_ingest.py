@@ -29,7 +29,7 @@ from agent_connector_sdk.ingest import (
 
 logger = logging.getLogger("systems_manager.kg")
 
-_BINDING = IngestBinding(connector="systems-manager", stream="systems")
+_BINDING = IngestBinding(connector="systems-manager-mcp", stream="systems")
 
 _ENTITY_FIELDS = {
     "HardwareNode": frozenset(
@@ -76,7 +76,9 @@ def _to_entity(record: dict[str, Any]) -> Entity:
         id=record.get("id"),
         node_type=record.get("node_type"),
         properties={
-            key: value for key, value in record.items() if key not in ("id", "node_type")
+            key: value
+            for key, value in record.items()
+            if key not in ("id", "node_type")
         },
     )
 

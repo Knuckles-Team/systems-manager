@@ -11,7 +11,7 @@ overrides = [{ name = "fastmcp-slim", extras = ["client", "server"], specifier =
 
 [[package]]
 name = "agent-connector-sdk"
-version = "0.2.1"
+version = "0.3.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -23,8 +23,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/46/49/9259f99d1d16a8f4e6f45715bf421808cf886df633f010254fc06c2211d2/agent_connector_sdk-0.3.11.tar.gz", hash = "sha256:3d2b38bd4a2781ea3dca94f147dbc5e4b26fb343d781354467ca393c21a81f14", size = 745118, upload-time = "2026-10-22T23:32:22.111Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/c0/f68a33b9344f5f7f2b9bb4a5baf281d6279f8189d04630d1544850d2a684/agent_connector_sdk-0.2.1-py3-none-any.whl", hash = "sha256:0bc8f997b05fbb4358c1e44cfd5d526c7715a8d4d0d14ba7624883c22d3a0719", size = 708662, upload-time = "2026-10-17T15:37:16.917Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/db/2985f2e6afa2a1708c86a7770616529fbd3dc01304f236e9db098e6c50bb/agent_connector_sdk-0.3.11-py3-none-any.whl", hash = "sha256:aaea4baf2fc870f9f31bfb2d9b10e090842c6e58772777804d720e602f2e33ec", size = 742982, upload-time = "2026-10-22T23:32:20.508Z" },
 ]
 
 [package.optional-dependencies]
@@ -1496,9 +1497,9 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "agent-connector-sdk", extras = ["mcp"], specifier = ">=0.2.1,<1.0.0" },
-    { name = "agent-connector-sdk", extras = ["mcp"], marker = "extra == 'all'", specifier = ">=0.2.1,<1.0.0" },
-    { name = "agent-connector-sdk", extras = ["mcp"], marker = "extra == 'mcp'", specifier = ">=0.2.1,<1.0.0" },
+    { name = "agent-connector-sdk", extras = ["mcp"], specifier = ">=0.3.11,<1.0.0" },
+    { name = "agent-connector-sdk", extras = ["mcp"], marker = "extra == 'all'", specifier = ">=0.3.11,<1.0.0" },
+    { name = "agent-connector-sdk", extras = ["mcp"], marker = "extra == 'mcp'", specifier = ">=0.3.11,<1.0.0" },
     { name = "distro", specifier = ">=1.9.0" },
     { name = "psutil", specifier = ">=7.2.2" },
     { name = "pydantic", specifier = ">=2.14.1" },

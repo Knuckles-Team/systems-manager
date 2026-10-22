@@ -1,9 +1,9 @@
 {
   "api_version": "arbora.io/v1",
   "artifacts": {
-    "connector_manifest.yml": "6143d3857002ac905fc9968cba97f04217e52ea6ab22edf980b8f7dd1fda4235",
+    "connector_manifest.yml": "418891fa568f73fc35c55f541903e269675e5aeba17b6f41004693b1566a8fd2",
     "systems_manager/connectors/mcp_source_presets.json": "a7fdf7972c4724745fe6a09c037588d3f4344e0cbb7f2ef65509f3cbc6951b0b",
-    "systems_manager/connectors/tool_schema_fingerprints.json": "d34122dae75c67317b0e13baea33a1bc2f8b47e0f1931e91305c7a746d500c13",
+    "systems_manager/connectors/tool_schema_fingerprints.json": "384b219f1a4184defa07f29d3401ae817922ac862c2947e0931ffcbf4f3fc9fe",
     "systems_manager/ontology/fixtures/records.json": "e8070d8d14ba28458eaa54251fa07d250cfe41bccb95f101a528c96857c0c83a",
     "systems_manager/ontology/mappings/source.yaml": "5b96870339dd6d95ca073e147c36158be7c7d8db56134bb844431d488d672fbd",
     "systems_manager/ontology/migrations/manifest.json": "8cef0690e8182bde103b8b6e48deedd87f1330763e9f15cfe3bd465e4ac98a2a",
@@ -22,7 +22,7 @@
     "bundle_schema": "2",
     "epistemic_graph": ">=2.27.0,<3"
   },
-  "connector": "systems-manager",
+  "connector": "systems-manager-mcp",
   "kind": "ConnectorSourceAttestation",
   "live_certified": false,
   "mode": "offline-source",
