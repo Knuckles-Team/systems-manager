@@ -51,7 +51,7 @@ from systems_manager.systems_manager import (
     resolve_managed_path,
 )
 
-__version__ = "2.2.3"
+__version__ = "2.2.4"
 
 logging.basicConfig(
     level=logging.WARNING,
