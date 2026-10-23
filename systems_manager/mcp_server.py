@@ -35,6 +35,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="authlib.*
 
 from agent_connector_sdk.config import load_config, setting
 from agent_connector_sdk.mcp.action_dispatch import resolve_action
+from agent_connector_sdk.mcp.action_split import assert_tools_classified
 from agent_connector_sdk.mcp.concurrency import run_blocking as _agent_run_blocking
 from agent_connector_sdk.mcp.context import ctx_log
 from agent_connector_sdk.mcp.server import create_mcp_server
@@ -50,7 +51,7 @@ from systems_manager.systems_manager import (
     resolve_managed_path,
 )
 
-__version__ = "2.2.2"
+__version__ = "2.2.3"
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -484,24 +485,6 @@ _ALL_CLASSIFIED_TOOLS = frozenset(
         "act",
     }
 )
-
-
-def _assert_registered_tools_are_classified(mcp: FastMCP) -> None:
-    """Refuse startup when a registered tool has no explicit policy class."""
-    provider = getattr(mcp, "_local_provider", None)
-    components = getattr(provider, "_components", None)
-    if not isinstance(components, dict):
-        return
-    registered = {
-        str(getattr(component, "name", "") or "")
-        for key, component in components.items()
-        if str(key).startswith("tool:") and getattr(component, "name", None)
-    }
-    unclassified = registered - _ALL_CLASSIFIED_TOOLS
-    if unclassified:
-        raise RuntimeError(
-            "Unclassified MCP tools prevent startup: " + ", ".join(sorted(unclassified))
-        )
 
 
 def register_misc_tools(mcp: FastMCP) -> None:
@@ -1214,7 +1197,8 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
             }
         return {"target": "local", "success": True, "ingested": result}
 
-    _assert_registered_tools_are_classified(mcp)
+    # Fail closed: any registered tool without a policy class refuses startup.
+    assert_tools_classified(mcp, _ALL_CLASSIFIED_TOOLS)
     mcp.add_middleware(SystemsSecurityMiddleware())
     return args, mcp, middlewares
 
