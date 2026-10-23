@@ -69,7 +69,7 @@ async def test_ingest_entities_uses_canonical_native_boundary(ingest):
         "systems:nic:interface:example",
     }
     assert request.relationships[0].relation_reference.endswith(
-        "resources/HardwareNode/relations/hasInterface"
+        "relations/HardwareNode/hasInterface"
     )
 
 

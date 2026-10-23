@@ -157,5 +157,8 @@
     rdfs:label "Systems Manager Ontology" ;
     rdfs:comment """Systems Manager infrastructure model — managed compute boundaries and
     their OS-level resources, represented with opaque source references and operational
-    attributes through the governed knowledge-graph boundary.""" ;
-    owl:imports <http://knuckles.team/kg> .
+    attributes through the governed knowledge-graph boundary.""" .
+
+# ontology-codemod R3
+<http://knuckles.team/kg#DiskVolume> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Volume> .
+<http://knuckles.team/kg#NetworkInterface> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#NetworkInterface> .
