@@ -180,11 +180,14 @@ Agent Connector SDK contract.
 | `TLS_PROFILE` | — | Shared mandatory-verification transport profile |
 | `TLS_PROFILES_REF` | — | Runtime reference to the transport profile catalog |
 | `LANGFUSE_TLS_PROFILE_REF` | — | Runtime reference to verified Langfuse trust |
+| `MCP_TOOL_MODE` | `intent` | Current intent-first tool surface |
 | `SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS` | `false` | Default-deny host mutations |
 | `SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS` | `false` | Default-deny file mutations |
 | `SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS` | `false` | Default-deny sensitive inventory |
 | `SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES` | `false` | Default-deny active probes |
 | `SYSTEMS_MANAGER_MAX_BLOCKING_OPERATIONS` | `2` | Bounded host-operation concurrency |
+| `SYSTEMS_MANAGER_HEALTH_INGEST` | `true` | Enable governed health trend ingestion |
+| `SYSTEMS_MANAGER_HEALTH_AGGREGATE_S` | `3600` | Health trend aggregation window |
 | `SYSTEMS_MANAGER_NODE_REF` | — | Runtime node alias; only a keyed digest persists |
 | `SYSTEMS_MANAGER_NOTIFY_TLS_PROFILE` | — | Optional inline mandatory-verification notification TLS profile |
 | `SYSTEMS_MANAGER_NOTIFY_TLS_PROFILE_REF` | — | Runtime reference to the notification TLS profile |
