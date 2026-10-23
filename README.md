@@ -1,6 +1,6 @@
 # systems-manager
 
-Version: 2.2.2
+Version: 2.2.3
 
 `systems-manager` is the typed host-operations provider for Agent Connector SDK and
 Arbora. It exposes cross-platform package, service, process, network, disk,
