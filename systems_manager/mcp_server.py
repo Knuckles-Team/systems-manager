@@ -8,6 +8,7 @@ import sys
 import warnings
 import weakref
 from collections.abc import Callable
+from importlib.metadata import version as package_version
 from typing import Any, Literal, TypeVar, cast
 
 from agent_connector_sdk.utilities import to_boolean
@@ -51,7 +52,7 @@ from systems_manager.systems_manager import (
     resolve_managed_path,
 )
 
-__version__ = "2.2.5"
+__version__ = package_version("systems-manager")
 
 logging.basicConfig(
     level=logging.WARNING,

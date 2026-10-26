@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "systems-manager"
-version = "2.2.5"
+version = "2.2.6"
 description = "Systems Manager will update your system and install/upgrade applications. Additionally, as allow AI to perform these activities as an MCP Server"
 readme = "README.md"
 classifiers = [ "Development Status :: 5 - Production/Stable", "License :: Public Domain", "Environment :: Console", "Operating System :: POSIX :: Linux", "Programming Language :: Python :: 3",]
@@ -78,3 +78,37 @@ override-dependencies = [
 
 [tool.pipelines_hooks.ste]
 exempt = ["specs/*", "specs/**/*"]
+
+[tool.pipelines.codespell]
+ignore_words = ["callin"]
+
+[tool.pipelines.container]
+image_var = "SYSTEMS_MANAGER_MCP_IMAGE_DIGEST"
+restart = "unless-stopped"
+tmpfs_size = "128m"
+env_file_mode = "none"
+compose_host = {env = "SYSTEMS_MANAGER_MCP_BIND_ADDRESS", default = "127.0.0.1"}
+publish_port = {env = "SYSTEMS_MANAGER_MCP_PORT", default = 8000}
+container_name = false
+hostname = false
+health_timeout = "5s"
+health_command_timeout = 3
+compose_env = [
+    "AUTH_TYPE=${AUTH_TYPE:?authenticated MCP transport required}",
+    "MCP_TLS_TERMINATED=${MCP_TLS_TERMINATED:?verified TLS boundary required}",
+    "MCP_TRUSTED_PROXY_CIDRS=${MCP_TRUSTED_PROXY_CIDRS:?trusted ingress CIDRs required}",
+    "MCP_ALLOWED_HOSTS=${MCP_ALLOWED_HOSTS:?MCP Host allowlist required}",
+    "FASTMCP_SERVER_AUTH_STATIC_TOKENS_REF=${FASTMCP_SERVER_AUTH_STATIC_TOKENS_REF:-}",
+    "FASTMCP_SERVER_AUTH_JWT_JWKS_URI=${FASTMCP_SERVER_AUTH_JWT_JWKS_URI:-}",
+    "FASTMCP_SERVER_AUTH_JWT_ISSUER=${FASTMCP_SERVER_AUTH_JWT_ISSUER:-}",
+    "FASTMCP_SERVER_AUTH_JWT_AUDIENCE=${FASTMCP_SERVER_AUTH_JWT_AUDIENCE:-}",
+    "SYSTEMS_MANAGER_FILESYSTEM_ROOT=/workspace",
+    "SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS=${SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS:-false}",
+    "SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS=${SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS:-false}",
+    "SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS=${SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS:-false}",
+    "SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES=${SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES:-false}",
+]
+limits = {mcp = {memory_limit_env = "", memory_limit = "1g", cpu_limit_env = "", cpu_limit = "1.0"}}
+[[tool.pipelines.container.state_volumes]]
+name = "systems-manager-mcp-state"
+target = "/workspace"

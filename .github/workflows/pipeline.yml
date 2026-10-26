@@ -22,6 +22,8 @@ jobs:
   publish-pypi:
     needs: security-gate
     uses: Knuckles-Team/pipelines/.github/workflows/python_pipeline.yml@main
+    with:
+      connector: true
     permissions:
       contents: write
     secrets:
@@ -29,6 +31,8 @@ jobs:
   publish-docker:
     needs: publish-pypi
     uses: Knuckles-Team/pipelines/.github/workflows/container_pipeline.yml@main
+    with:
+      render_connector: true
     permissions:
       contents: read
     secrets:

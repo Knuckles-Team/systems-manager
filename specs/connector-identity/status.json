@@ -15,7 +15,7 @@
         "0fc259d2ad48"
       ],
       "verified_by": [
-        "tests/test_fleet_name.py:35"
+        "tests/test_fleet_name.py:34"
       ]
     }
   ]

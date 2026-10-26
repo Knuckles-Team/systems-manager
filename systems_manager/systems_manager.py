@@ -21,6 +21,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from collections.abc import Callable, Iterable, Iterator
 from datetime import datetime
+from importlib.metadata import version as package_version
 from pathlib import Path
 from typing import Any, BinaryIO, Literal, NamedTuple
 from urllib.parse import urlsplit
@@ -32,7 +33,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from systems_manager.k8s_detect import is_k8s_node
 
-__version__ = "2.2.5"
+__version__ = package_version("systems-manager")
 
 _MAX_MANAGED_FILE_BYTES = 8 * 1024 * 1024
 _MAX_LOCAL_PACKAGE_BYTES = 2 * 1024 * 1024 * 1024
