@@ -1473,7 +1473,7 @@ wheels = [
 
 [[package]]
 name = "systems-manager"
-version = "2.2.5"
+version = "2.2.6"
 source = { editable = "." }
 dependencies = [
     { name = "agent-connector-sdk", extra = ["mcp"] },

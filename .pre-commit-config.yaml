@@ -64,15 +64,18 @@ repos:
   rev: f96ec7f3b26a32619435686eb5813235f7e3327e  # frozen: 1.9.1
   hooks:
   - id: nbqa-ruff
+- repo: https://github.com/Knuckles-Team/pipelines
+  rev: main
+  hooks:
+  - id: connector-standard
+  - id: secrets
+  - id: spec
+    stages: [pre-push]
+  - id: tests-fast
+    stages: [pre-push]
+  - id: dependency-readiness
 - repo: local
   hooks:
-  - id: dependency-readiness
-    name: Dependency readiness — every declared intra-fleet constraint is installable
-    entry: bash -c 'P=""; d="$PWD"; while [ "$d" != "/" ]; do [ -d "$d/agent-packages/agents/repository-manager" ] && { P="$d/agent-packages/agents/repository-manager"; break; }; d=$(dirname "$d"); done; [ -n "$P" ] || P=repository-manager; uv run --no-project --python 3.12 --prerelease=allow --with "$P" python -m repository_manager.dependency_readiness .'
-    language: system
-    pass_filenames: false
-    always_run: true
-    stages: [manual, pre-push]
   - id: mermaid-validate
     name: mermaid-validate
     entry: mermaid-validate
@@ -100,13 +103,6 @@ repos:
     language: system
     pass_filenames: false
     always_run: true
-  - id: check-bumpversion
-    name: validate bumpversion config
-    entry: |-
-      bash -c 'if [ -f ".bumpversion.cfg" ]; then bump2version patch --dry-run --allow-dirty; fi'
-    language: system
-    pass_filenames: false
-    always_run: true
 - repo: https://github.com/AleksaC/hadolint-py
   rev: 6e7504451511eaeb62a3e7f14d63b0296cbf86eb  # frozen: v2.15.1
   hooks:
@@ -121,11 +117,3 @@ repos:
   rev: f626253b23de45412865c07fd076ff95d4cd77a7 # v3.0.1
   hooks:
   - id: docker-compose-check
-- repo: local
-  hooks:
-  - id: security-sanitizer
-    name: Security and Garbage Sanitizer
-    entry: python scripts/security_sanitizer.py
-    language: python
-    pass_filenames: false
-    always_run: true

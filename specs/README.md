@@ -13,3 +13,6 @@ Read the existing specs first. Extend the spec that owns the behavior. Create a 
 ## Local specifications
 
 This repository has no local spec yet.
+
+- [Connector identity](connector-identity/spec.md) — the connector's fleet name and identity bindings.
+- [Connector content](connector-content/spec.md) — packaged skills, prompts and ontology served by the connector.
