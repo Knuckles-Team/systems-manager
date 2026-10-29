@@ -562,7 +562,7 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
     return args, mcp, []
 
 
-def register_systems_tools(context: RegistrationContext) -> None:
+def register_connector_tools(context: RegistrationContext) -> None:
     """Register every systems-manager tool on the SDK-built server."""
     args = context.settings
     mcp = context.server
