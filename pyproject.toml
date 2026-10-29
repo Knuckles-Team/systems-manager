@@ -29,7 +29,7 @@ systems-manager-helper = "systems_manager.sudo_helper:main"
 
 # The one declared connector identity: the fleet name (SCION-CONNECTOR-CONTROL-R071).
 [project.entry-points."agent_connector_sdk.connector"]
-systems-manager-mcp = "systems_manager"
+systems-manager-mcp = "systems_manager:connector"
 
 [tool.uv.workspace]
 members = ["."]

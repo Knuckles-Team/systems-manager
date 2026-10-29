@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastmcp.exceptions import ToolError
+from mcp.shared.exceptions import MCPError
 
 from systems_manager.mcp_server import get_mcp_instance
 from systems_manager.models import CommandResult
@@ -15,6 +16,9 @@ args, mcp_server, middlewares = get_mcp_instance()
 
 @pytest.fixture(autouse=True)
 def _enabled_test_policy(monkeypatch):
+    # A fresh server per test keeps the SDK rate limiter's burst bucket per test.
+    global mcp_server
+    mcp_server = get_mcp_instance()[1]
     monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS", "true")
     monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS", "true")
     monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS", "true")
@@ -236,7 +240,7 @@ async def test_sm_system_operations_error_handling():
         "systems_manager.mcp_server.detect_and_create_manager",
         side_effect=Exception("System Crash"),
     ):
-        with pytest.raises(ToolError) as exc_info:
+        with pytest.raises((ToolError, MCPError)) as exc_info:
             await mcp_server.call_tool(
                 "sm_system_operations", arguments={"action": "update"}
             )

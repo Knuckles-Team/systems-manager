@@ -35,11 +35,12 @@ warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="authlib.*")
 
 from agent_connector_sdk.config import load_config, setting
+from agent_connector_sdk.connector import build_server
+from agent_connector_sdk.connector_hooks import RegistrationContext
 from agent_connector_sdk.mcp.action_dispatch import resolve_action
 from agent_connector_sdk.mcp.action_split import assert_tools_classified
 from agent_connector_sdk.mcp.concurrency import run_blocking as _agent_run_blocking
 from agent_connector_sdk.mcp.context import ctx_log
-from agent_connector_sdk.mcp.server import create_mcp_server
 from agent_connector_sdk.mcp.tool_surface import register_tool_surface
 
 from systems_manager.os_provider_tools import register_os_provider_tools
@@ -51,8 +52,6 @@ from systems_manager.systems_manager import (
     detect_and_create_manager,
     resolve_managed_path,
 )
-
-__version__ = package_version("systems-manager")
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -557,13 +556,16 @@ def register_misc_tools(mcp: FastMCP) -> None:
 
 
 def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
-    """Initialize the MCP server."""
+    """Build the declared connector's server (args, server, middlewares)."""
     load_config()
-    args, mcp, middlewares = create_mcp_server(
-        name="systems-manager",
-        version=__version__,
-        instructions="Systems Manager MCP Server",
-    )
+    args, mcp = build_server("systems_manager")
+    return args, mcp, []
+
+
+def register_systems_tools(context: RegistrationContext) -> None:
+    """Register every systems-manager tool on the SDK-built server."""
+    args = context.settings
+    mcp = context.server
     transport = str(getattr(args, "transport", "stdio") or "stdio").casefold()
     auth_type = str(getattr(args, "auth_type", "none") or "none").casefold()
     network_transport = transport in {"streamable-http", "sse"}
@@ -1201,12 +1203,11 @@ def get_mcp_instance() -> tuple[argparse.Namespace, FastMCP, list[Any]]:
     # Fail closed: any registered tool without a policy class refuses startup.
     assert_tools_classified(mcp, _ALL_CLASSIFIED_TOOLS)
     mcp.add_middleware(SystemsSecurityMiddleware())
-    return args, mcp, middlewares
 
 
 def mcp_server() -> None:
-    args, mcp, middlewares = get_mcp_instance()
-    print(f"systems-manager MCP v{__version__}", file=sys.stderr)
+    args, mcp, _ = get_mcp_instance()
+    print(f"systems-manager MCP v{package_version('systems-manager')}", file=sys.stderr)
     print("\nStarting MCP Server", file=sys.stderr)
     print(f"  Transport: {args.transport.upper()}", file=sys.stderr)
     print(f"  Auth: {args.auth_type}", file=sys.stderr)
