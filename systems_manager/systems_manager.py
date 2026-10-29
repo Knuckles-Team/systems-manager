@@ -33,8 +33,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from systems_manager.k8s_detect import is_k8s_node
 
-__version__ = package_version("systems-manager")
-
 _MAX_MANAGED_FILE_BYTES = 8 * 1024 * 1024
 _MAX_LOCAL_PACKAGE_BYTES = 2 * 1024 * 1024 * 1024
 _MAX_FILESYSTEM_RESULTS = 10_000
@@ -4440,7 +4438,7 @@ def _run_feature_actions(manager, args: argparse.Namespace) -> None:
 
 
 def systems_manager():
-    print(f"systems_manager v{__version__}")
+    print(f"systems_manager v{package_version('systems-manager')}")
     parser = _systems_manager_parser()
     args = parser.parse_args()
 
