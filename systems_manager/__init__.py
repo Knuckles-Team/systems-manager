@@ -6,11 +6,11 @@ does not expose dynamic optional-dependency aliases.
 
 from agent_connector_sdk.connector import Connector  # noqa: E402
 
-from systems_manager.mcp_server import register_connector_tools  # noqa: E402
+from systems_manager.mcp_server import attach_server_surface  # noqa: E402
 
 connector = Connector(
     instructions="Systems Manager MCP Server",
-    extra_registrations=(register_connector_tools,),
+    extra_registrations=(attach_server_surface,),
 )
 
 __all__ = ["connector"]
