@@ -27,12 +27,6 @@ systems-manager = "systems_manager.systems_manager:main"
 systems-manager-mcp = "systems_manager.mcp_server:mcp_server"
 systems-manager-helper = "systems_manager.sudo_helper:main"
 
-[project.entry-points."agent_connector_sdk.skill_providers"]
-systems-manager = "systems_manager.skills"
-
-[project.entry-points."agent_connector_sdk.ontology_providers"]
-systems-manager = "systems_manager.ontology"
-
 # The one declared connector identity: the fleet name (SCION-CONNECTOR-CONTROL-R071).
 [project.entry-points."agent_connector_sdk.connector"]
 systems-manager-mcp = "systems_manager"
