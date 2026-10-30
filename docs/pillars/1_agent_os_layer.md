@@ -1,7 +1,7 @@
 # Agent OS layer
 
 `systems-manager` is the local execution provider for a reviewed set of host
-operations. Agent Connector SDK and Arbora provide configuration, policy,
+operations. Scion SDK and Arbora provide configuration, policy,
 delegation, and lifecycle coordination around that local boundary.
 
 ## Platform provider

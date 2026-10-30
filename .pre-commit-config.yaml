@@ -92,7 +92,7 @@ repos:
     always_run: true
   - id: env-var-drift
     name: check env-var/config drift
-    entry: bash -c 'if [ -f uv.lock ]; then uv run python -m agent_connector_sdk.mcp.env_drift --check; else python -m agent_connector_sdk.mcp.env_drift --check; fi'
+    entry: bash -c 'if [ -f uv.lock ]; then uv run python -m scion_sdk.mcp.env_drift --check; else python -m scion_sdk.mcp.env_drift --check; fi'
     language: system
     pass_filenames: false
     files: ^(README\.md|\.env\.example|mcp_config.*\.json|.*/mcp_config.*\.json|docker/.*compose.*\.ya?ml|.*/auth\.py|.*/mcp_server\.py)$

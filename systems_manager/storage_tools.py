@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from agent_connector_sdk.mcp.concurrency import run_blocking
 from fastmcp import Context, FastMCP
 from pydantic import Field
+from scion_sdk.mcp.concurrency import run_blocking
 
 from systems_manager import storage_health
 from systems_manager.bmc_credentials import get_bmc_credentials

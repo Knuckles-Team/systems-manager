@@ -3,7 +3,7 @@
 CONCEPT:AU-KG.ingest.enterprise-source-extractor. The package natively pushes the
 infrastructure state it discovers over its manager seam into the epistemic-graph knowledge
 graph as **typed OWL nodes** (``:HardwareNode``, ``:NetworkInterface``, ``:DiskVolume``) +
-links through ``agent_connector_sdk.ingest`` -- the generated ``SourceIngest`` client, not
+links through ``scion_sdk.ingest`` -- the generated ``SourceIngest`` client, not
 a local ingestion helper. There is one write path: connectors never access raw engine
 transactions and ingestion failures are explicit. Nodes carry provenance via the request's
 ``IngestBinding`` and match the classes federated by ``systems_manager.ontology``.
@@ -17,8 +17,8 @@ import logging
 import socket
 from typing import Any
 
-from agent_connector_sdk.config import setting
-from agent_connector_sdk.ingest import (
+from scion_sdk.config import setting
+from scion_sdk.ingest import (
     ChangeSet,
     Entity,
     IngestBinding,

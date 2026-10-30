@@ -20,7 +20,7 @@ secrets, trust paths, or host identities.
 
 For `streamable-http` or `sse`, configure:
 
-- an authentication provider through the current Agent Connector SDK MCP settings;
+- an authentication provider through the current Scion SDK MCP settings;
 - direct TLS certificate/key settings, or a verified TLS-stop proxy and
   trusted proxy CIDRs;
 - an explicit host allowlist;

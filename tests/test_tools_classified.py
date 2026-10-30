@@ -1,8 +1,8 @@
 """Startup refuses any registered tool that has no policy class (fail closed)."""
 
 import pytest
-from agent_connector_sdk.mcp.action_split import assert_tools_classified
 from fastmcp import FastMCP
+from scion_sdk.mcp.action_split import assert_tools_classified
 
 from systems_manager import mcp_server as server
 

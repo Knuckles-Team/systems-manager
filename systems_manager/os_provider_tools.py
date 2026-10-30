@@ -1,7 +1,7 @@
-from agent_connector_sdk.mcp.context import ctx_confirm_destructive, ctx_log
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field
+from scion_sdk.mcp.context import ctx_confirm_destructive, ctx_log
 
 from systems_manager.os_provider import get_os_provider
 
@@ -37,7 +37,12 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
-        await ctx_log(ctx, f"Fetching process details for PID: {pid}", logger=logger, level="debug")
+        await ctx_log(
+            ctx,
+            f"Fetching process details for PID: {pid}",
+            logger=logger,
+            level="debug",
+        )
         try:
             provider = get_os_provider()
             processes = provider.get_process_details(pid)
@@ -149,7 +154,12 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.package-service-mutation: Package & Service Mutation
         """
-        await ctx_log(ctx, f"Managing service: {service_name} ({action})", logger=logger, level="debug")
+        await ctx_log(
+            ctx,
+            f"Managing service: {service_name} ({action})",
+            logger=logger,
+            level="debug",
+        )
 
         if not await ctx_confirm_destructive(
             ctx, f"{action.upper()} the service: {service_name}"
@@ -188,7 +198,9 @@ def register_os_provider_tools(mcp: FastMCP):
             modules = provider.list_kernel_modules()
             return {"success": True, "modules": modules}
         except Exception:
-            await ctx_log(ctx, "Kernel module discovery failed", logger=logger, level="error")
+            await ctx_log(
+                ctx, "Kernel module discovery failed", logger=logger, level="error"
+            )
             return {"success": False, "error": "Operation failed"}
 
     @mcp.tool(
@@ -210,7 +222,9 @@ def register_os_provider_tools(mcp: FastMCP):
 
         CONCEPT:SM-OS.deployment.deep-introspection-telemetry: Deep Introspection Telemetry
         """
-        await ctx_log(ctx, f"Querying system logs (limit: {limit})", logger=logger, level="debug")
+        await ctx_log(
+            ctx, f"Querying system logs (limit: {limit})", logger=logger, level="debug"
+        )
         try:
             provider = get_os_provider()
             logs = provider.query_system_logs(limit)
@@ -234,7 +248,9 @@ def register_os_provider_tools(mcp: FastMCP):
         ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """Start a kernel-level event trace (ETW on Windows, or strace on Linux)."""
-        await ctx_log(ctx, f"Starting system trace: {session_name}", logger=logger, level="debug")
+        await ctx_log(
+            ctx, f"Starting system trace: {session_name}", logger=logger, level="debug"
+        )
 
         if not await ctx_confirm_destructive(
             ctx, f"START tracing session: {session_name}"
@@ -264,7 +280,9 @@ def register_os_provider_tools(mcp: FastMCP):
         ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """Stop a kernel-level event trace."""
-        await ctx_log(ctx, f"Stopping system trace: {session_name}", logger=logger, level="debug")
+        await ctx_log(
+            ctx, f"Stopping system trace: {session_name}", logger=logger, level="debug"
+        )
         if not await ctx_confirm_destructive(
             ctx, f"STOP tracing session: {session_name}"
         ):

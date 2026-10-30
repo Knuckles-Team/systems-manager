@@ -12,7 +12,7 @@ description: >-
 license: MIT
 tags: [infra, networking, netplan, systemd-networkd, bond, docker-swarm, vxlan, failover, homelab]
 metadata:
-  author: Genius
+  author: Knuckles-Team
   version: '0.1.21'
 ---
 
