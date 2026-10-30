@@ -28,8 +28,8 @@ from urllib.parse import urlsplit
 
 import distro
 import psutil
-from agent_connector_sdk.config import setting
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from scion_sdk.config import setting
 
 from systems_manager.k8s_detect import is_k8s_node
 

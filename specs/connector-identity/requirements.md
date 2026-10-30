@@ -6,4 +6,4 @@ Each row is one requirement. A row names the file it touches and the test that p
 
 | ID | Requirement | Acceptance |
 |---|---|---|
-| `CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R001` | **Fleet name.** `pyproject.toml` declares `systems-manager-mcp` as the single `agent_connector_sdk.connector` entry point. The content pack, the manifest `connector`, the fingerprints and the ingest binding all carry `systems-manager-mcp`. Proving test: `tests/test_fleet_name.py::test_connector_name_is_the_fleet_name`. | Every connector name in the package is `systems-manager-mcp`. |
+| `CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R001` | **Fleet name.** `pyproject.toml` declares `systems-manager-mcp` as the single `scion_sdk.connector` entry point. The content pack, the manifest `connector`, the fingerprints and the ingest binding all carry `systems-manager-mcp`. Proving test: `tests/test_fleet_name.py::test_connector_name_is_the_fleet_name`. | Every connector name in the package is `systems-manager-mcp`. |

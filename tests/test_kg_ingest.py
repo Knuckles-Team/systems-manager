@@ -1,7 +1,7 @@
 """Governed, privacy-preserving host telemetry ingestion coverage.
 
 Exercises the real ``ingest_entities``/``ingest_host_inventory`` seam against a fake
-``agent_connector_sdk.ingest`` transport (no engine required). The real SDK request
+``scion_sdk.ingest`` transport (no engine required). The real SDK request
 builder still runs underneath systems-manager's own node/relationship allow-list, so
 both layers of validation are exercised.
 """
@@ -12,8 +12,8 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from agent_connector_sdk.ingest import KnowledgeIngest
 from epistemic_graph.generated.source_ingestion import SourceIngestionRequest
+from scion_sdk.ingest import KnowledgeIngest
 
 import systems_manager.kg_ingest as kg
 

@@ -1,7 +1,7 @@
 # Systems Manager concept overview
 
 **Ecosystem role:** a typed local-host operations provider for Arbora and
-agent-connector-sdk.
+scion-sdk.
 
 ## Capability model
 

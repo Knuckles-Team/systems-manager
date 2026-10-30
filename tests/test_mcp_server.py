@@ -3,7 +3,7 @@
 import asyncio
 from importlib.metadata import version
 
-from agent_connector_sdk.mcp.tool_surface import registered_tools
+from scion_sdk.mcp.tool_surface import registered_tools
 
 
 class TestToolRegistration:

@@ -1,13 +1,13 @@
-# Agent Connector SDK integration
+# Scion SDK integration
 
-`systems-manager` is a typed, local host-operation provider. Agent Connector SDK
+`systems-manager` is a typed, local host-operation provider. Scion SDK
 supplies the MCP server, configuration, transport security, approval prompts,
 delegation, and observability boundaries. Neither component turns model output
 into a shell command.
 
 ## Current integration
 
-- The package uses the current Agent Connector SDK server factory and intent-first
+- The package uses the current Scion SDK server factory and intent-first
   tool surface.
 - Sensitive reads, active network probes, host mutations, and generic file
   mutations have separate default-deny administrator gates.

@@ -11,11 +11,11 @@ from collections.abc import Callable
 from importlib.metadata import version as package_version
 from typing import Any, Literal, TypeVar, cast
 
-from agent_connector_sdk.utilities import to_boolean
 from fastmcp import Context, FastMCP
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field
+from scion_sdk.utilities import to_boolean
 
 # Filter RequestsDependencyWarning early to prevent log spam
 with warnings.catch_warnings():
@@ -34,14 +34,14 @@ warnings.filterwarnings("ignore", message=".*urllib3.*or charset_normalizer.*")
 # Filter AuthlibDeprecationWarning
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="authlib.*")
 
-from agent_connector_sdk.config import load_config, setting
-from agent_connector_sdk.connector import build_server
-from agent_connector_sdk.connector_hooks import RegistrationContext
-from agent_connector_sdk.mcp.action_dispatch import resolve_action
-from agent_connector_sdk.mcp.action_split import assert_tools_classified
-from agent_connector_sdk.mcp.concurrency import run_blocking as _agent_run_blocking
-from agent_connector_sdk.mcp.context import ctx_log
-from agent_connector_sdk.mcp.tool_surface import register_tool_surface
+from scion_sdk.config import load_config, setting
+from scion_sdk.connector import build_server
+from scion_sdk.connector_hooks import RegistrationContext
+from scion_sdk.mcp.action_dispatch import resolve_action
+from scion_sdk.mcp.action_split import assert_tools_classified
+from scion_sdk.mcp.concurrency import run_blocking as _agent_run_blocking
+from scion_sdk.mcp.context import ctx_log
+from scion_sdk.mcp.tool_surface import register_tool_surface
 
 from systems_manager.os_provider_tools import register_os_provider_tools
 from systems_manager.storage_tools import register_storage_health_tools
@@ -1216,7 +1216,7 @@ def mcp_server() -> None:
     # applied inside create_mcp_server; nothing to re-check here.
     if args.transport == "stdio":
         # Stdout purity is owned fd-level by the MCP SDK's own stdio_server()
-        # (agent-connector-sdk B-19): it claims fd 1 exclusively and dup2()s stderr
+        # (scion-sdk B-19): it claims fd 1 exclusively and dup2()s stderr
         # over it for every other writer, so no process-wide patch is needed.
         mcp.run(transport="stdio")
     elif args.transport == "streamable-http":

@@ -11,14 +11,14 @@ domain: development
 license: MIT
 tags: [systems-manager, python, mcp, fastmcp, connector, host-operations, development, gates]
 metadata:
-  author: Genius
+  author: Knuckles-Team
   version: '0.1.0'
 ---
 
 # systems-manager development
 
 `systems-manager` is a Python connector that exposes governed host inspection and
-host-lifecycle operations through the Agent Connector SDK. Keep the provider's
+host-lifecycle operations through the Scion SDK. Keep the provider's
 runtime boundary narrow: package operations, service/process/network/disk
 inspection, storage health, managed-file policy, and typed host telemetry belong
 here; durable graph storage, Arbora admission, and deployment credentials belong

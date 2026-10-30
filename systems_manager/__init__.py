@@ -4,7 +4,7 @@ Import concrete clients and entry points from their owning modules. The package 
 does not expose dynamic optional-dependency aliases.
 """
 
-from agent_connector_sdk.connector import Connector  # noqa: E402
+from scion_sdk.connector import Connector  # noqa: E402
 
 from systems_manager.mcp_server import register_connector_tools  # noqa: E402
 

@@ -2,13 +2,13 @@
 
 Version: 2.2.6
 
-`systems-manager` is the typed host-operations provider for Agent Connector SDK and
+`systems-manager` is the typed host-operations provider for Scion SDK and
 Arbora. It exposes cross-platform package, service, process, network, disk,
 managed-file, firewall, physical-storage, Agent OS, and privacy-safe host-ingestion
 capabilities without exposing a raw command tool.
 
 The current package requires Python 3.11–3.14 and
-`agent-connector-sdk>=2.0.0,<3.0.0`.
+`scion-sdk>=2.0.0,<3.0.0`.
 
 ## Install and run
 
@@ -43,7 +43,7 @@ belong in AgentConfig or the process launcher.
 
 - Network MCP listeners require configured authentication. Non-loopback listeners also
   require direct TLS or a trusted TLS-stop proxy, exact allowed hosts, and the
-  current Agent Connector SDK transport checks.
+  current Scion SDK transport checks.
 - Host mutations are denied unless `SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS=true` and the
   individual request receives destructive-operation approval.
 - Managed-file writes also require
@@ -127,7 +127,7 @@ tool.
 ## Knowledge-graph ingestion
 
 `systems_ingest_host` reads local typed telemetry and submits an allowlisted projection
-through the Agent Connector SDK native governed ingestion boundary. It emits only:
+through the Scion SDK native governed ingestion boundary. It emits only:
 
 - `HardwareNode`, `NetworkInterface`, and `DiskVolume` nodes;
 - `hasInterface` and `hasVolume` relationships;
@@ -165,7 +165,7 @@ JWT issuer/JWKS/audience configuration, and debug mode disabled.
 ## Environment variables
 
 The generated table is sourced from the value-free `.env.example` plus the inherited
-Agent Connector SDK contract.
+Scion SDK contract.
 
 <!-- ENV-VARS-TABLE:START -->
 
@@ -207,7 +207,7 @@ Agent Connector SDK contract.
 | `PORT` | `8000` | Bind port for HTTP transports |
 | `ENABLE_OTEL` | `false` | Enable only with an approved collector |
 
-#### Inherited agent-connector-sdk variables (apply to every connector)
+#### Inherited scion-sdk variables (apply to every connector)
 
 | Variable | Example | Description |
 |----------|---------|-------------|
@@ -231,7 +231,7 @@ Agent Connector SDK contract.
 | `MODEL_ID` | `gpt-4o` | Model id for the agent |
 | `ENABLE_WEB_UI` | `True` | Serve the AG-UI web interface |
 
-_51 package + 19 inherited variable(s). Auto-generated from `.env.example` + the shared agent-connector-sdk set — do not edit._
+_51 package + 19 inherited variable(s). Auto-generated from `.env.example` + the shared scion-sdk set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
 ## Development and release gates
@@ -246,7 +246,7 @@ pre-commit run --all-files
 
 Run host operations only through mocks during tests. Do not run native builds or live
 host mutations as a validation shortcut. The source dependency floor is intentionally
-`agent-connector-sdk>=2.0.0`; regenerate and commit a neutral lock only after that release
+`scion-sdk>=2.0.0`; regenerate and commit a neutral lock only after that release
 is available from the configured package index. Never commit an editable local source
 or a stale dependency resolution.
 

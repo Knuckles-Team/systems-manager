@@ -1,5 +1,5 @@
 site_name: "systems-manager"
-site_description: "Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the agent-connector-sdk ecosystem."
+site_description: "Cross-platform CLI / API / MCP Server / Agent for system maintenance, package management, and zero-script remote host orchestration in the scion-sdk ecosystem."
 site_url: "https://knuckles-team.github.io/systems-manager/"
 repo_name: "Knuckles-Team/systems-manager"
 repo_url: "https://github.com/Knuckles-Team/systems-manager"
@@ -96,6 +96,6 @@ nav:
   - Multi-Host: multi_host.md
   - Day 0 Installation: day_0_provisioning.md
   - Concepts: concepts.md
-  - Agent Connector SDK Integration: agent_connector_sdk_synergy.md
+  - Scion SDK Integration: scion_sdk_synergy.md
   - Validation: code_coverage.md
   - Agent OS Layer: pillars/1_agent_os_layer.md
