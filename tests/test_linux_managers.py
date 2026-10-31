@@ -610,7 +610,9 @@ class TestZypperManager:
 
         zypper_manager.run_command = mock_run
 
-        result = zypper_manager.install_applications(["nonexistent"])
+        # The fallback needs a snap binary; do not depend on the host having one.
+        with patch("shutil.which", return_value="/usr/bin/snap"):
+            result = zypper_manager.install_applications(["nonexistent"])
         assert len(result["snap_installed"]) == 1
 
     def test_update_success(self, zypper_manager):

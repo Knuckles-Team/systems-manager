@@ -1,4 +1,13 @@
+import pytest
+
+from systems_manager import k8s_detect
 from systems_manager.k8s_detect import is_k8s_node
+
+
+@pytest.fixture(autouse=True)
+def _linux_host(monkeypatch):
+    """The detection rules under test are the Linux ones, whatever runs the suite."""
+    monkeypatch.setattr(k8s_detect.platform, "system", lambda: "Linux")
 
 
 def _no_signal(**overrides):

@@ -112,6 +112,7 @@ def test_reboot_proceeds_normally_on_non_k8s_host():
     mgr = AptManager(silent=True)
     with (
         _patch_k8s_node(False, "no Kubernetes signals detected"),
+        patch("platform.system", return_value="Linux"),
         patch.object(mgr, "run_command", return_value={"success": True}),
     ):
         res = mgr.reboot()
