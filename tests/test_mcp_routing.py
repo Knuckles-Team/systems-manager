@@ -7,7 +7,7 @@ from mcp.shared.exceptions import MCPError
 
 from systems_manager.mcp_server import get_mcp_instance
 from systems_manager.models import CommandResult
-from systems_manager.systems_manager import WindowsManager
+from systems_manager.systems_manager import WindowsManager, filesystem_anchor
 
 # Since FastMCP tool routing can be tested directly with call_tool,
 # we initialize get_mcp_instance once at module level for speed.
@@ -365,8 +365,8 @@ async def test_sm_network_operations(
             "get_disk_usage",
             {},
             "usage_str",
-            ("/",),
-        ),  # default path '/'
+            (filesystem_anchor(),),
+        ),  # default path is the volume root
         ("get_disk_space_report", "get_disk_space_report", {}, "report_str", ()),
     ],
 )

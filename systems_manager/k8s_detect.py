@@ -8,6 +8,7 @@ see ``SystemsManagerBase._k8s_lifecycle_guard`` in ``systems_manager.py``.
 """
 
 import os
+import platform
 import shutil
 import subprocess
 from collections.abc import Callable
@@ -57,6 +58,9 @@ def is_k8s_node(
     Returns a ``(is_node, reason)`` tuple; ``reason`` is a short human-readable
     explanation of which signal fired (or that none did).
     """
+    if platform.system() != "Linux":
+        return False, "Kubernetes (RKE2) node detection applies to Linux hosts only"
+
     for unit in _SYSTEMD_UNITS:
         if run_command(["systemctl", "is-active", unit]) == "active":
             return True, f"systemd unit '{unit}' is active"

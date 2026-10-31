@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import sys
 from unittest.mock import Mock
 
 import pytest
@@ -44,11 +45,19 @@ def mock_windows_platform(monkeypatch):
     yield
 
 
+def _skip_on_windows_interpreter() -> None:
+    """Simulating POSIX by patching ``os.name`` breaks pathlib on a real Windows interpreter."""
+    if sys.platform == "win32":
+        pytest.skip("Linux platform simulation cannot run on a Windows interpreter")
+
+
 @pytest.fixture
 def mock_linux_platform(monkeypatch):
     """Mock Linux platform fixture."""
     import os
     import platform
+
+    _skip_on_windows_interpreter()
 
     import distro
 
@@ -68,6 +77,8 @@ def mock_rhel_platform(monkeypatch):
     import os
     import platform
 
+    _skip_on_windows_interpreter()
+
     import distro
 
     monkeypatch.setattr(platform, "system", lambda: "Linux")
@@ -84,6 +95,8 @@ def mock_arch_platform(monkeypatch):
     """Mock Arch platform fixture."""
     import os
     import platform
+
+    _skip_on_windows_interpreter()
 
     import distro
 

@@ -50,6 +50,7 @@ from systems_manager.systems_manager import (
     SystemsManagerBase,
     WindowsManager,
     detect_and_create_manager,
+    filesystem_anchor,
     resolve_managed_path,
 )
 
@@ -904,7 +905,9 @@ def register_connector_tools(context: RegistrationContext) -> None:
                     manager.list_disks,
                 )
             elif action == "get_disk_usage":
-                return await run_blocking(manager.get_disk_usage, path or "/")
+                return await run_blocking(
+                    manager.get_disk_usage, path or filesystem_anchor()
+                )
             elif action == "get_disk_space_report":
                 return await run_blocking(
                     manager.get_disk_space_report,

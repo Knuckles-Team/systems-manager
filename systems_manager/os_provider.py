@@ -1,8 +1,10 @@
 import abc
 import json
 import logging
+import os
 import platform
 import subprocess
+from pathlib import Path
 from typing import Any
 
 import psutil
@@ -86,7 +88,7 @@ class OSProvider(abc.ABC):
         return {
             "cpu_percent": psutil.cpu_percent(interval=1),
             "memory": psutil.virtual_memory()._asdict(),
-            "disk": psutil.disk_usage("/")._asdict(),
+            "disk": psutil.disk_usage(Path.cwd().anchor or os.sep)._asdict(),
             "processes_count": len(psutil.pids()),
             "users": [u.name for u in psutil.users()],
             "boot_time": psutil.boot_time(),
