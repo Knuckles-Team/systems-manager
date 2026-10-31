@@ -106,7 +106,16 @@ def _package_command(action: str, name: str | None) -> list[str]:
 
 
 def main() -> None:
-    if not hasattr(os, "geteuid") or os.geteuid() != 0:
+    if os.name == "nt":
+        _result_and_exit(
+            {
+                "success": False,
+                "error": "Unsupported on this platform: the elevation helper is POSIX-only",
+                "unsupported_platform": "Windows",
+            },
+            1,
+        )
+    if os.geteuid() != 0:
         _result_and_exit(
             {"success": False, "error": "Pre-authorized elevation is required"}, 1
         )

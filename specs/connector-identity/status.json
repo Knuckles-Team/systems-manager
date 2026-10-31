@@ -2,9 +2,10 @@
   "schema_version": 2,
   "spec_id": "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY",
   "owner_repo": "systems-manager",
-  "delivery_state": "VERIFIED",
+  "delivery_state": "SPECIFIED",
   "requirement_ids": [
-    "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R001"
+    "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R001",
+    "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R002"
   ],
   "requirements": [
     {
@@ -17,6 +18,13 @@
       "verified_by": [
         "tests/test_fleet_name.py:34"
       ]
+    },
+    {
+      "id": "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R002",
+      "title": "Windows portability",
+      "delivery_state": "SPECIFIED",
+      "landed_in": [],
+      "verified_by": []
     }
   ]
 }

@@ -315,6 +315,11 @@ def _bounded_stream_reader(stream, output: bytearray, limit: int) -> None:
             pass
 
 
+def filesystem_anchor() -> str:
+    """Root of the current volume: ``/`` on POSIX, ``C:\\`` (the cwd drive) on Windows."""
+    return Path.cwd().anchor or os.sep
+
+
 def _trusted_search_directories() -> tuple[Path, ...]:
     """Return administrator-controlled executable directories for this platform."""
     if os.name == "nt":
@@ -2144,7 +2149,22 @@ class NodeManager:
                 return {"success": False, "error": "Pinned NVM install failed"}
         return {"success": True, "revision": revision}
 
+    @staticmethod
+    def _bash_unsupported() -> dict | None:
+        """Typed refusal where the nvm bash bootstrap cannot run (Windows)."""
+        if platform.system() == "Windows":
+            return {
+                "success": False,
+                "error": "Unsupported on this platform: nvm requires bash; "
+                "use nvm-windows or winget on Windows",
+                "unsupported_platform": "Windows",
+            }
+        return None
+
     def install_node(self, version: str = "--lts") -> dict:
+        unsupported = self._bash_unsupported()
+        if unsupported:
+            return unsupported
         version = self._validated_version(version)
         script = resolve_managed_path(
             os.path.join(
@@ -2158,6 +2178,9 @@ class NodeManager:
         )
 
     def use_node(self, version: str) -> dict:
+        unsupported = self._bash_unsupported()
+        if unsupported:
+            return unsupported
         version = self._validated_version(version)
         script = resolve_managed_path(
             os.path.join(
@@ -2391,7 +2414,7 @@ class SystemsManagerBase(ABC):
             "version": platform.version(),
             "machine": platform.machine(),
             "processor": platform.processor(),
-            "load_avg": os.getloadavg() if platform.system() != "Windows" else "N/A",
+            "load_avg": os.getloadavg() if hasattr(os, "getloadavg") else "N/A",
         }
 
     def get_hardware_statistics(self) -> dict:
@@ -2399,7 +2422,7 @@ class SystemsManagerBase(ABC):
             "cpu_percent": psutil.cpu_percent(interval=1),
             "cpu_count": psutil.cpu_count(),
             "memory": psutil.virtual_memory()._asdict(),
-            "disk_usage": psutil.disk_usage("/")._asdict(),
+            "disk_usage": psutil.disk_usage(filesystem_anchor())._asdict(),
             "network": psutil.net_io_counters()._asdict(),
         }
 
@@ -2534,8 +2557,6 @@ class SystemsManagerBase(ABC):
         if platform.system() == "Linux":
             return self.run_command(["systemctl", "restart", name], elevated=True)
         elif platform.system() == "Windows":
-            if not os.path.exists(self.winget_bin):
-                self.winget_bin = "winget.exe"
             return self.run_command(
                 [
                     "powershell.exe",
