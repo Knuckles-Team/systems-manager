@@ -1,4 +1,5 @@
 import json
+import os
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +11,7 @@ def _printed_payload(mock_print):
     return json.loads(mock_print.call_args.args[0])
 
 
+@pytest.mark.skipif(os.name == "nt", reason="the elevation helper is POSIX-only")
 def test_sudo_helper_requires_pre_authorized_root():
     with (
         patch.object(sudo_helper.os, "geteuid", return_value=1000, create=True),
@@ -63,6 +65,7 @@ def test_sudo_helper_rejects_malformed_allowlists(monkeypatch):
             sudo_helper._service_command("start", "bad;name")
 
 
+@pytest.mark.skipif(os.name == "nt", reason="the elevation helper is POSIX-only")
 def test_sudo_helper_main_returns_only_sanitized_result(monkeypatch):
     monkeypatch.setenv(
         "SYSTEMS_MANAGER_HELPER_ALLOWED_SERVICES_JSON", '["example-service"]'
