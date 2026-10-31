@@ -43,7 +43,7 @@ def test_k8s_detection_skips_systemctl_and_posix_paths_on_windows(monkeypatch):
     monkeypatch.setattr(k8s_detect.platform, "system", lambda: "Windows")
     run = Mock(return_value="active")
     is_node, reason = k8s_detect.is_k8s_node(
-        run_command=run, path_exists=lambda p: True, which=lambda b: "x"
+        run_command=run, path_exists=lambda p: True, which=lambda _b: "x"
     )
     assert is_node is False
     assert "Linux" in reason
@@ -65,7 +65,7 @@ def test_filesystem_anchor_follows_current_volume(monkeypatch):
     class FakeCwd:
         anchor = "D:\\"
 
-    monkeypatch.setattr(sm.Path, "cwd", classmethod(lambda cls: FakeCwd()))
+    monkeypatch.setattr(sm.Path, "cwd", classmethod(lambda _cls: FakeCwd()))
     assert filesystem_anchor() == "D:\\"
 
 
@@ -77,7 +77,7 @@ def test_hardware_statistics_never_queries_posix_root(
     monkeypatch.setattr(
         sm.psutil, "disk_usage", lambda p: seen.append(p) or Mock(_asdict=dict)
     )
-    monkeypatch.setattr(sm.psutil, "cpu_percent", lambda interval=1: 0.0)
+    monkeypatch.setattr(sm.psutil, "cpu_percent", lambda *_a, **_k: 0.0)
     manager = sm.WindowsManager(silent=True)
     manager.get_hardware_statistics()
     assert seen == ["C:\\"]
@@ -105,7 +105,7 @@ def test_spawn_uses_new_process_group_not_session_on_windows(monkeypatch):
     monkeypatch.setattr(sm.os, "name", "nt")
     popen = Mock()
     monkeypatch.setattr(sm.subprocess, "Popen", popen)
-    monkeypatch.setattr(sm, "_minimal_child_environment", lambda o: {})
+    monkeypatch.setattr(sm, "_minimal_child_environment", lambda _o: {})
     monkeypatch.setattr(sm.subprocess, "CREATE_NEW_PROCESS_GROUP", 512, raising=False)
     sm._spawn_managed_process(["x"], None)
     kwargs = popen.call_args.kwargs
