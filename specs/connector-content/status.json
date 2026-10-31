@@ -2,9 +2,12 @@
   "schema_version": 2,
   "spec_id": "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT",
   "owner_repo": "systems-manager",
-  "delivery_state": "VERIFIED",
+  "delivery_state": "SPECIFIED",
   "requirement_ids": [
-    "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R001"
+    "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R001",
+    "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002",
+    "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003",
+    "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004"
   ],
   "requirements": [
     {
@@ -19,6 +22,27 @@
       "verified_by": [
         "tests/test_default_content_surfaces.py:15"
       ]
+    },
+    {
+      "id": "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002",
+      "title": "Declare access contracts for the competency reads of systems-manager",
+      "delivery_state": "SPECIFIED",
+      "landed_in": [],
+      "verified_by": []
+    },
+    {
+      "id": "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003",
+      "title": "Prove service lifecycle parity across Linux, Windows and macOS",
+      "delivery_state": "SPECIFIED",
+      "landed_in": [],
+      "verified_by": []
+    },
+    {
+      "id": "CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004",
+      "title": "Register the workspace reader",
+      "delivery_state": "SPECIFIED",
+      "landed_in": [],
+      "verified_by": []
     }
   ]
 }
