@@ -101,22 +101,38 @@ async def test_host_mutations_are_serialized_process_wide(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_approval_is_canonical_bounded_and_fails_closed():
-    class _ApprovalContext:
-        prompt = ""
+async def test_approval_is_canonical_bounded_and_fails_closed(monkeypatch):
+    from systems_manager import confirmation
 
-        async def elicit(self, prompt, *, response_type):
-            assert response_type is bool
-            self.prompt = prompt
-            return SimpleNamespace(action="accept", data=True)
+    seen = {}
 
-    context = _ApprovalContext()
-    assert await server._mutation_approved(context, "update\npackages", "target\rhost")
-    assert context.prompt.startswith("SYSTEMS MANAGER MUTATION APPROVAL\nAction: ")
-    assert "update packages" in context.prompt
-    assert "target host" in context.prompt
-    assert len(context.prompt) < 800
-    assert await server._mutation_approved(None, "update") is False
+    async def fake_confirm(ctx, description, **kwargs):
+        seen["description"] = description
+        seen.update(kwargs)
+        return True
+
+    monkeypatch.setattr(confirmation, "ctx_confirm_destructive", fake_confirm)
+    context = object()
+    assert (
+        await confirmation.require_approval(
+            context, "update\npackages", "target\rhost", arguments={"a": 1}
+        )
+        is None
+    )
+    prompt = seen["description"]
+    assert prompt.startswith("SYSTEMS MANAGER MUTATION APPROVAL\nAction: ")
+    assert "update packages" in prompt
+    assert "target host" in prompt
+    assert len(prompt) < 800
+    assert seen["confirmation_arguments"] == {"a": 1}
+    assert seen["explicit_confirm"] is False
+    await confirmation.require_approval(context, "update", confirm=True)
+    assert seen["explicit_confirm"] is True
+    assert await confirmation.require_approval(None, "update") == {
+        "success": False,
+        "error": "Operation approval is required",
+    }
+    assert await confirmation.require_approval(None, "update", confirm=True)
 
 
 @pytest.mark.asyncio

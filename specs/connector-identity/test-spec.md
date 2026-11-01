@@ -6,3 +6,4 @@ Governing spec: [spec.md](spec.md).
 |---|---|---|---|
 | T-001 | `CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R001` | `tests/test_fleet_name.py::test_connector_name_is_the_fleet_name` | Every connector name in the package is `systems-manager-mcp`. |
 | T-002 | `CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R002` | `tests/test_windows_portability.py::test_node_manager_bash_bootstrap_is_typed_unsupported_on_windows` | Windows hosts get a typed unsupported result, never a crash. |
+| T-003 | `CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R003` | `tests/test_destructive_confirmation_transports.py::test_stdio_no_auth_mutation` | A non-eliciting client is refused naming `confirm=true`, then succeeds with it. |

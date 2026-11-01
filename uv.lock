@@ -1340,7 +1340,7 @@ wheels = [
 
 [[package]]
 name = "scion-sdk"
-version = "0.6.4"
+version = "0.6.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1353,9 +1353,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/91/61/5a694538fe4b5c3313d18dfb2ddf28b3a15d9dd93eb6e32c4f5486326c62/scion_sdk-0.6.4.tar.gz", hash = "sha256:4441e8e543f65587def7e98a78246be303a95ca840acae73f92bdaa08d8ea10f", size = 1151330, upload-time = "2026-10-31T02:50:26.547Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/97/77/7aefc9929adf88e110fa91c99eee41b244af3a0071ea6449d68b2f0b3ba9/scion_sdk-0.6.5.tar.gz", hash = "sha256:318a605054e35f991cb93f902d0ed5ef1867c105bd9582fd88d6f3c02d38e93b", size = 1154777, upload-time = "2026-11-01T08:53:27.499Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/34/2990f86ca875f09a7ddbc2179668635b54e058cfc704d7dfea6e397c4762/scion_sdk-0.6.4-py3-none-any.whl", hash = "sha256:b5535a9342a3f675e173c933fcb3e26b59bb2f603875ad419bfb4261486ab5d2", size = 1093413, upload-time = "2026-10-31T02:50:25.131Z" },
+    { url = "https://files.pythonhosted.org/packages/43/e5/2b120ef553739b23f380f8da5936c0ed01214704afc564b6e99382a47acd/scion_sdk-0.6.5-py3-none-any.whl", hash = "sha256:1bce0023a0c56648b32f231f1960e1be2c0581334c12213be446e81b1b73eedd", size = 1101295, upload-time = "2026-11-01T08:53:26.01Z" },
 ]
 
 [package.optional-dependencies]
@@ -1392,7 +1392,7 @@ wheels = [
 
 [[package]]
 name = "systems-manager"
-version = "2.2.8"
+version = "2.2.9"
 source = { editable = "." }
 dependencies = [
     { name = "distro" },
@@ -1422,9 +1422,9 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.1.1" },
     { name = "pytest-asyncio", marker = "extra == 'test'", specifier = ">=1.4.0" },
     { name = "requests", specifier = ">=2.34.2" },
-    { name = "scion-sdk", extras = ["mcp"], specifier = ">=0.6.4,<0.7.0" },
-    { name = "scion-sdk", extras = ["mcp"], marker = "extra == 'all'", specifier = ">=0.6.4,<0.7.0" },
-    { name = "scion-sdk", extras = ["mcp"], marker = "extra == 'mcp'", specifier = ">=0.6.4,<0.7.0" },
+    { name = "scion-sdk", extras = ["mcp"], specifier = ">=0.6.5,<0.7.0" },
+    { name = "scion-sdk", extras = ["mcp"], marker = "extra == 'all'", specifier = ">=0.6.5,<0.7.0" },
+    { name = "scion-sdk", extras = ["mcp"], marker = "extra == 'mcp'", specifier = ">=0.6.5,<0.7.0" },
 ]
 provides-extras = ["mcp", "all", "test"]
 
