@@ -1150,9 +1150,9 @@ def register_connector_tools(context: RegistrationContext) -> None:
                     rule.name if rule is not None else None,
                     arguments={
                         "action": action,
-                        "rule": rule.model_dump(mode="json")
-                        if rule is not None
-                        else None,
+                        "rule": (
+                            rule.model_dump(mode="json") if rule is not None else None
+                        ),
                     },
                     confirm=confirm,
                 )
