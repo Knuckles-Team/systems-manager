@@ -25,7 +25,7 @@ def _enabled_test_policy(monkeypatch):
     monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES", "true")
 
     async def approved(*_args, **_kwargs):
-        return True
+        return None
 
     async def inline_run_blocking(function, *args, **kwargs):
         return function(*args, **kwargs)
@@ -33,7 +33,7 @@ def _enabled_test_policy(monkeypatch):
     async def inline_ctx_log(*_args, **_kwargs):
         return None
 
-    monkeypatch.setattr("systems_manager.mcp_server._mutation_approved", approved)
+    monkeypatch.setattr("systems_manager.mcp_server.require_approval", approved)
     monkeypatch.setattr("systems_manager.mcp_server.run_blocking", inline_run_blocking)
     monkeypatch.setattr("systems_manager.mcp_server.ctx_log", inline_ctx_log)
 

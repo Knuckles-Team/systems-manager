@@ -1,8 +1,9 @@
 from fastmcp import Context, FastMCP
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field
-from scion_sdk.mcp.context import ctx_confirm_destructive, ctx_log
+from scion_sdk.mcp.context import ctx_log
 
+from systems_manager.confirmation import require_approval
 from systems_manager.os_provider import get_os_provider
 
 logger = get_logger("OSProviderTools")
@@ -147,6 +148,13 @@ def register_os_provider_tools(mcp: FastMCP):
         action: str = Field(
             description="Action to perform: start, stop, restart, enable, disable"
         ),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Explicit confirmation. Pass true when the client cannot answer "
+                "an approval prompt."
+            ),
+        ),
         ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """
@@ -161,10 +169,16 @@ def register_os_provider_tools(mcp: FastMCP):
             level="debug",
         )
 
-        if not await ctx_confirm_destructive(
-            ctx, f"{action.upper()} the service: {service_name}"
-        ):
-            return {"success": False, "error": "Operation cancelled by user."}
+        if (
+            refused := await require_approval(
+                ctx,
+                f"{action.upper()} the service",
+                service_name,
+                arguments={"service_name": service_name, "action": action},
+                confirm=confirm,
+            )
+        ) is not None:
+            return refused
 
         try:
             provider = get_os_provider()
@@ -245,6 +259,13 @@ def register_os_provider_tools(mcp: FastMCP):
     )
     async def start_system_trace(
         session_name: str = Field(description="Name of the trace session"),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Explicit confirmation. Pass true when the client cannot answer "
+                "an approval prompt."
+            ),
+        ),
         ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """Start a kernel-level event trace (ETW on Windows, or strace on Linux)."""
@@ -252,10 +273,16 @@ def register_os_provider_tools(mcp: FastMCP):
             ctx, f"Starting system trace: {session_name}", logger=logger, level="debug"
         )
 
-        if not await ctx_confirm_destructive(
-            ctx, f"START tracing session: {session_name}"
-        ):
-            return {"success": False, "error": "Operation cancelled by user."}
+        if (
+            refused := await require_approval(
+                ctx,
+                "START tracing session",
+                session_name,
+                arguments={"session_name": session_name},
+                confirm=confirm,
+            )
+        ) is not None:
+            return refused
 
         try:
             provider = get_os_provider()
@@ -277,16 +304,29 @@ def register_os_provider_tools(mcp: FastMCP):
     )
     async def stop_system_trace(
         session_name: str = Field(description="Name of the trace session"),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Explicit confirmation. Pass true when the client cannot answer "
+                "an approval prompt."
+            ),
+        ),
         ctx: Context | None = Field(description="MCP context", default=None),
     ) -> dict:
         """Stop a kernel-level event trace."""
         await ctx_log(
             ctx, f"Stopping system trace: {session_name}", logger=logger, level="debug"
         )
-        if not await ctx_confirm_destructive(
-            ctx, f"STOP tracing session: {session_name}"
-        ):
-            return {"success": False, "error": "Operation approval is required"}
+        if (
+            refused := await require_approval(
+                ctx,
+                "STOP tracing session",
+                session_name,
+                arguments={"session_name": session_name},
+                confirm=confirm,
+            )
+        ) is not None:
+            return refused
         try:
             provider = get_os_provider()
             result = provider.stop_system_trace(session_name)

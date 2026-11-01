@@ -5,7 +5,8 @@
   "delivery_state": "SPECIFIED",
   "requirement_ids": [
     "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R001",
-    "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R002"
+    "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R002",
+    "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R003"
   ],
   "requirements": [
     {
@@ -22,6 +23,13 @@
     {
       "id": "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R002",
       "title": "Windows portability",
+      "delivery_state": "SPECIFIED",
+      "landed_in": [],
+      "verified_by": []
+    },
+    {
+      "id": "CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R003",
+      "title": "Mutations refuse cleanly and accept confirm=true",
       "delivery_state": "SPECIFIED",
       "landed_in": [],
       "verified_by": []

@@ -43,6 +43,7 @@ from scion_sdk.mcp.concurrency import run_blocking as _agent_run_blocking
 from scion_sdk.mcp.context import ctx_log
 from scion_sdk.mcp.tool_surface import register_tool_surface
 
+from systems_manager.confirmation import require_approval
 from systems_manager.os_provider_tools import register_os_provider_tools
 from systems_manager.storage_tools import register_storage_health_tools
 from systems_manager.systems_manager import (
@@ -122,31 +123,6 @@ def _host_mutation_lock() -> asyncio.Lock:
         lock = asyncio.Lock()
         _HOST_MUTATION_LOCKS[loop] = lock
     return lock
-
-
-def _approval_text(action: str, detail: str | None = None) -> str:
-    safe_action = " ".join(str(action).split())[:128]
-    safe_detail = " ".join(str(detail or "").split())[:512]
-    if not safe_action:
-        raise ValueError("Mutation approval action is required")
-    lines = ["SYSTEMS MANAGER MUTATION APPROVAL", f"Action: {safe_action}"]
-    if safe_detail:
-        lines.append(f"Target: {safe_detail}")
-    lines.append("Approve this one operation?")
-    return "\n".join(lines)
-
-
-async def _mutation_approved(
-    ctx: Context | None, action: str, detail: str | None = None
-) -> bool:
-    """Require an explicit per-operation approval in addition to admin policy."""
-    if not ctx:
-        return False
-    try:
-        decision = await ctx.elicit(_approval_text(action, detail), response_type=bool)
-    except Exception:
-        return False
-    return decision.action == "accept" and bool(decision.data)
 
 
 _SYSTEM_MUTATIONS = frozenset(
@@ -638,6 +614,13 @@ def register_connector_tools(context: RegistrationContext) -> None:
                 "universal-skills `k8s-node-rolling-update` workflow instead."
             ),
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         resolved = _resolve_current_action(action, SYSTEM_ACTIONS)
@@ -650,10 +633,19 @@ def register_connector_tools(context: RegistrationContext) -> None:
             f"sm_system_operations: {action}",
             logger=logger,
         )
-        if action in _SYSTEM_MUTATIONS and not await _mutation_approved(
-            ctx, action, "configured host"
+        if action in _SYSTEM_MUTATIONS and (
+            (
+                refused := await require_approval(
+                    ctx,
+                    action,
+                    "configured host",
+                    arguments={"action": action},
+                    confirm=confirm,
+                )
+            )
+            is not None
         ):
-            return {"success": False, "error": "Operation approval is required"}
+            return refused
         try:
             if action == "install_applications":
                 return await run_blocking(manager.install_applications, packages or [])
@@ -764,6 +756,13 @@ def register_connector_tools(context: RegistrationContext) -> None:
             + ", ".join(f"'{a}'" for a in SERVICE_ACTIONS),
         ),
         service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         resolved = _resolve_current_action(action, SERVICE_ACTIONS)
@@ -776,10 +775,19 @@ def register_connector_tools(context: RegistrationContext) -> None:
             f"sm_service_operations: {action}",
             logger=logger,
         )
-        if action in _SERVICE_MUTATIONS and not await _mutation_approved(
-            ctx, action, service_name
+        if action in _SERVICE_MUTATIONS and (
+            (
+                refused := await require_approval(
+                    ctx,
+                    action,
+                    service_name,
+                    arguments={"action": action, "service_name": service_name},
+                    confirm=confirm,
+                )
+            )
+            is not None
         ):
-            return {"success": False, "error": "Operation approval is required"}
+            return refused
         try:
             if action == "list_services":
                 return await run_blocking(
@@ -810,6 +818,13 @@ def register_connector_tools(context: RegistrationContext) -> None:
             + ", ".join(f"'{a}'" for a in PROCESS_ACTIONS),
         ),
         pid: int | None = Field(None, description="Process ID"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         resolved = _resolve_current_action(action, PROCESS_ACTIONS)
@@ -822,10 +837,19 @@ def register_connector_tools(context: RegistrationContext) -> None:
             f"sm_process_operations: {action}",
             logger=logger,
         )
-        if action == "kill_process" and not await _mutation_approved(
-            ctx, action, f"process {pid}" if pid is not None else None
+        if action == "kill_process" and (
+            (
+                refused := await require_approval(
+                    ctx,
+                    action,
+                    f"process {pid}" if pid is not None else None,
+                    arguments={"action": action, "pid": pid},
+                    confirm=confirm,
+                )
+            )
+            is not None
         ):
-            return {"success": False, "error": "Operation approval is required"}
+            return refused
         try:
             if action == "list_processes":
                 return await run_blocking(
@@ -962,6 +986,13 @@ def register_connector_tools(context: RegistrationContext) -> None:
         pattern: str | None = Field(None, description="Search pattern"),
         recursive: bool = Field(False, description="Recursive search"),
         depth: int = Field(1, description="Depth for list_files"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         resolved = _resolve_current_action(action, FILE_ACTIONS)
@@ -983,9 +1014,24 @@ def register_connector_tools(context: RegistrationContext) -> None:
                 "delete",
                 "create",
             }
-            and not await _mutation_approved(ctx, file_action, filepath)
+            and (
+                (
+                    refused := await require_approval(
+                        ctx,
+                        file_action,
+                        filepath,
+                        arguments={
+                            "action": action,
+                            "file_action": file_action,
+                            "filepath": filepath,
+                        },
+                        confirm=confirm,
+                    )
+                )
+                is not None
+            )
         ):
-            return {"success": False, "error": "Operation approval is required"}
+            return refused
         try:
             if action == "get_system_logs":
                 return await run_blocking(manager.get_system_logs, lines=lines)
@@ -1027,6 +1073,13 @@ def register_connector_tools(context: RegistrationContext) -> None:
             None, description="Opaque job reference returned by list_cron_jobs"
         ),
         user: str | None = Field(None, description="User for cron job"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         resolved = _resolve_current_action(action, CRON_ACTIONS)
@@ -1039,10 +1092,19 @@ def register_connector_tools(context: RegistrationContext) -> None:
             f"sm_cron_operations: {action}",
             logger=logger,
         )
-        if action == "remove_cron_job" and not await _mutation_approved(
-            ctx, action, "configured schedule"
+        if action == "remove_cron_job" and (
+            (
+                refused := await require_approval(
+                    ctx,
+                    action,
+                    "configured schedule",
+                    arguments={"action": action, "job_ref": job_ref, "user": user},
+                    confirm=confirm,
+                )
+            )
+            is not None
         ):
-            return {"success": False, "error": "Operation approval is required"}
+            return refused
         try:
             if action == "list_cron_jobs":
                 return await run_blocking(manager.list_cron_jobs, user)
@@ -1061,6 +1123,13 @@ def register_connector_tools(context: RegistrationContext) -> None:
         rule: FirewallRuleSpec | None = Field(
             None, description="Structured firewall rule specification"
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         resolved = _resolve_current_action(action, FIREWALL_ACTIONS)
@@ -1073,13 +1142,24 @@ def register_connector_tools(context: RegistrationContext) -> None:
             f"sm_firewall_operations: {action}",
             logger=logger,
         )
-        if action in {
-            "add_firewall_rule",
-            "remove_firewall_rule",
-        } and not await _mutation_approved(
-            ctx, action, rule.name if rule is not None else None
+        if action in {"add_firewall_rule", "remove_firewall_rule"} and (
+            (
+                refused := await require_approval(
+                    ctx,
+                    action,
+                    rule.name if rule is not None else None,
+                    arguments={
+                        "action": action,
+                        "rule": (
+                            rule.model_dump(mode="json") if rule is not None else None
+                        ),
+                    },
+                    confirm=confirm,
+                )
+            )
+            is not None
         ):
-            return {"success": False, "error": "Operation approval is required"}
+            return refused
         try:
             if action == "get_firewall_status":
                 return await run_blocking(
@@ -1107,6 +1187,13 @@ def register_connector_tools(context: RegistrationContext) -> None:
         path: str | None = Field(None, description="Path for venv"),
         version: str | None = Field(None, description="Version of python/node"),
         package: str | None = Field(None, description="Package name to install"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         resolved = _resolve_current_action(action, ADVANCED_ACTIONS)
@@ -1119,8 +1206,16 @@ def register_connector_tools(context: RegistrationContext) -> None:
             f"sm_advanced_operations: {action}",
             logger=logger,
         )
-        if not await _mutation_approved(ctx, action, "configured host"):
-            return {"success": False, "error": "Operation approval is required"}
+        if (
+            refused := await require_approval(
+                ctx,
+                action,
+                "configured host",
+                arguments={"action": action, "path": path, "package": package},
+                confirm=confirm,
+            )
+        ) is not None:
+            return refused
         try:
             if action == "add_authorized_key":
                 return await run_blocking(manager.add_authorized_key, public_key or "")

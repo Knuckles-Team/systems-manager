@@ -131,7 +131,7 @@ async def test_manage_service():
     with (
         patch("systems_manager.os_provider_tools.get_os_provider") as mock_get,
         patch(
-            "systems_manager.os_provider_tools.ctx_confirm_destructive",
+            "systems_manager.confirmation.ctx_confirm_destructive",
             return_value=True,
         ),
     ):
@@ -151,14 +151,14 @@ async def test_manage_service():
 @pytest.mark.asyncio
 async def test_manage_service_cancelled():
     with patch(
-        "systems_manager.os_provider_tools.ctx_confirm_destructive", return_value=False
+        "systems_manager.confirmation.ctx_confirm_destructive", return_value=False
     ):
         res = await mcp_server.call_tool(
             "manage_service", arguments={"service_name": "nginx", "action": "restart"}
         )
         data = parse_mcp_result(res)
         assert data["success"] is False
-        assert "cancelled" in data["error"]
+        assert data["error"] == "Operation approval is required"
 
 
 @pytest.mark.asyncio
@@ -166,7 +166,7 @@ async def test_manage_service_exception():
     with (
         patch("systems_manager.os_provider_tools.get_os_provider") as mock_get,
         patch(
-            "systems_manager.os_provider_tools.ctx_confirm_destructive",
+            "systems_manager.confirmation.ctx_confirm_destructive",
             return_value=True,
         ),
     ):
@@ -237,7 +237,7 @@ async def test_system_trace():
     with (
         patch("systems_manager.os_provider_tools.get_os_provider") as mock_get,
         patch(
-            "systems_manager.os_provider_tools.ctx_confirm_destructive",
+            "systems_manager.confirmation.ctx_confirm_destructive",
             return_value=True,
         ),
     ):
@@ -268,14 +268,14 @@ async def test_system_trace():
 @pytest.mark.asyncio
 async def test_start_system_trace_cancelled():
     with patch(
-        "systems_manager.os_provider_tools.ctx_confirm_destructive", return_value=False
+        "systems_manager.confirmation.ctx_confirm_destructive", return_value=False
     ):
         res = await mcp_server.call_tool(
             "start_system_trace", arguments={"session_name": "test"}
         )
         data = parse_mcp_result(res)
         assert data["success"] is False
-        assert "cancelled" in data["error"]
+        assert data["error"] == "Operation approval is required"
 
 
 @pytest.mark.asyncio
@@ -283,7 +283,7 @@ async def test_system_trace_exception():
     with (
         patch("systems_manager.os_provider_tools.get_os_provider") as mock_get,
         patch(
-            "systems_manager.os_provider_tools.ctx_confirm_destructive",
+            "systems_manager.confirmation.ctx_confirm_destructive",
             return_value=True,
         ),
     ):
