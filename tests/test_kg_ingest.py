@@ -12,14 +12,14 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
-from epistemic_graph.generated.source_ingestion import SourceIngestionRequest
+from medulla.generated.source_ingestion import SourceIngestionRequest
 from scion_sdk.ingest import KnowledgeIngest
 
 import systems_manager.kg_ingest as kg
 
 
 class _FakeTransport:
-    """Records every submitted request; no epistemic-graph engine required."""
+    """Records every submitted request; no medulla engine required."""
 
     def __init__(self) -> None:
         self.requests: list[SourceIngestionRequest] = []
