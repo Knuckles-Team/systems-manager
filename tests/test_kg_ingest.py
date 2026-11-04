@@ -19,7 +19,7 @@ import systems_manager.kg_ingest as kg
 
 
 class _FakeTransport:
-    """Records every submitted request; no epistemic-graph engine required."""
+    """Records every submitted request; no medulla engine required."""
 
     def __init__(self) -> None:
         self.requests: list[SourceIngestionRequest] = []

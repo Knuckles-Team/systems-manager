@@ -61,7 +61,7 @@ when those operations are requested.
 
 1. Obtain current host telemetry through typed reads.
 2. Confirm `SYSTEMS_MANAGER_PSEUDONYMIZATION_KEY` is available through AgentConfig and the
-   epistemic-graph session is authorized for a governed write.
+   medulla session is authorized for a governed write.
 3. Call `systems_ingest_host`. Its allowlisted projection emits only `HardwareNode`,
    `NetworkInterface`, and `DiskVolume` fields and `hasInterface` / `hasVolume` edges.
 4. Verify node and edge counts. Do not add arbitrary fields, raw names, addresses, identifiers,

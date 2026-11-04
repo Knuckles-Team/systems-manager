@@ -1,7 +1,7 @@
-"""Native epistemic-graph ingestion for host telemetry (typed graph nodes).
+"""Native medulla ingestion for host telemetry (typed graph nodes).
 
 CONCEPT:AU-KG.ingest.enterprise-source-extractor. The package natively pushes the
-infrastructure state it discovers over its manager seam into the epistemic-graph knowledge
+infrastructure state it discovers over its manager seam into the medulla knowledge
 graph as **typed OWL nodes** (``:HardwareNode``, ``:NetworkInterface``, ``:DiskVolume``) +
 links through ``scion_sdk.ingest`` -- the generated ``SourceIngest`` client, not
 a local ingestion helper. There is one write path: connectors never access raw engine
