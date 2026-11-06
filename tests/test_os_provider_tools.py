@@ -140,7 +140,7 @@ async def test_manage_service():
         provider.manage_service.return_value = {"status": "ok"}
 
         res = await mcp_server.call_tool(
-            "manage_service", arguments={"service_name": "nginx", "action": "restart"}
+            "manage_service_restart", arguments={"service_name": "nginx"}
         )
         data = parse_mcp_result(res)
         assert data["success"] is True
@@ -154,7 +154,7 @@ async def test_manage_service_cancelled():
         "systems_manager.confirmation.ctx_confirm_destructive", return_value=False
     ):
         res = await mcp_server.call_tool(
-            "manage_service", arguments={"service_name": "nginx", "action": "restart"}
+            "manage_service_restart", arguments={"service_name": "nginx"}
         )
         data = parse_mcp_result(res)
         assert data["success"] is False
@@ -174,7 +174,7 @@ async def test_manage_service_exception():
         mock_get.return_value = provider
         provider.manage_service.side_effect = Exception("error")
         res = await mcp_server.call_tool(
-            "manage_service", arguments={"service_name": "nginx", "action": "restart"}
+            "manage_service_restart", arguments={"service_name": "nginx"}
         )
         data = parse_mcp_result(res)
         assert data["success"] is False

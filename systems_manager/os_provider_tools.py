@@ -5,6 +5,7 @@ from scion_sdk.mcp.context import ctx_log
 
 from systems_manager.confirmation import require_approval
 from systems_manager.os_provider import get_os_provider
+from systems_manager.routed import call_routed
 
 logger = get_logger("OSProviderTools")
 
@@ -133,17 +134,7 @@ def register_os_provider_tools(mcp: FastMCP):
             await ctx_log(ctx, "Service discovery failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(
-        annotations={
-            "title": "Manage Service",
-            "readOnlyHint": False,
-            "destructiveHint": True,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"system", "services"},
-    )
-    async def manage_service(
+    async def _manage_service_routed(
         service_name: str = Field(description="Name of the service"),
         action: str = Field(
             description="Action to perform: start, stop, restart, enable, disable"
@@ -187,6 +178,156 @@ def register_os_provider_tools(mcp: FastMCP):
         except Exception:
             await ctx_log(ctx, "Service operation failed", logger=logger, level="error")
             return {"success": False, "error": "Operation failed"}
+
+    @mcp.tool(
+        name="manage_service_start",
+        description="Start a system service. Asks for confirmation first.",
+        tags={"system", "services"},
+        annotations={
+            "title": "Start Service",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    )
+    async def manage_service_start(
+        service_name: str = Field(description="Name of the service"),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Explicit confirmation. Pass true when the client cannot answer "
+                "an approval prompt."
+            ),
+        ),
+        ctx: Context | None = Field(description="MCP context", default=None),
+    ) -> dict:
+        """Start the service."""
+        return await call_routed(
+            _manage_service_routed,
+            "start",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="manage_service_stop",
+        description="Stop a system service. Asks for confirmation first.",
+        tags={"system", "services"},
+        annotations={
+            "title": "Stop Service",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    )
+    async def manage_service_stop(
+        service_name: str = Field(description="Name of the service"),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Explicit confirmation. Pass true when the client cannot answer "
+                "an approval prompt."
+            ),
+        ),
+        ctx: Context | None = Field(description="MCP context", default=None),
+    ) -> dict:
+        """Stop the service."""
+        return await call_routed(
+            _manage_service_routed,
+            "stop",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="manage_service_restart",
+        description="Restart a system service. Asks for confirmation first.",
+        tags={"system", "services"},
+        annotations={
+            "title": "Restart Service",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    )
+    async def manage_service_restart(
+        service_name: str = Field(description="Name of the service"),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Explicit confirmation. Pass true when the client cannot answer "
+                "an approval prompt."
+            ),
+        ),
+        ctx: Context | None = Field(description="MCP context", default=None),
+    ) -> dict:
+        """Restart the service."""
+        return await call_routed(
+            _manage_service_routed,
+            "restart",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="manage_service_enable",
+        description="Enable at boot a system service. Asks for confirmation first.",
+        tags={"system", "services"},
+        annotations={
+            "title": "Enable at boot Service",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    )
+    async def manage_service_enable(
+        service_name: str = Field(description="Name of the service"),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Explicit confirmation. Pass true when the client cannot answer "
+                "an approval prompt."
+            ),
+        ),
+        ctx: Context | None = Field(description="MCP context", default=None),
+    ) -> dict:
+        """Enable at boot the service."""
+        return await call_routed(
+            _manage_service_routed,
+            "enable",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="manage_service_disable",
+        description="Disable at boot a system service. Asks for confirmation first.",
+        tags={"system", "services"},
+        annotations={
+            "title": "Disable at boot Service",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    )
+    async def manage_service_disable(
+        service_name: str = Field(description="Name of the service"),
+        confirm: bool = Field(
+            default=False,
+            description=(
+                "Explicit confirmation. Pass true when the client cannot answer "
+                "an approval prompt."
+            ),
+        ),
+        ctx: Context | None = Field(description="MCP context", default=None),
+    ) -> dict:
+        """Disable at boot the service."""
+        return await call_routed(
+            _manage_service_routed,
+            "disable",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
 
     @mcp.tool(
         annotations={

@@ -8,17 +8,19 @@ from mcp.shared.exceptions import MCPError
 from systems_manager.mcp_server import get_mcp_instance
 from systems_manager.models import CommandResult
 from systems_manager.systems_manager import WindowsManager, filesystem_anchor
+from tests.routed_calls import RoutedServer
 
 # Since FastMCP tool routing can be tested directly with call_tool,
 # we initialize get_mcp_instance once at module level for speed.
 args, mcp_server, middlewares = get_mcp_instance()
+mcp_server = RoutedServer(mcp_server)
 
 
 @pytest.fixture(autouse=True)
 def _enabled_test_policy(monkeypatch):
     # A fresh server per test keeps the SDK rate limiter's burst bucket per test.
     global mcp_server
-    mcp_server = get_mcp_instance()[1]
+    mcp_server = RoutedServer(get_mcp_instance()[1])
     monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS", "true")
     monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS", "true")
     monkeypatch.setenv("SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS", "true")

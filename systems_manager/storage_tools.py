@@ -15,23 +15,14 @@ from scion_sdk.mcp.concurrency import run_blocking
 
 from systems_manager import storage_health
 from systems_manager.bmc_credentials import get_bmc_credentials
+from systems_manager.routed import call_routed
 from systems_manager.systems_manager import detect_and_create_manager
 
 
 def register_storage_health_tools(mcp: FastMCP) -> None:
     """Register the storage-health tool (CONCEPT:SM-OS.governance.sys-8)."""
 
-    @mcp.tool(
-        annotations={
-            "title": "Storage Health",
-            "readOnlyHint": True,
-            "destructiveHint": False,
-            "idempotentHint": True,
-            "openWorldHint": False,
-        },
-        tags={"storage_health", "observability"},
-    )
-    async def sm_storage_health(
+    async def _sm_storage_health_routed(
         action: str = Field(
             default="report", description="report | smart | faults | raid"
         ),
@@ -80,3 +71,75 @@ def register_storage_health_tools(mcp: FastMCP) -> None:
                 lambda: storage_health.report(manager, target=target)
             )
         return {"success": False, "error": f"Unknown action: {action}"}
+
+    @mcp.tool(
+        name="sm_storage_health_smart",
+        description="Smart (sm_storage_health). Physical disk + BMC drive-fault health: SMART (incl. megaraid passthrough),\nBMC/IPMI drive-slot faults, and RAID physical-disk state — correlated so a\nBMC-flagged disk with clean SMART media reads as a link/aging fault, not media\nwear (CONCEPT:SM-OS.governance.sys-8/SYS-1.5).",
+        tags={"gated", "observability", "granular", "storage_health", "split-action"},
+        annotations={
+            "title": "Smart",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+    )
+    async def sm_storage_health_smart(
+        ctx: Context | None = Field(default=None, description="MCP context"),
+    ) -> Any:
+        """Smart (one operation of sm_storage_health)."""
+        return await call_routed(_sm_storage_health_routed, "smart", {"ctx": ctx})
+
+    @mcp.tool(
+        name="sm_storage_health_faults",
+        description="Faults (sm_storage_health). Physical disk + BMC drive-fault health: SMART (incl. megaraid passthrough),\nBMC/IPMI drive-slot faults, and RAID physical-disk state — correlated so a\nBMC-flagged disk with clean SMART media reads as a link/aging fault, not media\nwear (CONCEPT:SM-OS.governance.sys-8/SYS-1.5).",
+        tags={"gated", "observability", "granular", "storage_health", "split-action"},
+        annotations={
+            "title": "Faults",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+    )
+    async def sm_storage_health_faults(
+        ctx: Context | None = Field(default=None, description="MCP context"),
+    ) -> Any:
+        """Faults (one operation of sm_storage_health)."""
+        return await call_routed(_sm_storage_health_routed, "faults", {"ctx": ctx})
+
+    @mcp.tool(
+        name="sm_storage_health_raid",
+        description="Raid (sm_storage_health). Physical disk + BMC drive-fault health: SMART (incl. megaraid passthrough),\nBMC/IPMI drive-slot faults, and RAID physical-disk state — correlated so a\nBMC-flagged disk with clean SMART media reads as a link/aging fault, not media\nwear (CONCEPT:SM-OS.governance.sys-8/SYS-1.5).",
+        tags={"gated", "observability", "granular", "storage_health", "split-action"},
+        annotations={
+            "title": "Raid",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+    )
+    async def sm_storage_health_raid(
+        ctx: Context | None = Field(default=None, description="MCP context"),
+    ) -> Any:
+        """Raid (one operation of sm_storage_health)."""
+        return await call_routed(_sm_storage_health_routed, "raid", {"ctx": ctx})
+
+    @mcp.tool(
+        name="sm_storage_health_report",
+        description="Report (sm_storage_health). Physical disk + BMC drive-fault health: SMART (incl. megaraid passthrough),\nBMC/IPMI drive-slot faults, and RAID physical-disk state — correlated so a\nBMC-flagged disk with clean SMART media reads as a link/aging fault, not media\nwear (CONCEPT:SM-OS.governance.sys-8/SYS-1.5).",
+        tags={"gated", "observability", "granular", "storage_health", "split-action"},
+        annotations={
+            "title": "Report",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": False,
+        },
+    )
+    async def sm_storage_health_report(
+        ctx: Context | None = Field(default=None, description="MCP context"),
+    ) -> Any:
+        """Report (one operation of sm_storage_health)."""
+        return await call_routed(_sm_storage_health_routed, "report", {"ctx": ctx})
