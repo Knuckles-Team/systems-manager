@@ -488,7 +488,7 @@ async def test_sm_file_operations():
             "sm_file_operations",
             arguments={
                 "action": "manage_file",
-                "file_action": "write",
+                "file_action": "create",
                 "filepath": "/tmp/test",
                 "content": "hello",
             },
@@ -496,7 +496,7 @@ async def test_sm_file_operations():
         actual = parse_mcp_result(res)
         assert actual == "file_content"
         mgr.fs_manager.manage_file.assert_called_once_with(
-            "write", "/tmp/test", "hello"
+            "create", "/tmp/test", "hello"
         )
 
 
