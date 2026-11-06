@@ -12,6 +12,7 @@ from importlib.metadata import version as package_version
 from typing import Any, Literal, TypeVar, cast
 
 from fastmcp import Context, FastMCP
+from fastmcp.exceptions import ToolError
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.utilities.logging import get_logger
 from pydantic import Field
@@ -245,7 +246,7 @@ def _classify_tool(name: str, arguments: dict[str, Any]) -> str:
             file_action = arguments.get("file_action", "read")
             if file_action == "read":
                 return "sensitive-read"
-            if file_action in {"write", "append", "delete", "create"}:
+            if file_action in {"create", "update", "delete"}:
                 return "filesystem-mutation"
         if action == "list_actions":
             return "public"
@@ -305,6 +306,14 @@ def _classify_tool(name: str, arguments: dict[str, Any]) -> str:
     raise PermissionError("Unclassified tool invocation")
 
 
+class PolicyDeniedError(ToolError, PermissionError):
+    """A deployment-policy denial whose reason reaches the caller.
+
+    Plain ``PermissionError`` is masked as "Internal server error" by the server,
+    which hides the administrator gate that refused the call.
+    """
+
+
 class SystemsSecurityMiddleware(Middleware):
     """Default-deny mutations, sensitive reads, and active network probes."""
 
@@ -315,23 +324,23 @@ class SystemsSecurityMiddleware(Middleware):
         if mutating and not to_boolean(
             setting("SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS", False)
         ):
-            raise PermissionError("Host mutation is disabled by administrator policy")
+            raise PolicyDeniedError("Host mutation is disabled by administrator policy")
         if policy == "filesystem-mutation" and not to_boolean(
             setting("SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS", False)
         ):
-            raise PermissionError(
+            raise PolicyDeniedError(
                 "Generic filesystem mutation is disabled by administrator policy"
             )
         if policy == "sensitive-read" and not to_boolean(
             setting("SYSTEMS_MANAGER_ALLOW_SENSITIVE_READS", False)
         ):
-            raise PermissionError(
+            raise PolicyDeniedError(
                 "Sensitive host reads are disabled by administrator policy"
             )
         if policy == "network-probe" and not to_boolean(
             setting("SYSTEMS_MANAGER_ALLOW_NETWORK_PROBES", False)
         ):
-            raise PermissionError(
+            raise PolicyDeniedError(
                 "Active network probes are disabled by administrator policy"
             )
         if not mutating:
@@ -978,10 +987,12 @@ def register_connector_tools(context: RegistrationContext) -> None:
             + ", ".join(f"'{a}'" for a in FILE_ACTIONS),
         ),
         filepath: str | None = Field(None, description="Path to file"),
-        content: str | None = Field(None, description="Content to write/append"),
-        file_action: (
-            Literal["read", "write", "append", "delete", "create"] | None
-        ) = Field(cast(Any, "read"), description="Action for text editor/manage file"),
+        content: str | None = Field(
+            None, description="Content to create or update the file with"
+        ),
+        file_action: Literal["read", "create", "update", "delete"] | None = Field(
+            cast(Any, "read"), description="Action for text editor/manage file"
+        ),
         lines: int = Field(100, description="Number of lines to tail"),
         pattern: str | None = Field(None, description="Search pattern"),
         recursive: bool = Field(False, description="Recursive search"),
@@ -1009,10 +1020,9 @@ def register_connector_tools(context: RegistrationContext) -> None:
             action == "manage_file"
             and file_action
             in {
-                "write",
-                "append",
-                "delete",
                 "create",
+                "update",
+                "delete",
             }
             and (
                 (

@@ -5,6 +5,12 @@ All notable changes to `systems-manager` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.10] - 2026-11-06
+
+### Fixed
+- `sm_file_operations` `manage_file` offers `read`, `create`, `update`, `delete` (the actions the manager implements); `update` is now classified as a filesystem mutation and gated like the others, and `write`/`append`, which the manager rejected, are removed.
+- Administrator-policy denials reach the caller as a tool error naming the gate instead of a masked internal error (CONN-SYSTEMS-MANAGER-CONNECTOR-IDENTITY-R004).
+
 ## [2.2.8] - 2026-10-30
 
 ### Changed
