@@ -780,7 +780,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Applications",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -812,7 +812,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Update",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -849,7 +849,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Reboot",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -886,7 +886,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Clean",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -913,7 +913,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Optimize",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -940,7 +940,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Python Modules",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1181,7 +1181,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Clean Temp Files",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1210,7 +1210,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Clean Package Cache",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1259,7 +1259,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Enable Windows Features",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1289,7 +1289,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Disable Windows Features",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1319,7 +1319,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Add Repository",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1349,7 +1349,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Local Package",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1483,7 +1483,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Start Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1513,7 +1513,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Stop Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1543,7 +1543,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Restart Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1573,7 +1573,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Enable Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1603,7 +1603,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Disable Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2134,7 +2134,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Manage File",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2486,7 +2486,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Add Firewall Rule",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2615,7 +2615,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Add Authorized Key",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2645,7 +2645,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Uv",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2674,7 +2674,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Create Venv",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2705,7 +2705,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Package",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2736,7 +2736,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Nvm",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2765,7 +2765,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Node",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2795,7 +2795,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Use Node",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
