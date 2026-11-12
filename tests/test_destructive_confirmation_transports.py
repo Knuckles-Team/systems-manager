@@ -181,7 +181,6 @@ async def _accept(message: str, response_type: Any, params: Any, context: Any) -
 
 def _write_args(target: Path, **extra: Any) -> dict[str, Any]:
     return {
-        "action": "manage_file",
         "file_action": "create",
         "filepath": "created.txt",
         "content": "written\n",
@@ -200,20 +199,20 @@ async def _destructive_flow(
     async with open_client(**kwargs) as client:
         if elicits:
             done = await client.call_tool(
-                "sm_file_operations", _write_args(target), raise_on_error=False
+                "sm_file_manage_file", _write_args(target), raise_on_error=False
             )
             assert not done.is_error, f"{label}: {done.content}"
             assert target.read_text() == "written\n"
             return
         refused = await client.call_tool(
-            "sm_file_operations", _write_args(target), raise_on_error=False
+            "sm_file_manage_file", _write_args(target), raise_on_error=False
         )
         assert not refused.is_error, f"{label}: {refused.content}"
         assert refused.structured_content["cancelled"] is True
         assert "confirm=true" in refused.structured_content["reason"]
         assert not target.exists(), "an unconfirmed mutation must not change anything"
         confirmed = await client.call_tool(
-            "sm_file_operations",
+            "sm_file_manage_file",
             _write_args(target, confirm=True),
             raise_on_error=False,
         )

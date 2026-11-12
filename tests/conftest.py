@@ -4,6 +4,9 @@ from unittest.mock import Mock
 
 import pytest
 
+# The server parses sys.argv when it is built; pytest's own arguments are not server flags.
+sys.argv[1:] = []
+
 
 @pytest.fixture(autouse=True)
 def deployment_pseudonymization_key(monkeypatch):

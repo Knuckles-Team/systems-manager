@@ -46,6 +46,7 @@ from scion_sdk.mcp.tool_surface import register_tool_surface
 
 from systems_manager.confirmation import require_approval
 from systems_manager.os_provider_tools import register_os_provider_tools
+from systems_manager.routed import call_routed
 from systems_manager.storage_tools import register_storage_health_tools
 from systems_manager.systems_manager import (
     FirewallRuleSpec,
@@ -199,7 +200,12 @@ def _aggregate_policy(
 
 def _classify_tool(name: str, arguments: dict[str, Any]) -> str:
     """Classify every registered operation; unknown calls fail closed."""
+    if name in _SPLIT_TOOLS:
+        name, action = _SPLIT_TOOLS[name]
+        arguments = {**arguments, "action": action}
     action = arguments.get("action")
+    if name in _SERVICE_TOOLS:
+        return "host-mutation"
     if name in {"health_check", "get_management_capabilities"}:
         return "public"
     if name == "sm_system_operations":
@@ -267,7 +273,6 @@ def _classify_tool(name: str, arguments: dict[str, Any]) -> str:
         return _aggregate_policy(action, mutations=frozenset(ADVANCED_ACTIONS))
     if name in {
         "systems_ingest_host",
-        "sm_storage_health",
         "sm_storage_health_faults",
         "sm_storage_health_raid",
         "sm_storage_health_report",
@@ -280,7 +285,7 @@ def _classify_tool(name: str, arguments: dict[str, Any]) -> str:
         "query_system_logs",
     }:
         return "sensitive-read"
-    if name in {"manage_service", "start_system_trace", "stop_system_trace"}:
+    if name in {"start_system_trace", "stop_system_trace"}:
         return "host-mutation"
     agent_policies: dict[str, tuple[frozenset[str], frozenset[str]]] = {
         "sm_agent_identity_operations": (
@@ -432,6 +437,30 @@ def _resolve_current_action(
     return resolve_action(action, allowed, service="systems-manager")
 
 
+# Each operation is its own tool named ``<prefix>_<action>``. The security middleware
+# classifies a call by the routed tool and action the tool stands for.
+_ROUTED_TOOLS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "sm_system": ("sm_system_operations", SYSTEM_ACTIONS),
+    "sm_service": ("sm_service_operations", SERVICE_ACTIONS),
+    "sm_process": ("sm_process_operations", PROCESS_ACTIONS),
+    "sm_network": ("sm_network_operations", NETWORK_ACTIONS),
+    "sm_disk": ("sm_disk_operations", DISK_ACTIONS),
+    "sm_user": ("sm_user_operations", USER_ACTIONS),
+    "sm_file": ("sm_file_operations", FILE_ACTIONS),
+    "sm_cron": ("sm_cron_operations", CRON_ACTIONS),
+    "sm_firewall": ("sm_firewall_operations", FIREWALL_ACTIONS),
+    "sm_advanced": ("sm_advanced_operations", ADVANCED_ACTIONS),
+}
+_SPLIT_TOOLS: dict[str, tuple[str, str]] = {
+    f"{prefix}_{action}": (routed, action)
+    for prefix, (routed, actions) in _ROUTED_TOOLS.items()
+    for action in actions
+}
+_SERVICE_TOOLS = frozenset(
+    f"manage_service_{a}" for a in ("start", "stop", "restart", "enable", "disable")
+)
+
+
 _ALL_CLASSIFIED_TOOLS = frozenset(
     {
         "health_check",
@@ -440,12 +469,10 @@ _ALL_CLASSIFIED_TOOLS = frozenset(
         "get_network_connections",
         "capture_system_snapshot",
         "list_services",
-        "manage_service",
         "list_kernel_modules",
         "query_system_logs",
         "start_system_trace",
         "stop_system_trace",
-        "sm_storage_health",
         "sm_storage_health_faults",
         "sm_storage_health_raid",
         "sm_storage_health_report",
@@ -454,17 +481,9 @@ _ALL_CLASSIFIED_TOOLS = frozenset(
         "sm_agent_specialist_operations",
         "sm_agent_scheduler_operations",
         "sm_agent_watchdog_operations",
-        "sm_system_operations",
-        "sm_service_operations",
-        "sm_process_operations",
-        "sm_network_operations",
-        "sm_disk_operations",
-        "sm_user_operations",
-        "sm_file_operations",
-        "sm_cron_operations",
-        "sm_firewall_operations",
-        "sm_advanced_operations",
         "systems_ingest_host",
+        *_SPLIT_TOOLS,
+        *_SERVICE_TOOLS,
         # Agent-utilities intent verbs: find/ask read; act routes governed writes.
         "find",
         "ask",
@@ -598,10 +617,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         ],
     )
 
-    @mcp.tool(
-        description="System operations for managing packages, system health, and updates"
-    )
-    async def sm_system_operations(
+    async def _sm_system_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -757,8 +773,606 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for managing system services")
-    async def sm_service_operations(
+    @mcp.tool(
+        name="sm_system_install_applications",
+        description="Install applications (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Install Applications",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_install_applications(
+        packages: list[str] | None = Field(
+            None, description="List of applications/packages"
+        ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Install applications (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "install_applications",
+            {"packages": packages, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_update",
+        description="Update (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Update",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_update(
+        allow_on_k8s: bool = Field(
+            False,
+            description=(
+                "Override: allow 'update' or 'reboot' to proceed even if this "
+                "host is detected as a live Kubernetes (RKE2) node. Prefer the "
+                "universal-skills `k8s-node-rolling-update` workflow instead."
+            ),
+        ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Update (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "update",
+            {"allow_on_k8s": allow_on_k8s, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_reboot",
+        description="Reboot (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Reboot",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_reboot(
+        allow_on_k8s: bool = Field(
+            False,
+            description=(
+                "Override: allow 'update' or 'reboot' to proceed even if this "
+                "host is detected as a live Kubernetes (RKE2) node. Prefer the "
+                "universal-skills `k8s-node-rolling-update` workflow instead."
+            ),
+        ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Reboot (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "reboot",
+            {"allow_on_k8s": allow_on_k8s, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_clean",
+        description="Clean (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Clean",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_clean(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Clean (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "clean", {"confirm": confirm, "ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_optimize",
+        description="Optimize (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Optimize",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_optimize(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Optimize (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "optimize", {"confirm": confirm, "ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_install_python_modules",
+        description="Install python modules (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Install Python Modules",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_install_python_modules(
+        packages: list[str] | None = Field(
+            None, description="List of applications/packages"
+        ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Install python modules (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "install_python_modules",
+            {"packages": packages, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_get_os_statistics",
+        description="Get os statistics (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Os Statistics",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_get_os_statistics(
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get os statistics (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "get_os_statistics", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_get_hardware_statistics",
+        description="Get hardware statistics (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Hardware Statistics",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_get_hardware_statistics(
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get hardware statistics (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "get_hardware_statistics", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_search_package",
+        description="Search package (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Search Package",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_search_package(
+        package: str | None = Field(None, description="Single package name"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Search package (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "search_package",
+            {"package": package, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_get_package_info",
+        description="Get package info (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Package Info",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_get_package_info(
+        package: str | None = Field(None, description="Single package name"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get package info (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "get_package_info",
+            {"package": package, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_list_installed_packages",
+        description="List installed packages (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "List Installed Packages",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_list_installed_packages(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List installed packages (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "list_installed_packages", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_list_upgradable_packages",
+        description="List upgradable packages (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "List Upgradable Packages",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_list_upgradable_packages(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List upgradable packages (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "list_upgradable_packages", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_system_health_check",
+        description="System health check (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "System Health Check",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_system_health_check(
+        ctx: Context | None = None,
+    ) -> Any:
+        """System health check (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "system_health_check", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_get_uptime",
+        description="Get uptime (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Uptime",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_get_uptime(
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get uptime (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "get_uptime", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_list_env_vars",
+        description="List env vars (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "List Env Vars",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_list_env_vars(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List env vars (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "list_env_vars", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_get_env_var",
+        description="Get env var (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Env Var",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_get_env_var(
+        env_var: str | None = Field(None, description="Environment variable name"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get env var (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "get_env_var",
+            {"env_var": env_var, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_clean_temp_files",
+        description="Clean temp files (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Clean Temp Files",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_clean_temp_files(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Clean temp files (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "clean_temp_files",
+            {"confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_clean_package_cache",
+        description="Clean package cache (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Clean Package Cache",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_clean_package_cache(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Clean package cache (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "clean_package_cache",
+            {"confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_list_windows_features",
+        description="List windows features (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "List Windows Features",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_list_windows_features(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List windows features (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "list_windows_features", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_enable_windows_features",
+        description="Enable windows features (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Enable Windows Features",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_enable_windows_features(
+        feature_name: str | None = Field(None, description="Windows feature name"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Enable windows features (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "enable_windows_features",
+            {"feature_name": feature_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_disable_windows_features",
+        description="Disable windows features (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Disable Windows Features",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_disable_windows_features(
+        feature_name: str | None = Field(None, description="Windows feature name"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Disable windows features (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "disable_windows_features",
+            {"feature_name": feature_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_add_repository",
+        description="Add repository (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Add Repository",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_add_repository(
+        repository: str | None = Field(None, description="Repository URL or name"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Add repository (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "add_repository",
+            {"repository": repository, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_system_install_local_package",
+        description="Install local package (sm_system_operations). System operations for managing packages, system health, and updates",
+        tags={"split-action"},
+        annotations={
+            "title": "Install Local Package",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_install_local_package(
+        file_path: str | None = Field(None, description="Path to local package file"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Install local package (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed,
+            "install_local_package",
+            {"file_path": file_path, "confirm": confirm, "ctx": ctx},
+        )
+
+    async def _sm_service_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -819,8 +1433,200 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for managing system processes")
-    async def sm_process_operations(
+    @mcp.tool(
+        name="sm_service_list_services",
+        description="List services (sm_service_operations). Operations for managing system services",
+        tags={"split-action"},
+        annotations={
+            "title": "List Services",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_service_list_services(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List services (one operation of sm_service_operations)."""
+        return await call_routed(
+            _sm_service_operations_routed, "list_services", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_service_get_service_status",
+        description="Get service status (sm_service_operations). Operations for managing system services",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Service Status",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_service_get_service_status(
+        service_name: str | None = Field(None, description="Name of the service"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get service status (one operation of sm_service_operations)."""
+        return await call_routed(
+            _sm_service_operations_routed,
+            "get_service_status",
+            {"service_name": service_name, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_service_start_service",
+        description="Start service (sm_service_operations). Operations for managing system services",
+        tags={"split-action"},
+        annotations={
+            "title": "Start Service",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_service_start_service(
+        service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Start service (one operation of sm_service_operations)."""
+        return await call_routed(
+            _sm_service_operations_routed,
+            "start_service",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_service_stop_service",
+        description="Stop service (sm_service_operations). Operations for managing system services",
+        tags={"split-action"},
+        annotations={
+            "title": "Stop Service",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_service_stop_service(
+        service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Stop service (one operation of sm_service_operations)."""
+        return await call_routed(
+            _sm_service_operations_routed,
+            "stop_service",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_service_restart_service",
+        description="Restart service (sm_service_operations). Operations for managing system services",
+        tags={"split-action"},
+        annotations={
+            "title": "Restart Service",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_service_restart_service(
+        service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Restart service (one operation of sm_service_operations)."""
+        return await call_routed(
+            _sm_service_operations_routed,
+            "restart_service",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_service_enable_service",
+        description="Enable service (sm_service_operations). Operations for managing system services",
+        tags={"split-action"},
+        annotations={
+            "title": "Enable Service",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_service_enable_service(
+        service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Enable service (one operation of sm_service_operations)."""
+        return await call_routed(
+            _sm_service_operations_routed,
+            "enable_service",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_service_disable_service",
+        description="Disable service (sm_service_operations). Operations for managing system services",
+        tags={"split-action"},
+        annotations={
+            "title": "Disable Service",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_service_disable_service(
+        service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Disable service (one operation of sm_service_operations)."""
+        return await call_routed(
+            _sm_service_operations_routed,
+            "disable_service",
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
+        )
+
+    async def _sm_process_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -875,8 +1681,78 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for network analysis")
-    async def sm_network_operations(
+    @mcp.tool(
+        name="sm_process_kill_process",
+        description="Kill process (sm_process_operations). Operations for managing system processes",
+        tags={"split-action"},
+        annotations={
+            "title": "Kill Process",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_process_kill_process(
+        pid: int | None = Field(None, description="Process ID"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Kill process (one operation of sm_process_operations)."""
+        return await call_routed(
+            _sm_process_operations_routed,
+            "kill_process",
+            {"pid": pid, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_process_list_processes",
+        description="List processes (sm_process_operations). Operations for managing system processes",
+        tags={"split-action"},
+        annotations={
+            "title": "List Processes",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_process_list_processes(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List processes (one operation of sm_process_operations)."""
+        return await call_routed(
+            _sm_process_operations_routed, "list_processes", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_process_get_process_info",
+        description="Get process info (sm_process_operations). Operations for managing system processes",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Process Info",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_process_get_process_info(
+        pid: int | None = Field(None, description="Process ID"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get process info (one operation of sm_process_operations)."""
+        return await call_routed(
+            _sm_process_operations_routed, "get_process_info", {"pid": pid, "ctx": ctx}
+        )
+
+    async def _sm_network_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -912,8 +1788,92 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for managing system disks")
-    async def sm_disk_operations(
+    @mcp.tool(
+        name="sm_network_list_network_interfaces",
+        description="List network interfaces (sm_network_operations). Operations for network analysis",
+        tags={"split-action"},
+        annotations={
+            "title": "List Network Interfaces",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_network_list_network_interfaces(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List network interfaces (one operation of sm_network_operations)."""
+        return await call_routed(
+            _sm_network_operations_routed, "list_network_interfaces", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_network_list_open_ports",
+        description="List open ports (sm_network_operations). Operations for network analysis",
+        tags={"split-action"},
+        annotations={
+            "title": "List Open Ports",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_network_list_open_ports(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List open ports (one operation of sm_network_operations)."""
+        return await call_routed(
+            _sm_network_operations_routed, "list_open_ports", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_network_ping_host",
+        description="Ping host (sm_network_operations). Operations for network analysis",
+        tags={"split-action"},
+        annotations={
+            "title": "Ping Host",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_network_ping_host(
+        host: str | None = Field(None, description="Host to ping or lookup"),
+        count: int = Field(4, description="Ping count"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Ping host (one operation of sm_network_operations)."""
+        return await call_routed(
+            _sm_network_operations_routed,
+            "ping_host",
+            {"host": host, "count": count, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_network_dns_lookup",
+        description="Dns lookup (sm_network_operations). Operations for network analysis",
+        tags={"split-action"},
+        annotations={
+            "title": "Dns Lookup",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_network_dns_lookup(
+        host: str | None = Field(None, description="Host to ping or lookup"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Dns lookup (one operation of sm_network_operations)."""
+        return await call_routed(
+            _sm_network_operations_routed, "dns_lookup", {"host": host, "ctx": ctx}
+        )
+
+    async def _sm_disk_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -948,8 +1908,66 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for user and group management")
-    async def sm_user_operations(
+    @mcp.tool(
+        name="sm_disk_list_disks",
+        description="List disks (sm_disk_operations). Operations for managing system disks",
+        tags={"split-action"},
+        annotations={
+            "title": "List Disks",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_disk_list_disks(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List disks (one operation of sm_disk_operations)."""
+        return await call_routed(_sm_disk_operations_routed, "list_disks", {"ctx": ctx})
+
+    @mcp.tool(
+        name="sm_disk_get_disk_usage",
+        description="Get disk usage (sm_disk_operations). Operations for managing system disks",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Disk Usage",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_disk_get_disk_usage(
+        path: str | None = Field(None, description="Path for disk usage"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get disk usage (one operation of sm_disk_operations)."""
+        return await call_routed(
+            _sm_disk_operations_routed, "get_disk_usage", {"path": path, "ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_disk_get_disk_space_report",
+        description="Get disk space report (sm_disk_operations). Operations for managing system disks",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Disk Space Report",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_disk_get_disk_space_report(
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get disk space report (one operation of sm_disk_operations)."""
+        return await call_routed(
+            _sm_disk_operations_routed, "get_disk_space_report", {"ctx": ctx}
+        )
+
+    async def _sm_user_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -979,8 +1997,45 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for file and log management")
-    async def sm_file_operations(
+    @mcp.tool(
+        name="sm_user_list_users",
+        description="List users (sm_user_operations). Operations for user and group management",
+        tags={"split-action"},
+        annotations={
+            "title": "List Users",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_user_list_users(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List users (one operation of sm_user_operations)."""
+        return await call_routed(_sm_user_operations_routed, "list_users", {"ctx": ctx})
+
+    @mcp.tool(
+        name="sm_user_list_groups",
+        description="List groups (sm_user_operations). Operations for user and group management",
+        tags={"split-action"},
+        annotations={
+            "title": "List Groups",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_user_list_groups(
+        ctx: Context | None = None,
+    ) -> Any:
+        """List groups (one operation of sm_user_operations)."""
+        return await call_routed(
+            _sm_user_operations_routed, "list_groups", {"ctx": ctx}
+        )
+
+    async def _sm_file_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -1072,8 +2127,173 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for cron jobs")
-    async def sm_cron_operations(
+    @mcp.tool(
+        name="sm_file_manage_file",
+        description="Manage file (sm_file_operations). Operations for file and log management",
+        tags={"split-action"},
+        annotations={
+            "title": "Manage File",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_file_manage_file(
+        filepath: str | None = Field(None, description="Path to file"),
+        content: str | None = Field(
+            None, description="Content to create or update the file with"
+        ),
+        file_action: Literal["read", "create", "update", "delete"] | None = Field(
+            cast(Any, "read"), description="Action for text editor/manage file"
+        ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Manage file (one operation of sm_file_operations)."""
+        return await call_routed(
+            _sm_file_operations_routed,
+            "manage_file",
+            {
+                "filepath": filepath,
+                "content": content,
+                "file_action": file_action,
+                "confirm": confirm,
+                "ctx": ctx,
+            },
+        )
+
+    @mcp.tool(
+        name="sm_file_get_system_logs",
+        description="Get system logs (sm_file_operations). Operations for file and log management",
+        tags={"split-action"},
+        annotations={
+            "title": "Get System Logs",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_file_get_system_logs(
+        lines: int = Field(100, description="Number of lines to tail"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get system logs (one operation of sm_file_operations)."""
+        return await call_routed(
+            _sm_file_operations_routed, "get_system_logs", {"lines": lines, "ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_file_tail_log_file",
+        description="Tail log file (sm_file_operations). Operations for file and log management",
+        tags={"split-action"},
+        annotations={
+            "title": "Tail Log File",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_file_tail_log_file(
+        filepath: str | None = Field(None, description="Path to file"),
+        lines: int = Field(100, description="Number of lines to tail"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Tail log file (one operation of sm_file_operations)."""
+        return await call_routed(
+            _sm_file_operations_routed,
+            "tail_log_file",
+            {"filepath": filepath, "lines": lines, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_file_list_files",
+        description="List files (sm_file_operations). Operations for file and log management",
+        tags={"split-action"},
+        annotations={
+            "title": "List Files",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_file_list_files(
+        filepath: str | None = Field(None, description="Path to file"),
+        recursive: bool = Field(False, description="Recursive search"),
+        depth: int = Field(1, description="Depth for list_files"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """List files (one operation of sm_file_operations)."""
+        return await call_routed(
+            _sm_file_operations_routed,
+            "list_files",
+            {"filepath": filepath, "recursive": recursive, "depth": depth, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_file_search_files",
+        description="Search files (sm_file_operations). Operations for file and log management",
+        tags={"split-action"},
+        annotations={
+            "title": "Search Files",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_file_search_files(
+        filepath: str | None = Field(None, description="Path to file"),
+        pattern: str | None = Field(None, description="Search pattern"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Search files (one operation of sm_file_operations)."""
+        return await call_routed(
+            _sm_file_operations_routed,
+            "search_files",
+            {"filepath": filepath, "pattern": pattern, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_file_grep_files",
+        description="Grep files (sm_file_operations). Operations for file and log management",
+        tags={"split-action"},
+        annotations={
+            "title": "Grep Files",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_file_grep_files(
+        filepath: str | None = Field(None, description="Path to file"),
+        pattern: str | None = Field(None, description="Search pattern"),
+        recursive: bool = Field(False, description="Recursive search"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Grep files (one operation of sm_file_operations)."""
+        return await call_routed(
+            _sm_file_operations_routed,
+            "grep_files",
+            {
+                "filepath": filepath,
+                "pattern": pattern,
+                "recursive": recursive,
+                "ctx": ctx,
+            },
+        )
+
+    async def _sm_cron_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -1123,8 +2343,61 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for firewall management")
-    async def sm_firewall_operations(
+    @mcp.tool(
+        name="sm_cron_remove_cron_job",
+        description="Remove cron job (sm_cron_operations). Operations for cron jobs",
+        tags={"split-action"},
+        annotations={
+            "title": "Remove Cron Job",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_cron_remove_cron_job(
+        job_ref: str | None = Field(
+            None, description="Opaque job reference returned by list_cron_jobs"
+        ),
+        user: str | None = Field(None, description="User for cron job"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Remove cron job (one operation of sm_cron_operations)."""
+        return await call_routed(
+            _sm_cron_operations_routed,
+            "remove_cron_job",
+            {"job_ref": job_ref, "user": user, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_cron_list_cron_jobs",
+        description="List cron jobs (sm_cron_operations). Operations for cron jobs",
+        tags={"split-action"},
+        annotations={
+            "title": "List Cron Jobs",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_cron_list_cron_jobs(
+        user: str | None = Field(None, description="User for cron job"),
+        ctx: Context | None = None,
+    ) -> Any:
+        """List cron jobs (one operation of sm_cron_operations)."""
+        return await call_routed(
+            _sm_cron_operations_routed, "list_cron_jobs", {"user": user, "ctx": ctx}
+        )
+
+    async def _sm_firewall_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -1186,8 +2459,91 @@ def register_connector_tools(context: RegistrationContext) -> None:
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
-    @mcp.tool(description="Operations for SSH and specialized managers")
-    async def sm_advanced_operations(
+    @mcp.tool(
+        name="sm_firewall_get_firewall_status",
+        description="Get firewall status (sm_firewall_operations). Operations for firewall management",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Firewall Status",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_firewall_get_firewall_status(
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get firewall status (one operation of sm_firewall_operations)."""
+        return await call_routed(
+            _sm_firewall_operations_routed, "get_firewall_status", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_firewall_add_firewall_rule",
+        description="Add firewall rule (sm_firewall_operations). Operations for firewall management",
+        tags={"split-action"},
+        annotations={
+            "title": "Add Firewall Rule",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_firewall_add_firewall_rule(
+        rule: FirewallRuleSpec | None = Field(
+            None, description="Structured firewall rule specification"
+        ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Add firewall rule (one operation of sm_firewall_operations)."""
+        return await call_routed(
+            _sm_firewall_operations_routed,
+            "add_firewall_rule",
+            {"rule": rule, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_firewall_remove_firewall_rule",
+        description="Remove firewall rule (sm_firewall_operations). Operations for firewall management",
+        tags={"split-action"},
+        annotations={
+            "title": "Remove Firewall Rule",
+            "readOnlyHint": False,
+            "destructiveHint": True,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_firewall_remove_firewall_rule(
+        rule: FirewallRuleSpec | None = Field(
+            None, description="Structured firewall rule specification"
+        ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Remove firewall rule (one operation of sm_firewall_operations)."""
+        return await call_routed(
+            _sm_firewall_operations_routed,
+            "remove_firewall_rule",
+            {"rule": rule, "confirm": confirm, "ctx": ctx},
+        )
+
+    async def _sm_advanced_operations_routed(
         action: str = Field(
             ...,
             description="Action to perform. Must be one of: "
@@ -1251,6 +2607,216 @@ def register_connector_tools(context: RegistrationContext) -> None:
                 )
         except Exception:
             return {"success": False, "error": "Operation failed"}
+
+    @mcp.tool(
+        name="sm_advanced_add_authorized_key",
+        description="Add authorized key (sm_advanced_operations). Operations for SSH and specialized managers",
+        tags={"split-action"},
+        annotations={
+            "title": "Add Authorized Key",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_advanced_add_authorized_key(
+        public_key: str | None = Field(None, description="Public key content"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Add authorized key (one operation of sm_advanced_operations)."""
+        return await call_routed(
+            _sm_advanced_operations_routed,
+            "add_authorized_key",
+            {"public_key": public_key, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_advanced_install_uv",
+        description="Install uv (sm_advanced_operations). Operations for SSH and specialized managers",
+        tags={"split-action"},
+        annotations={
+            "title": "Install Uv",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_advanced_install_uv(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Install uv (one operation of sm_advanced_operations)."""
+        return await call_routed(
+            _sm_advanced_operations_routed,
+            "install_uv",
+            {"confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_advanced_create_venv",
+        description="Create venv (sm_advanced_operations). Operations for SSH and specialized managers",
+        tags={"split-action"},
+        annotations={
+            "title": "Create Venv",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_advanced_create_venv(
+        path: str | None = Field(None, description="Path for venv"),
+        version: str | None = Field(None, description="Version of python/node"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Create venv (one operation of sm_advanced_operations)."""
+        return await call_routed(
+            _sm_advanced_operations_routed,
+            "create_venv",
+            {"path": path, "version": version, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_advanced_install_package",
+        description="Install package (sm_advanced_operations). Operations for SSH and specialized managers",
+        tags={"split-action"},
+        annotations={
+            "title": "Install Package",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_advanced_install_package(
+        path: str | None = Field(None, description="Path for venv"),
+        package: str | None = Field(None, description="Package name to install"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Install package (one operation of sm_advanced_operations)."""
+        return await call_routed(
+            _sm_advanced_operations_routed,
+            "install_package",
+            {"path": path, "package": package, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_advanced_install_nvm",
+        description="Install nvm (sm_advanced_operations). Operations for SSH and specialized managers",
+        tags={"split-action"},
+        annotations={
+            "title": "Install Nvm",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_advanced_install_nvm(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Install nvm (one operation of sm_advanced_operations)."""
+        return await call_routed(
+            _sm_advanced_operations_routed,
+            "install_nvm",
+            {"confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_advanced_install_node",
+        description="Install node (sm_advanced_operations). Operations for SSH and specialized managers",
+        tags={"split-action"},
+        annotations={
+            "title": "Install Node",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_advanced_install_node(
+        version: str | None = Field(None, description="Version of python/node"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Install node (one operation of sm_advanced_operations)."""
+        return await call_routed(
+            _sm_advanced_operations_routed,
+            "install_node",
+            {"version": version, "confirm": confirm, "ctx": ctx},
+        )
+
+    @mcp.tool(
+        name="sm_advanced_use_node",
+        description="Use node (sm_advanced_operations). Operations for SSH and specialized managers",
+        tags={"split-action"},
+        annotations={
+            "title": "Use Node",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": False,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_advanced_use_node(
+        version: str | None = Field(None, description="Version of python/node"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
+        ctx: Context | None = None,
+    ) -> Any:
+        """Use node (one operation of sm_advanced_operations)."""
+        return await call_routed(
+            _sm_advanced_operations_routed,
+            "use_node",
+            {"version": version, "confirm": confirm, "ctx": ctx},
+        )
 
     @mcp.tool(
         description=(

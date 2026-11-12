@@ -11,7 +11,7 @@ class TestToolRegistration:
         from systems_manager.mcp_server import get_mcp_instance
 
         _, mcp, _ = get_mcp_instance()
-        assert "sm_service_operations" in registered_tools(mcp)
+        assert "sm_service_start_service" in registered_tools(mcp)
 
 
 class TestGetMcpInstance:

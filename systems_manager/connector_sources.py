@@ -12,12 +12,11 @@ CONNECTOR = "systems-manager-mcp"
 
 SOURCES = (
     source_meta(
-        tool="sm_service_operations",
+        tool="sm_service_list_services",
         source_id="system-services",
         record_type="SystemService",
         id_field="name",
         preset={
-            "action": "list_services",
             "doc_type": "system-service",
             "params_style": "args",
         },

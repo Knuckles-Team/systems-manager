@@ -186,9 +186,9 @@ def test_registered_policy_is_complete():
     }
     assert decorated_tools <= server._ALL_CLASSIFIED_TOOLS
     assert {
-        "sm_system_operations",
-        "sm_file_operations",
-        "sm_firewall_operations",
+        "sm_system_update",
+        "sm_file_manage_file",
+        "sm_firewall_add_firewall_rule",
         "systems_ingest_host",
     } <= decorated_tools
 

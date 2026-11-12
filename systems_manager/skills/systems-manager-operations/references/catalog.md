@@ -1,25 +1,20 @@
 # Provider workflow catalog
 
-Load only the workflow relevant to the current request. Start with `list_actions` on an
-action-routed tool when the live schema is not already present in the delegated tool
-description.
+Load only the workflow relevant to the current request. Every operation is its own typed tool; read its schema from the tool list.
 
 ## Tool map
 
 | Need | Current typed tool |
 | --- | --- |
-| OS, packages, cleanup, statistics, uptime | `sm_system_operations` |
-| Service lifecycle | `sm_service_operations` or provider `manage_service` |
-| Process inspection or termination | `sm_process_operations`, `get_process_details` |
-| Interfaces, ports, DNS, bounded probes | `sm_network_operations`, `get_network_connections` |
-| Filesystems and volume capacity | `sm_disk_operations` |
-| SMART, RAID, and BMC drive-fault correlation | `sm_storage_health` |
-| Managed files and system logs | `sm_file_operations`, `query_system_logs` |
-| Firewall rules | `sm_firewall_operations` |
-| Cron inventory and removal | `sm_cron_operations` |
-| Agent identity | `sm_agent_identity_operations` |
-| Specialist registry | `sm_agent_specialist_operations` |
-| Scheduler and watchdog | `sm_agent_scheduler_operations`, `sm_agent_watchdog_operations` |
+| OS, packages, cleanup, statistics, uptime | `sm_system_*` (see sm-packages-and-maintenance, sm-host-inspection) |
+| Service lifecycle | `sm_service_*` or provider `manage_service_*` |
+| Process inspection or termination | `sm_process_*`, `get_process_details` |
+| Interfaces, ports, DNS, bounded probes | `sm_network_*`, `get_network_connections` |
+| Filesystems and volume capacity | `sm_disk_*` |
+| SMART, RAID, and BMC drive-fault correlation | `sm_storage_health_*` |
+| Managed files and system logs | `sm_file_*`, `query_system_logs` |
+| Firewall rules | `sm_firewall_*` |
+| Cron inventory and removal | `sm_cron_*` |
 | Privacy-safe host graph projection | `systems_ingest_host` |
 
 ## Read and troubleshoot
@@ -47,7 +42,7 @@ description.
 
 ## Storage and BMC health
 
-Use `sm_storage_health` with `report`, `smart`, `faults`, or `raid`. Start in-band. Set
+Use `sm_storage_health_*` with `report`, `smart`, `faults`, or `raid`. Start in-band. Set
 `out_of_band=true` only when the deployment has projected a checked
 `SYSTEMS_MANAGER_BMC_CREDENTIALS` secret containing exactly `host`, `user`, and `password`.
 The provider consumes that value internally and must never return it. An optional `bmc_host`
