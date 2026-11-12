@@ -484,7 +484,7 @@ _ALL_CLASSIFIED_TOOLS = frozenset(
         "systems_ingest_host",
         *_SPLIT_TOOLS,
         *_SERVICE_TOOLS,
-        # Agent-utilities intent verbs: find/ask read; act routes governed writes.
+        # Meristem intent verbs: find/ask read; act routes governed writes.
         "find",
         "ask",
         "act",
