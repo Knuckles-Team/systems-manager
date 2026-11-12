@@ -6,32 +6,29 @@ management. The full ecosystem role and concept map are in [Overview](overview.m
 
 ## As an MCP server
 
-Once [deployed](deployment.md), the server defaults to the compact intent surface and
-keeps consolidated action-routed modules as the governed backing capabilities. Load
-only the domain needed for the current request, then discover its exact action schema.
+Once [deployed](deployment.md), the server exposes one typed tool per host operation.
+Load only the domain needed for the current request and read each tool's schema.
 
-| Tool | Operations |
+| Tool family | Operations |
 |---|---|
-| `sm_system_operations` | install / update / clean / optimize, OS + hardware statistics, package search, health check, uptime, env vars |
-| `sm_service_operations` | manage system services |
-| `sm_process_operations` | inspect and manage processes |
-| `sm_network_operations` | network analysis |
-| `sm_disk_operations` | manage disks |
-| `sm_user_operations` | user and group management |
-| `sm_file_operations` | file and log management |
-| `sm_cron_operations` | manage cron jobs |
-| `sm_firewall_operations` | firewall management |
-| `sm_storage_health` | SMART, RAID, and optional BMC drive-fault diagnostics |
+| `sm_system_*` | install, update, clean, optimize, reboot, OS and hardware statistics, package search and inventory, uptime, env vars, Windows features |
+| `sm_service_*`, `manage_service_*`, `list_services` | list, inspect, start, stop, restart, enable and disable system services |
+| `sm_process_*`, `get_process_details` | list, inspect and kill processes |
+| `sm_network_*`, `get_network_connections` | interfaces, open ports, ping, DNS lookup, connections |
+| `sm_disk_*` | disks, usage and space report |
+| `sm_user_*` | list users and groups |
+| `sm_file_*`, `query_system_logs` | file listing, search, grep, managed edits, logs |
+| `sm_cron_*` | list and remove cron jobs |
+| `sm_firewall_*` | firewall status and rules |
+| `sm_storage_health_*` | SMART, RAID, drive faults and the combined report |
+| `sm_advanced_*` | uv, nvm, Node, virtual environments, authorized keys |
 | `systems_ingest_host` | privacy-safe governed host graph ingestion |
-
-Agent identity, specialist registry, scheduler, and watchdog
-domains are also registered when their current provider toggles are enabled.
 
 Example agent prompts that map onto these tools:
 
-- *"Update the system and install git and htop"* → `sm_system_operations`
-- *"Show the hardware statistics for this host"* → `sm_system_operations`
-- *"Which processes are using the most memory?"* → `sm_process_operations`
+- *"Update the system and install git and htop"* -> `sm_system_update`, `sm_system_install_applications`
+- *"Show the hardware statistics for this host"* -> `sm_system_get_hardware_statistics`
+- *"Which processes are using the most memory?"* -> `sm_process_list_processes`
 
 Tool modules are individually togglable with environment switches (for example,
 `MISCTOOL`) and can be filtered through the current Scion SDK visibility

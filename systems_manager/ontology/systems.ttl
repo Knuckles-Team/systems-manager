@@ -22,11 +22,11 @@
 
 :SystemService a owl:Class ;
     rdfs:label "System Service" ;
-    rdfs:comment "An OS-managed service/unit (systemd or Windows service) on a HardwareNode (sm_service_operations list_services)." .
+    rdfs:comment "An OS-managed service/unit (systemd or Windows service) on a HardwareNode (sm_service_list_services)." .
 
 :SoftwarePackage a owl:Class ;
     rdfs:label "Software Package" ;
-    rdfs:comment "An installed or upgradable OS software package on a HardwareNode (sm_system_operations list_installed_packages)." .
+    rdfs:comment "An installed or upgradable OS software package on a HardwareNode (sm_system_list_installed_packages)." .
 
 # --- links (owl:ObjectProperty) ---
 
@@ -162,3 +162,6 @@
 # ontology-codemod R3
 <http://knuckles.team/kg#DiskVolume> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Volume> .
 <http://knuckles.team/kg#NetworkInterface> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#NetworkInterface> .
+<http://knuckles.team/kg#HardwareNode> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Host> .
+<http://knuckles.team/kg#SystemService> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Service> .
+<http://knuckles.team/kg#SoftwarePackage> rdfs:subClassOf <http://knuckles.team/kg#SoftwareComponent> .

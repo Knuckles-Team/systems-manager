@@ -789,13 +789,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
         packages: list[str] | None = Field(
             None, description="List of applications/packages"
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Install applications (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed,
             "install_applications",
-            {"packages": packages, "ctx": ctx},
+            {"packages": packages, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -819,13 +826,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
                 "universal-skills `k8s-node-rolling-update` workflow instead."
             ),
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Update (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed,
             "update",
-            {"allow_on_k8s": allow_on_k8s, "ctx": ctx},
+            {"allow_on_k8s": allow_on_k8s, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -849,13 +863,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
                 "universal-skills `k8s-node-rolling-update` workflow instead."
             ),
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Reboot (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed,
             "reboot",
-            {"allow_on_k8s": allow_on_k8s, "ctx": ctx},
+            {"allow_on_k8s": allow_on_k8s, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -871,10 +892,19 @@ def register_connector_tools(context: RegistrationContext) -> None:
         },
     )
     async def sm_system_clean(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Clean (one operation of sm_system_operations)."""
-        return await call_routed(_sm_system_operations_routed, "clean", {"ctx": ctx})
+        return await call_routed(
+            _sm_system_operations_routed, "clean", {"confirm": confirm, "ctx": ctx}
+        )
 
     @mcp.tool(
         name="sm_system_optimize",
@@ -889,10 +919,19 @@ def register_connector_tools(context: RegistrationContext) -> None:
         },
     )
     async def sm_system_optimize(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Optimize (one operation of sm_system_operations)."""
-        return await call_routed(_sm_system_operations_routed, "optimize", {"ctx": ctx})
+        return await call_routed(
+            _sm_system_operations_routed, "optimize", {"confirm": confirm, "ctx": ctx}
+        )
 
     @mcp.tool(
         name="sm_system_install_python_modules",
@@ -910,13 +949,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
         packages: list[str] | None = Field(
             None, description="List of applications/packages"
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Install python modules (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed,
             "install_python_modules",
-            {"packages": packages, "ctx": ctx},
+            {"packages": packages, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1141,11 +1187,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
         },
     )
     async def sm_system_clean_temp_files(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Clean temp files (one operation of sm_system_operations)."""
         return await call_routed(
-            _sm_system_operations_routed, "clean_temp_files", {"ctx": ctx}
+            _sm_system_operations_routed,
+            "clean_temp_files",
+            {"confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1161,11 +1216,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
         },
     )
     async def sm_system_clean_package_cache(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Clean package cache (one operation of sm_system_operations)."""
         return await call_routed(
-            _sm_system_operations_routed, "clean_package_cache", {"ctx": ctx}
+            _sm_system_operations_routed,
+            "clean_package_cache",
+            {"confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1202,13 +1266,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_system_enable_windows_features(
         feature_name: str | None = Field(None, description="Windows feature name"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Enable windows features (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed,
             "enable_windows_features",
-            {"feature_name": feature_name, "ctx": ctx},
+            {"feature_name": feature_name, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1225,13 +1296,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_system_disable_windows_features(
         feature_name: str | None = Field(None, description="Windows feature name"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Disable windows features (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed,
             "disable_windows_features",
-            {"feature_name": feature_name, "ctx": ctx},
+            {"feature_name": feature_name, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1248,13 +1326,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_system_add_repository(
         repository: str | None = Field(None, description="Repository URL or name"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Add repository (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed,
             "add_repository",
-            {"repository": repository, "ctx": ctx},
+            {"repository": repository, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1271,13 +1356,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_system_install_local_package(
         file_path: str | None = Field(None, description="Path to local package file"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Install local package (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed,
             "install_local_package",
-            {"file_path": file_path, "ctx": ctx},
+            {"file_path": file_path, "confirm": confirm, "ctx": ctx},
         )
 
     async def _sm_service_operations_routed(
@@ -1398,13 +1490,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_service_start_service(
         service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Start service (one operation of sm_service_operations)."""
         return await call_routed(
             _sm_service_operations_routed,
             "start_service",
-            {"service_name": service_name, "ctx": ctx},
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1421,13 +1520,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_service_stop_service(
         service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Stop service (one operation of sm_service_operations)."""
         return await call_routed(
             _sm_service_operations_routed,
             "stop_service",
-            {"service_name": service_name, "ctx": ctx},
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1444,13 +1550,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_service_restart_service(
         service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Restart service (one operation of sm_service_operations)."""
         return await call_routed(
             _sm_service_operations_routed,
             "restart_service",
-            {"service_name": service_name, "ctx": ctx},
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1467,13 +1580,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_service_enable_service(
         service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Enable service (one operation of sm_service_operations)."""
         return await call_routed(
             _sm_service_operations_routed,
             "enable_service",
-            {"service_name": service_name, "ctx": ctx},
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -1490,13 +1610,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_service_disable_service(
         service_name: str | None = Field(None, description="Name of the service"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Disable service (one operation of sm_service_operations)."""
         return await call_routed(
             _sm_service_operations_routed,
             "disable_service",
-            {"service_name": service_name, "ctx": ctx},
+            {"service_name": service_name, "confirm": confirm, "ctx": ctx},
         )
 
     async def _sm_process_operations_routed(
@@ -1568,11 +1695,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_process_kill_process(
         pid: int | None = Field(None, description="Process ID"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Kill process (one operation of sm_process_operations)."""
         return await call_routed(
-            _sm_process_operations_routed, "kill_process", {"pid": pid, "ctx": ctx}
+            _sm_process_operations_routed,
+            "kill_process",
+            {"pid": pid, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2011,6 +2147,13 @@ def register_connector_tools(context: RegistrationContext) -> None:
         file_action: Literal["read", "create", "update", "delete"] | None = Field(
             cast(Any, "read"), description="Action for text editor/manage file"
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Manage file (one operation of sm_file_operations)."""
@@ -2021,6 +2164,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
                 "filepath": filepath,
                 "content": content,
                 "file_action": file_action,
+                "confirm": confirm,
                 "ctx": ctx,
             },
         )
@@ -2052,9 +2196,9 @@ def register_connector_tools(context: RegistrationContext) -> None:
         tags={"split-action"},
         annotations={
             "title": "Tail Log File",
-            "readOnlyHint": False,
+            "readOnlyHint": True,
             "destructiveHint": False,
-            "idempotentHint": False,
+            "idempotentHint": True,
             "openWorldHint": True,
         },
     )
@@ -2125,9 +2269,9 @@ def register_connector_tools(context: RegistrationContext) -> None:
         tags={"split-action"},
         annotations={
             "title": "Grep Files",
-            "readOnlyHint": False,
+            "readOnlyHint": True,
             "destructiveHint": False,
-            "idempotentHint": False,
+            "idempotentHint": True,
             "openWorldHint": True,
         },
     )
@@ -2216,13 +2360,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
             None, description="Opaque job reference returned by list_cron_jobs"
         ),
         user: str | None = Field(None, description="User for cron job"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Remove cron job (one operation of sm_cron_operations)."""
         return await call_routed(
             _sm_cron_operations_routed,
             "remove_cron_job",
-            {"job_ref": job_ref, "user": user, "ctx": ctx},
+            {"job_ref": job_ref, "user": user, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2344,13 +2495,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
         rule: FirewallRuleSpec | None = Field(
             None, description="Structured firewall rule specification"
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Add firewall rule (one operation of sm_firewall_operations)."""
         return await call_routed(
             _sm_firewall_operations_routed,
             "add_firewall_rule",
-            {"rule": rule, "ctx": ctx},
+            {"rule": rule, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2369,13 +2527,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
         rule: FirewallRuleSpec | None = Field(
             None, description="Structured firewall rule specification"
         ),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Remove firewall rule (one operation of sm_firewall_operations)."""
         return await call_routed(
             _sm_firewall_operations_routed,
             "remove_firewall_rule",
-            {"rule": rule, "ctx": ctx},
+            {"rule": rule, "confirm": confirm, "ctx": ctx},
         )
 
     async def _sm_advanced_operations_routed(
@@ -2457,13 +2622,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_advanced_add_authorized_key(
         public_key: str | None = Field(None, description="Public key content"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Add authorized key (one operation of sm_advanced_operations)."""
         return await call_routed(
             _sm_advanced_operations_routed,
             "add_authorized_key",
-            {"public_key": public_key, "ctx": ctx},
+            {"public_key": public_key, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2479,11 +2651,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
         },
     )
     async def sm_advanced_install_uv(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Install uv (one operation of sm_advanced_operations)."""
         return await call_routed(
-            _sm_advanced_operations_routed, "install_uv", {"ctx": ctx}
+            _sm_advanced_operations_routed,
+            "install_uv",
+            {"confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2501,13 +2682,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     async def sm_advanced_create_venv(
         path: str | None = Field(None, description="Path for venv"),
         version: str | None = Field(None, description="Version of python/node"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Create venv (one operation of sm_advanced_operations)."""
         return await call_routed(
             _sm_advanced_operations_routed,
             "create_venv",
-            {"path": path, "version": version, "ctx": ctx},
+            {"path": path, "version": version, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2525,13 +2713,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     async def sm_advanced_install_package(
         path: str | None = Field(None, description="Path for venv"),
         package: str | None = Field(None, description="Package name to install"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Install package (one operation of sm_advanced_operations)."""
         return await call_routed(
             _sm_advanced_operations_routed,
             "install_package",
-            {"path": path, "package": package, "ctx": ctx},
+            {"path": path, "package": package, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2547,11 +2742,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
         },
     )
     async def sm_advanced_install_nvm(
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Install nvm (one operation of sm_advanced_operations)."""
         return await call_routed(
-            _sm_advanced_operations_routed, "install_nvm", {"ctx": ctx}
+            _sm_advanced_operations_routed,
+            "install_nvm",
+            {"confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2568,13 +2772,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_advanced_install_node(
         version: str | None = Field(None, description="Version of python/node"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Install node (one operation of sm_advanced_operations)."""
         return await call_routed(
             _sm_advanced_operations_routed,
             "install_node",
-            {"version": version, "ctx": ctx},
+            {"version": version, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -2591,11 +2802,20 @@ def register_connector_tools(context: RegistrationContext) -> None:
     )
     async def sm_advanced_use_node(
         version: str | None = Field(None, description="Version of python/node"),
+        confirm: bool = Field(
+            False,
+            description=(
+                "Explicit confirmation for a mutating action. Pass true when the "
+                "client cannot answer an approval prompt."
+            ),
+        ),
         ctx: Context | None = None,
     ) -> Any:
         """Use node (one operation of sm_advanced_operations)."""
         return await call_routed(
-            _sm_advanced_operations_routed, "use_node", {"version": version, "ctx": ctx}
+            _sm_advanced_operations_routed,
+            "use_node",
+            {"version": version, "confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
