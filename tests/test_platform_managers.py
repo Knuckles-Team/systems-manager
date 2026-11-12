@@ -24,7 +24,7 @@ from systems_manager.systems_manager import (
 def _not_a_k8s_node():
     """Keep platform detection independent of the host running the tests."""
     with patch(
-        "systems_manager.systems_manager.is_k8s_node",
+        "systems_manager.mcp_server.is_k8s_node",
         return_value=(False, "not a k8s node"),
     ):
         yield

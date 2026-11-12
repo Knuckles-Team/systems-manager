@@ -31,8 +31,6 @@ import psutil
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from scion_sdk.config import setting
 
-from systems_manager.k8s_detect import is_k8s_node
-
 _MAX_MANAGED_FILE_BYTES = 8 * 1024 * 1024
 _MAX_LOCAL_PACKAGE_BYTES = 2 * 1024 * 1024 * 1024
 _MAX_FILESYSTEM_RESULTS = 10_000
@@ -2278,30 +2276,8 @@ class SystemsManagerBase(ABC):
             self.log_command(command, error=e)
             return {"success": False, "error": "Managed command failed"}
 
-    def _k8s_lifecycle_guard(self, allow_on_k8s: bool) -> dict | None:
-        """Refuse a naive reboot or update on a live Kubernetes node."""
-        if allow_on_k8s or str(setting("ALLOW_UPDATE_ON_K8S", "")).casefold() in {
-            "1",
-            "true",
-            "yes",
-        }:
-            return None
-        is_node, _reason = is_k8s_node()
-        if not is_node:
-            return None
-        return {
-            "success": False,
-            "error": (
-                "This host is a live Kubernetes node; use the governed rolling "
-                "update workflow or an explicit deployment-policy override"
-            ),
-        }
-
-    def reboot(self, allow_on_k8s: bool = False) -> dict:
-        """Reboot the host after applying the Kubernetes lifecycle guard."""
-        guard = self._k8s_lifecycle_guard(allow_on_k8s)
-        if guard is not None:
-            return guard
+    def reboot(self) -> dict:
+        """Reboot the host (the tool layer confirms first)."""
         if platform.system() == "Windows":
             return self.run_command(["shutdown.exe", "/r", "/t", "0"], elevated=True)
         return self.run_command(["systemctl", "reboot"], elevated=True)
@@ -2311,7 +2287,7 @@ class SystemsManagerBase(ABC):
         pass
 
     @abstractmethod
-    def update(self, allow_on_k8s: bool = False) -> dict:
+    def update(self) -> dict:
         pass
 
     @abstractmethod
@@ -3465,10 +3441,7 @@ class AptManager(SystemsManagerBase):
                     self.logger.error("Native installation failed")
         return results
 
-    def update(self, allow_on_k8s: bool = False) -> dict:
-        guard = self._k8s_lifecycle_guard(allow_on_k8s)
-        if guard is not None:
-            return guard
+    def update(self) -> dict:
         try:
             update_result = self.run_command(["apt", "update"], elevated=True)
             if not update_result["success"]:
@@ -3652,10 +3625,7 @@ class DnfManager(SystemsManagerBase):
                     results["success"] = False
         return results
 
-    def update(self, allow_on_k8s: bool = False) -> dict:
-        guard = self._k8s_lifecycle_guard(allow_on_k8s)
-        if guard is not None:
-            return guard
+    def update(self) -> dict:
         result = self.run_command(["dnf", "update", "-y"], elevated=True)
         return {
             "success": result["success"],
@@ -3806,10 +3776,7 @@ class ZypperManager(SystemsManagerBase):
                     results["success"] = False
         return results
 
-    def update(self, allow_on_k8s: bool = False) -> dict:
-        guard = self._k8s_lifecycle_guard(allow_on_k8s)
-        if guard is not None:
-            return guard
+    def update(self) -> dict:
         result = self.run_command(["zypper", "update", "-y"], elevated=True)
         return {
             "success": result["success"],
@@ -3959,10 +3926,7 @@ class PacmanManager(SystemsManagerBase):
                     results["success"] = False
         return results
 
-    def update(self, allow_on_k8s: bool = False) -> dict:
-        guard = self._k8s_lifecycle_guard(allow_on_k8s)
-        if guard is not None:
-            return guard
+    def update(self) -> dict:
         result = self.run_command(["pacman", "-Syu", "--noconfirm"], elevated=True)
         return {
             "success": result["success"],
@@ -4124,10 +4088,7 @@ class WindowsManager(SystemsManagerBase):
                 self.logger.error("Winget installation failed")
         return results
 
-    def update(self, allow_on_k8s: bool = False) -> dict:
-        guard = self._k8s_lifecycle_guard(allow_on_k8s)
-        if guard is not None:
-            return guard
+    def update(self) -> dict:
         winget_result = self.run_command(
             [
                 "winget",
