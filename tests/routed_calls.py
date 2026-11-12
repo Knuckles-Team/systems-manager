@@ -31,7 +31,9 @@ class RoutedServer:
     def __init__(self, target: Any) -> None:
         self._target = target
 
-    async def call_tool(self, name: str, arguments: Any = None, *args: Any, **kwargs: Any):
+    async def call_tool(
+        self, name: str, arguments: Any = None, *args: Any, **kwargs: Any
+    ):
         name, arguments = tool_for(name, arguments)
         return await self._target.call_tool(name, arguments, *args, **kwargs)
 
