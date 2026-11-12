@@ -1,4 +1,5 @@
 @prefix : <http://knuckles.team/kg#> .
+@prefix core: <https://knuckles-team.github.io/ontology/core#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
@@ -160,8 +161,8 @@
     attributes through the governed knowledge-graph boundary.""" .
 
 # ontology-codemod R3
-<http://knuckles.team/kg#DiskVolume> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Volume> .
-<http://knuckles.team/kg#NetworkInterface> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#NetworkInterface> .
-<http://knuckles.team/kg#HardwareNode> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Host> .
-<http://knuckles.team/kg#SystemService> rdfs:subClassOf <http://knuckles.team/kg/infrastructure#Service> .
-<http://knuckles.team/kg#SoftwarePackage> rdfs:subClassOf <http://knuckles.team/kg#SoftwareComponent> .
+<http://knuckles.team/kg#DiskVolume> rdfs:subClassOf core:Resource .
+<http://knuckles.team/kg#NetworkInterface> rdfs:subClassOf core:Resource .
+<http://knuckles.team/kg#HardwareNode> rdfs:subClassOf core:System .
+<http://knuckles.team/kg#SystemService> rdfs:subClassOf core:ServiceCapability .
+<http://knuckles.team/kg#SoftwarePackage> rdfs:subClassOf core:Artifact .
