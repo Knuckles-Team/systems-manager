@@ -26,7 +26,7 @@ The fleet operator and the engine rely on this behaviour of `systems-manager`: `
 
 1. **Given** the `systems-manager` connector built from the default branch, **When** `tests/test_default_content_surfaces.py::test_default_content_surfaces` runs, **Then** `resources/list` includes `skill://` and `ontology://`; `prompts/list` includes each packaged prompt.
 
-### User Story 2 - Declare access contracts for the competency reads of systems-manager (Priority: P1)
+### User Story 2 - Declare the host access contract of systems-manager and add the host record tool (Priority: P1)
 
 The fleet operator and the engine rely on this behaviour of `systems-manager`: Subsystem: connector `systems-manager`. It is proven independently of the other stories.
 
@@ -58,7 +58,7 @@ The fleet operator and the engine rely on this behaviour of `systems-manager`: S
 ## Requirements
 
 - **FR-001**: Default content. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R001`.
-- **FR-002**: Declare access contracts for the competency reads of systems-manager. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`.
+- **FR-002**: Declare the host access contract of systems-manager and add the host record tool. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`.
 - **FR-003**: Prove service lifecycle parity across Linux, Windows and macOS. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003`.
 - **FR-004**: Register the workspace reader. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004`.
 

@@ -372,6 +372,7 @@ SYSTEM_ACTIONS = (
     "list_upgradable_packages",
     "system_health_check",
     "get_uptime",
+    "get_host_record",
     "list_env_vars",
     "get_env_var",
     "clean_temp_files",
@@ -714,6 +715,10 @@ def register_connector_tools(context: RegistrationContext) -> None:
             elif action == "get_uptime":
                 return await run_blocking(
                     manager.get_uptime,
+                )
+            elif action == "get_host_record":
+                return await run_blocking(
+                    manager.get_host_record,
                 )
             elif action == "list_env_vars":
                 return await run_blocking(
@@ -1104,6 +1109,26 @@ def register_connector_tools(context: RegistrationContext) -> None:
         """Get uptime (one operation of sm_system_operations)."""
         return await call_routed(
             _sm_system_operations_routed, "get_uptime", {"ctx": ctx}
+        )
+
+    @mcp.tool(
+        name="sm_system_get_host_record",
+        description="Get host record (sm_system_operations). Returns an opaque stable host_id (never a hostname) with pendingUpdates and uptimeSeconds",
+        tags={"split-action"},
+        annotations={
+            "title": "Get Host Record",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": True,
+        },
+    )
+    async def sm_system_get_host_record(
+        ctx: Context | None = None,
+    ) -> Any:
+        """Get host record (one operation of sm_system_operations)."""
+        return await call_routed(
+            _sm_system_operations_routed, "get_host_record", {"ctx": ctx}
         )
 
     @mcp.tool(

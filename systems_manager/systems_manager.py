@@ -2975,6 +2975,48 @@ class SystemsManagerBase(ABC):
         except Exception:
             return {"success": False, "error": "Operation failed"}
 
+    @staticmethod
+    def _machine_id() -> str | None:
+        for path in ("/etc/machine-id", "/var/lib/dbus/machine-id"):
+            try:
+                with open(path, encoding="ascii") as handle:
+                    value = handle.read().strip()
+            except OSError:
+                continue
+            if value:
+                return value
+        if platform.system() == "Windows":
+            try:
+                import winreg  # type: ignore[import-not-found]
+
+                with winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
+                    r"SOFTWARE\Microsoft\Cryptography",
+                    0,
+                    winreg.KEY_READ | winreg.KEY_WOW64_64KEY,
+                ) as key:
+                    return str(winreg.QueryValueEx(key, "MachineGuid")[0])
+            except OSError:
+                return None
+        return None
+
+    def get_host_record(self) -> dict:
+        """Host record keyed by an opaque host id; carries no hostname."""
+        machine_id = self._machine_id()
+        if not machine_id:
+            return {"success": False, "error": "Host identity unavailable"}
+        uptime = self.get_uptime()
+        upgradable = self.list_upgradable_packages()
+        if not uptime.get("success") or not upgradable.get("success"):
+            return {"success": False, "error": "Operation failed"}
+        digest = hashlib.sha256(f"systems-manager:host:{machine_id}".encode())
+        return {
+            "success": True,
+            "host_id": digest.hexdigest()[:32],
+            "pendingUpdates": int(upgradable["total"]),
+            "uptimeSeconds": int(uptime["uptime_seconds"]),
+        }
+
     def _linux_cron_jobs(self, user: str | None) -> dict:
         result = self.run_command(_crontab_list_command(user), capture_output=True)
         jobs = (

@@ -53,7 +53,6 @@ def test_every_scion_sdk_import_resolves_on_the_pinned_release() -> None:
                         missing.append(
                             f"{rel}:{node.lineno} {node.module}.{alias.name}"
                         )
-    assert not missing, (
-        "scion_sdk names that do not exist on the pinned release:\n"
-        + "\n".join(missing)
-    )
+    assert (
+        not missing
+    ), "scion_sdk names that do not exist on the pinned release:\n" + "\n".join(missing)

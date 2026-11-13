@@ -1,4 +1,4 @@
-@prefix : <http://knuckles.team/kg#> .
+@prefix : <https://knuckles-team.github.io/ontology/connector/host-systems#> .
 @prefix core: <https://knuckles-team.github.io/ontology/core#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -10,18 +10,22 @@
 # filesystem paths, user identity, and credential material.
 
 :HardwareNode a owl:Class ;
+    rdfs:subClassOf core:InfrastructureHost ;
     rdfs:label "Hardware Node" ;
     rdfs:comment "A managed physical or virtual compute boundary identified by an opaque deployment reference." .
 
 :NetworkInterface a owl:Class ;
+    rdfs:subClassOf core:Interface ;
     rdfs:label "Network Interface" ;
     rdfs:comment "A network interface on a HardwareNode, represented without an address, hardware address, or local interface name." .
 
 :DiskVolume a owl:Class ;
+    rdfs:subClassOf core:StorageContainer ;
     rdfs:label "Disk Volume" ;
     rdfs:comment "A disk volume on a HardwareNode represented without a device name, serial number, or filesystem path." .
 
 :SystemService a owl:Class ;
+    rdfs:subClassOf core:ConfigurationItem ;
     rdfs:label "System Service" ;
     rdfs:comment "An OS-managed service/unit (systemd or Windows service) on a HardwareNode (sm_service_list_services)." .
 
@@ -30,6 +34,18 @@
     rdfs:comment "An installed or upgradable OS software package on a HardwareNode (sm_system_list_installed_packages)." .
 
 # --- links (owl:ObjectProperty) ---
+
+:pendingUpdates a owl:DatatypeProperty ;
+    rdfs:label "pending updates" ;
+    rdfs:comment "Number of upgradable packages pending on a HardwareNode (sm_system_get_host_record)." ;
+    rdfs:domain :HardwareNode ;
+    rdfs:range xsd:integer .
+
+:uptimeSeconds a owl:DatatypeProperty ;
+    rdfs:label "uptime seconds" ;
+    rdfs:comment "Seconds since a HardwareNode last booted (sm_system_get_host_record)." ;
+    rdfs:domain :HardwareNode ;
+    rdfs:range xsd:integer .
 
 :hasInterface a owl:ObjectProperty ;
     rdfs:label "has interface" ;
@@ -154,15 +170,15 @@
     rdfs:domain :SystemService ;
     rdfs:range xsd:string .
 
-<http://knuckles.team/kg/systems> a owl:Ontology ;
+<https://knuckles-team.github.io/ontology/connector/systems> a owl:Ontology ;
     rdfs:label "Systems Manager Ontology" ;
     rdfs:comment """Systems Manager infrastructure model — managed compute boundaries and
     their OS-level resources, represented with opaque source references and operational
     attributes through the governed knowledge-graph boundary.""" .
 
 # ontology-codemod R3
-<http://knuckles.team/kg#DiskVolume> rdfs:subClassOf core:Resource .
-<http://knuckles.team/kg#NetworkInterface> rdfs:subClassOf core:Resource .
-<http://knuckles.team/kg#HardwareNode> rdfs:subClassOf core:System .
-<http://knuckles.team/kg#SystemService> rdfs:subClassOf core:ServiceCapability .
-<http://knuckles.team/kg#SoftwarePackage> rdfs:subClassOf core:Artifact .
+<https://knuckles-team.github.io/ontology/connector/host-systems#DiskVolume> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Volume> .
+<https://knuckles-team.github.io/ontology/connector/host-systems#NetworkInterface> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#NetworkInterface> .
+<https://knuckles-team.github.io/ontology/connector/host-systems#HardwareNode> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Host> .
+<https://knuckles-team.github.io/ontology/connector/host-systems#SystemService> rdfs:subClassOf <https://knuckles-team.github.io/ontology/infrastructure#Service> .
+<https://knuckles-team.github.io/ontology/connector/host-systems#SoftwarePackage> rdfs:subClassOf <https://knuckles-team.github.io/ontology/core#SoftwareComponent> .
