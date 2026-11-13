@@ -35,6 +35,18 @@
 
 # --- links (owl:ObjectProperty) ---
 
+:pendingUpdates a owl:DatatypeProperty ;
+    rdfs:label "pending updates" ;
+    rdfs:comment "Number of upgradable packages pending on a HardwareNode (sm_system_get_host_record)." ;
+    rdfs:domain :HardwareNode ;
+    rdfs:range xsd:integer .
+
+:uptimeSeconds a owl:DatatypeProperty ;
+    rdfs:label "uptime seconds" ;
+    rdfs:comment "Seconds since a HardwareNode last booted (sm_system_get_host_record)." ;
+    rdfs:domain :HardwareNode ;
+    rdfs:range xsd:integer .
+
 :hasInterface a owl:ObjectProperty ;
     rdfs:label "has interface" ;
     rdfs:comment "Links a HardwareNode to a NetworkInterface it exposes." ;
