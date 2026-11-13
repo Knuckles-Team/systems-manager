@@ -1,0 +1,19 @@
+@prefix ac: <https://knuckles-team.github.io/agent-connector-sdk/access#> .
+@prefix infra: <http://knuckles.team/kg/infrastructure#> .
+@prefix sm: <http://knuckles.team/kg/systems-manager-access#> .
+
+# Hostnames are excluded by the ontology privacy policy: the record is keyed by
+# an opaque host_id derived from the machine identity, never by a hostname.
+sm:hostAccess a ac:AccessContract ;
+    ac:classIri infra:Host ;
+    ac:sourceId "systems-manager" ;
+    ac:entity "host" ;
+    ac:keyField "host_id" ;
+    ac:accessKind "mcp_tool" ;
+    ac:operation "sm_system_get_host_record" ;
+    ac:pagination "none" .
+
+sm:pendingUpdates a ac:PropertyBinding ;
+    ac:contract sm:hostAccess ; ac:property infra:pendingUpdates ; ac:field "pendingUpdates" .
+sm:uptimeSeconds a ac:PropertyBinding ;
+    ac:contract sm:hostAccess ; ac:property infra:uptimeSeconds ; ac:field "uptimeSeconds" .

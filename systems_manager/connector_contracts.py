@@ -54,6 +54,19 @@ CONTRACTS = (
                 ),
             ),
             ToolStep(
+                tool="sm_system_get_host_record",
+                params=(),
+                result=("host_id", "pendingUpdates", "uptimeSeconds"),
+                refusals=(
+                    Refusal(
+                        "ACCESS_DENIED", "the credential lacks access to the operation"
+                    ),
+                    Refusal(
+                        "INVALID_ARGUMENT", "the upstream system rejects the input"
+                    ),
+                ),
+            ),
+            ToolStep(
                 tool="sm_system_get_os_statistics",
                 params=(),
                 result=("os", "version"),
@@ -1497,6 +1510,7 @@ LINKS = (
             "health_check",
             "get_management_capabilities",
             "sm_system_get_uptime",
+            "sm_system_get_host_record",
             "sm_system_get_os_statistics",
             "sm_system_get_hardware_statistics",
             "sm_system_system_health_check",

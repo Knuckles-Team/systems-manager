@@ -78,6 +78,7 @@
       "sm_system_enable_windows_features",
       "sm_system_get_env_var",
       "sm_system_get_hardware_statistics",
+      "sm_system_get_host_record",
       "sm_system_get_os_statistics",
       "sm_system_get_package_info",
       "sm_system_get_uptime",
