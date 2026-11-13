@@ -40,12 +40,12 @@ xychart-beta
 `██████████████░░░░░░` 74/100
 
 > [!NOTE]
-> Detected ecosystem marker: scion-sdk → Agent-Utilities Ecosystem
+> Detected ecosystem marker: scion-sdk → Meristem Ecosystem
 
 | Criterion | Points | Evidence | Reasoning |
 |-----------|--------|----------|-----------|
 | has_pyproject | 10 | `pyproject.toml and requirements.txt` | Both pyproject.toml and requirements.txt exist, fulfilling mandatory Python proj |
-| project_type_detected | 10 | `Agent-Utilities Ecosystem` | Identified 1 ecosystem marker(s) in dependencies |
+| project_type_detected | 10 | `Meristem Ecosystem` | Identified 1 ecosystem marker(s) in dependencies |
 | externalized_prompts | 0 | `${WORKSPACE_ROOT}/agent-packages/agents/systems-manager` | No prompts/ directory found. Prompts may be hardcoded in source. |
 | observability | 0 | `dependency list` | No observability tools (logfire, sentry, opentelemetry) found |
 | testing_suite | 10 | `tests dir: True, pytest dep: True` | Tests directory exists, pytest in dependencies |
@@ -287,7 +287,7 @@ xychart-beta
 | 17 | 🔴 High | Environment Variables | Only 29% of env vars documented in README.md | High | Medium |
 | 18 | 🔴 High | Environment Variables | Undocumented env vars: AGENT_POLICIES_PATH, AUTH_TYPE, EUNOMIA_POLICY_FILE, EUNO | High | Medium |
 | 19 | 🔴 High | Environment Variables | 8 Python env vars not in .env.example: AGENT_POLICIES_PATH, MAINTENANCE_PRIORITY | High | Medium |
-| 20 | 🟡 Medium | Project Analysis | Detected ecosystem marker: scion-sdk → Agent-Utilities Ecosystem | Medium | Low |
+| 20 | 🟡 Medium | Project Analysis | Detected ecosystem marker: scion-sdk → Meristem Ecosystem | Medium | Low |
 | 21 | 🟡 Medium | Project Analysis | Protocol support: MCP | Medium | Low |
 | 22 | 🟡 Medium | Test Coverage | Test suite lacks intent diversity (only one type) | Medium | Low |
 | 23 | 🟡 Medium | Test Coverage | 12 potential doc-test drift items | Medium | Low |
