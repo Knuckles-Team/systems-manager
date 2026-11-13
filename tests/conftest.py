@@ -29,7 +29,7 @@ def private_umask():
 def not_a_kubernetes_node(monkeypatch):
     """Keep tests hermetic: the machine running them may itself be a k8s node."""
     monkeypatch.setattr(
-        "systems_manager.systems_manager.is_k8s_node", lambda *a, **k: (False, "test")
+        "systems_manager.mcp_server.is_k8s_node", lambda *a, **k: (False, "test")
     )
 
 

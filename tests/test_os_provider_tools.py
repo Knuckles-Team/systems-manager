@@ -131,7 +131,7 @@ async def test_manage_service():
     with (
         patch("systems_manager.os_provider_tools.get_os_provider") as mock_get,
         patch(
-            "systems_manager.confirmation.ctx_confirm_destructive",
+            "scion_sdk.mcp.destructive.ctx_confirm_destructive",
             return_value=True,
         ),
     ):
@@ -150,9 +150,7 @@ async def test_manage_service():
 
 @pytest.mark.asyncio
 async def test_manage_service_cancelled():
-    with patch(
-        "systems_manager.confirmation.ctx_confirm_destructive", return_value=False
-    ):
+    with patch("scion_sdk.mcp.destructive.ctx_confirm_destructive", return_value=False):
         res = await mcp_server.call_tool(
             "manage_service_restart", arguments={"service_name": "nginx"}
         )
@@ -166,7 +164,7 @@ async def test_manage_service_exception():
     with (
         patch("systems_manager.os_provider_tools.get_os_provider") as mock_get,
         patch(
-            "systems_manager.confirmation.ctx_confirm_destructive",
+            "scion_sdk.mcp.destructive.ctx_confirm_destructive",
             return_value=True,
         ),
     ):
@@ -237,7 +235,7 @@ async def test_system_trace():
     with (
         patch("systems_manager.os_provider_tools.get_os_provider") as mock_get,
         patch(
-            "systems_manager.confirmation.ctx_confirm_destructive",
+            "scion_sdk.mcp.destructive.ctx_confirm_destructive",
             return_value=True,
         ),
     ):
@@ -267,9 +265,7 @@ async def test_system_trace():
 
 @pytest.mark.asyncio
 async def test_start_system_trace_cancelled():
-    with patch(
-        "systems_manager.confirmation.ctx_confirm_destructive", return_value=False
-    ):
+    with patch("scion_sdk.mcp.destructive.ctx_confirm_destructive", return_value=False):
         res = await mcp_server.call_tool(
             "start_system_trace", arguments={"session_name": "test"}
         )
@@ -283,7 +279,7 @@ async def test_system_trace_exception():
     with (
         patch("systems_manager.os_provider_tools.get_os_provider") as mock_get,
         patch(
-            "systems_manager.confirmation.ctx_confirm_destructive",
+            "scion_sdk.mcp.destructive.ctx_confirm_destructive",
             return_value=True,
         ),
     ):

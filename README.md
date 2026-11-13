@@ -198,7 +198,6 @@ Scion SDK contract.
 | `SYSTEMS_MANAGER_UV_VERSION` | — | Exact approved uv release |
 | `SYSTEMS_MANAGER_NVM_COMMIT` | — | Exact approved NVM commit |
 | `SYSTEMS_MANAGER_NVM_DIR` | — | NVM directory beneath the managed filesystem root |
-| `ALLOW_UPDATE_ON_K8S` | `false` | Keep Kubernetes lifecycle guard enabled |
 | `MISCTOOL` | `true` | Register base health/readiness tools |
 | `OS_PROVIDERTOOL` | `true` | Register operating-system provider tools |
 | `STORAGE_HEALTHTOOL` | `true` | Register storage health tools |

@@ -1121,7 +1121,7 @@ CONTRACTS = (
             ),
             ToolStep(
                 tool="sm_system_update",
-                params=("allow_on_k8s", "confirm"),
+                params=("confirm",),
                 result=("result",),
                 refusals=(
                     Refusal(
@@ -1257,7 +1257,7 @@ CONTRACTS = (
             ),
             ToolStep(
                 tool="sm_system_reboot",
-                params=("allow_on_k8s", "confirm"),
+                params=("confirm",),
                 result=("result",),
                 refusals=(
                     Refusal(

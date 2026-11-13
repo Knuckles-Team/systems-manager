@@ -1,17 +1,14 @@
 """Per-operation approval for host mutations, in addition to administrator policy.
 
-The decision itself belongs to the SDK: it honours an explicit ``confirm=true``,
-refuses (never errors) a client that did not advertise elicitation, asks an
-eliciting client, and returns an input request on modern MCP. This module only
-adapts the SDK answer to a tool result.
+The decision itself belongs to the SDK's one destructive guard. This module only
+builds the approval text and fails closed without a context.
 """
 
 from collections.abc import Mapping
 from typing import Any
 
 from fastmcp import Context
-from mcp.types import InputRequiredResult
-from scion_sdk.mcp.context import confirmation_refusal, ctx_confirm_destructive
+from scion_sdk.mcp.destructive import guard_destructive
 
 
 def approval_text(action: str, detail: str | None = None) -> str:
@@ -36,27 +33,21 @@ async def require_approval(
 ) -> Any | None:
     """Return ``None`` when the operation may proceed, else the tool result.
 
-    A missing context fails closed. The returned value is either the SDK input
-    request (modern MCP) or a cancelled payload naming ``confirm=true`` when the
-    client cannot elicit.
+    The decision is the SDK's one destructive guard: a live confirmation, the
+    per-call ``confirm`` argument, or the operator's ``SCION_ALLOW_DESTRUCTIVE``
+    setting. A missing context fails closed.
     """
     if not ctx:
         return {"success": False, "error": "Operation approval is required"}
     try:
-        decision = await ctx_confirm_destructive(
+        refused = await guard_destructive(
             ctx,
             approval_text(action, detail),
-            confirmation_arguments=arguments,
-            explicit_confirm=confirm is True,
+            arguments,
+            confirm=confirm is True,
         )
     except Exception:
         return {"success": False, "error": "Operation approval is required"}
-    if isinstance(decision, InputRequiredResult):
-        return decision
-    if decision is True:
-        return None
-    try:
-        refusal = confirmation_refusal(ctx, action)
-    except Exception:
-        refusal = {"cancelled": True, "operation": action}
-    return {"success": False, "error": "Operation approval is required", **refusal}
+    if isinstance(refused, dict):
+        return {"success": False, "error": "Operation approval is required", **refused}
+    return refused

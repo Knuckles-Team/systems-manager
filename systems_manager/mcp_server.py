@@ -45,6 +45,7 @@ from scion_sdk.mcp.context import ctx_log
 from scion_sdk.mcp.tool_surface import register_tool_surface
 
 from systems_manager.confirmation import require_approval
+from systems_manager.k8s_detect import is_k8s_node
 from systems_manager.os_provider_tools import register_os_provider_tools
 from systems_manager.routed import call_routed
 from systems_manager.storage_tools import register_storage_health_tools
@@ -632,14 +633,6 @@ def register_connector_tools(context: RegistrationContext) -> None:
         file_path: str | None = Field(None, description="Path to local package file"),
         feature_name: str | None = Field(None, description="Windows feature name"),
         env_var: str | None = Field(None, description="Environment variable name"),
-        allow_on_k8s: bool = Field(
-            False,
-            description=(
-                "Override: allow 'update' or 'reboot' to proceed even if this "
-                "host is detected as a live Kubernetes (RKE2) node. Prefer the "
-                "universal-skills `k8s-node-rolling-update` workflow instead."
-            ),
-        ),
         confirm: bool = Field(
             False,
             description=(
@@ -664,7 +657,11 @@ def register_connector_tools(context: RegistrationContext) -> None:
                 refused := await require_approval(
                     ctx,
                     action,
-                    "configured host",
+                    (
+                        "configured host (a live Kubernetes node)"
+                        if action in {"update", "reboot"} and is_k8s_node()[0]
+                        else "configured host"
+                    ),
                     arguments={"action": action},
                     confirm=confirm,
                 )
@@ -676,15 +673,9 @@ def register_connector_tools(context: RegistrationContext) -> None:
             if action == "install_applications":
                 return await run_blocking(manager.install_applications, packages or [])
             elif action == "update":
-                return await run_blocking(
-                    manager.update,
-                    allow_on_k8s=allow_on_k8s,
-                )
+                return await run_blocking(manager.update)
             elif action == "reboot":
-                return await run_blocking(
-                    manager.reboot,
-                    allow_on_k8s=allow_on_k8s,
-                )
+                return await run_blocking(manager.reboot)
             elif action == "clean":
                 return await run_blocking(
                     manager.clean,
@@ -785,7 +776,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Applications",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -817,20 +808,12 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Update",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
     )
     async def sm_system_update(
-        allow_on_k8s: bool = Field(
-            False,
-            description=(
-                "Override: allow 'update' or 'reboot' to proceed even if this "
-                "host is detected as a live Kubernetes (RKE2) node. Prefer the "
-                "universal-skills `k8s-node-rolling-update` workflow instead."
-            ),
-        ),
         confirm: bool = Field(
             False,
             description=(
@@ -844,7 +827,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         return await call_routed(
             _sm_system_operations_routed,
             "update",
-            {"allow_on_k8s": allow_on_k8s, "confirm": confirm, "ctx": ctx},
+            {"confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -854,20 +837,12 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Reboot",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
     )
     async def sm_system_reboot(
-        allow_on_k8s: bool = Field(
-            False,
-            description=(
-                "Override: allow 'update' or 'reboot' to proceed even if this "
-                "host is detected as a live Kubernetes (RKE2) node. Prefer the "
-                "universal-skills `k8s-node-rolling-update` workflow instead."
-            ),
-        ),
         confirm: bool = Field(
             False,
             description=(
@@ -881,7 +856,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         return await call_routed(
             _sm_system_operations_routed,
             "reboot",
-            {"allow_on_k8s": allow_on_k8s, "confirm": confirm, "ctx": ctx},
+            {"confirm": confirm, "ctx": ctx},
         )
 
     @mcp.tool(
@@ -891,7 +866,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Clean",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -918,7 +893,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Optimize",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -945,7 +920,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Python Modules",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1206,7 +1181,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Clean Temp Files",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1235,7 +1210,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Clean Package Cache",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1284,7 +1259,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Enable Windows Features",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1314,7 +1289,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Disable Windows Features",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1344,7 +1319,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Add Repository",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1374,7 +1349,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Local Package",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1508,7 +1483,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Start Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1538,7 +1513,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Stop Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1568,7 +1543,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Restart Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1598,7 +1573,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Enable Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -1628,7 +1603,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Disable Service",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2159,7 +2134,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Manage File",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2511,7 +2486,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Add Firewall Rule",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2640,7 +2615,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Add Authorized Key",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2670,7 +2645,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Uv",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2699,7 +2674,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Create Venv",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2730,7 +2705,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Package",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2761,7 +2736,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Nvm",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2790,7 +2765,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Install Node",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },
@@ -2820,7 +2795,7 @@ def register_connector_tools(context: RegistrationContext) -> None:
         annotations={
             "title": "Use Node",
             "readOnlyHint": False,
-            "destructiveHint": False,
+            "destructiveHint": True,
             "idempotentHint": False,
             "openWorldHint": True,
         },

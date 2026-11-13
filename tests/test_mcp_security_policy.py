@@ -111,7 +111,9 @@ async def test_approval_is_canonical_bounded_and_fails_closed(monkeypatch):
         seen.update(kwargs)
         return True
 
-    monkeypatch.setattr(confirmation, "ctx_confirm_destructive", fake_confirm)
+    monkeypatch.setattr(
+        "scion_sdk.mcp.destructive.ctx_confirm_destructive", fake_confirm
+    )
     context = object()
     assert (
         await confirmation.require_approval(
