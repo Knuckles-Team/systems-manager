@@ -1,0 +1,19 @@
+@prefix ac: <https://knuckles-team.github.io/ontology/access#> .
+@prefix : <https://knuckles-team.github.io/ontology/connector/host-systems#> .
+@prefix smac: <https://knuckles-team.github.io/ontology/connector/host-systems-access#> .
+
+# Hostnames are excluded by the ontology privacy policy: the record is keyed by
+# an opaque host_id derived from the machine identity, never by a hostname.
+smac:hostAccess a ac:AccessContract ;
+    ac:classIri :HardwareNode ;
+    ac:sourceId "systems-manager" ;
+    ac:entity "host" ;
+    ac:keyField "host_id" ;
+    ac:accessKind "mcp_tool" ;
+    ac:operation "sm_system_get_host_record" ;
+    ac:pagination "none" .
+
+smac:pendingUpdates a ac:PropertyBinding ;
+    ac:contract smac:hostAccess ; ac:property :pendingUpdates ; ac:field "pendingUpdates" .
+smac:uptimeSeconds a ac:PropertyBinding ;
+    ac:contract smac:hostAccess ; ac:property :uptimeSeconds ; ac:field "uptimeSeconds" .

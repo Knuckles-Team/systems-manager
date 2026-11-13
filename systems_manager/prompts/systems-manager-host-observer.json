@@ -47,6 +47,7 @@
       "sm_storage_health_report",
       "sm_storage_health_smart",
       "sm_system_get_hardware_statistics",
+      "sm_system_get_host_record",
       "sm_system_get_os_statistics",
       "sm_system_get_uptime",
       "sm_system_system_health_check",

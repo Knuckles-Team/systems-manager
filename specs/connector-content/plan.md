@@ -137,7 +137,7 @@ None. The constitution check passed.
 ### Production caller chain
 
 - `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R001`: `systems-manager` in `pyproject.toml` runs `systems_manager.systems_manager:main`, which builds the server from the `scion_sdk.connector` entry point `systems_manager:connector` (`systems_manager/__init__.py:11`); the SDK `Connector` then lists the packaged skills, ontology and prompts.
-- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`: arbora `fleet.call` reaches the existing read tool of `systems_manager/mcp_server.py`, whose result is validated against the `ac:AccessContract` rows declared in `systems_manager/ontology/access_contracts.ttl`.
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`: arbora `fleet.call` reaches the new read tool `sm_system_get_host_record` of `systems_manager/mcp_server.py` (hostnames stay excluded by the ontology privacy policy), whose result is validated against the `ac:AccessContract` declared in `systems_manager/ontology/access_contracts.ttl`; consumer MEDULLA-CQ-CONN-R001.2.
 
 ### Cross-repo seams
 
@@ -160,7 +160,7 @@ None. The constitution check passed.
 ### Production caller chain
 
 - `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R001`: `systems-manager` in `pyproject.toml` runs `systems_manager.systems_manager:main`, which builds the server from the `scion_sdk.connector` entry point `systems_manager:connector` (`systems_manager/__init__.py:11`); the SDK `Connector` then lists the packaged skills, ontology and prompts.
-- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`: arbora `fleet.call` reaches the existing read tool of `systems_manager/mcp_server.py`, whose result is validated against the `ac:AccessContract` rows declared in `systems_manager/ontology/access_contracts.ttl`.
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`: arbora `fleet.call` reaches the new read tool `sm_system_get_host_record` of `systems_manager/mcp_server.py` (hostnames stay excluded by the ontology privacy policy), whose result is validated against the `ac:AccessContract` declared in `systems_manager/ontology/access_contracts.ttl`; consumer MEDULLA-CQ-CONN-R001.2.
 
 ### Cross-repo seams
 
@@ -183,7 +183,7 @@ None. The constitution check passed.
 ## Production caller chain
 
 - `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R001`: `systems-manager` in `pyproject.toml` runs `systems_manager.systems_manager:main`, which builds the server from the `scion_sdk.connector` entry point `systems_manager:connector` (`systems_manager/__init__.py:11`); the SDK `Connector` then lists the packaged skills, ontology and prompts.
-- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`: arbora `fleet.call` reaches the existing read tool of `systems_manager/mcp_server.py`, whose result is validated against the `ac:AccessContract` rows declared in `systems_manager/ontology/access_contracts.ttl`.
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`: arbora `fleet.call` reaches the new read tool `sm_system_get_host_record` of `systems_manager/mcp_server.py` (hostnames stay excluded by the ontology privacy policy), whose result is validated against the `ac:AccessContract` declared in `systems_manager/ontology/access_contracts.ttl`; consumer MEDULLA-CQ-CONN-R001.2.
 - `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003`: an MCP client calls `sm_service_operations` (systems_manager/mcp_server.py:752), which calls `manage_service` and `query_system_logs` of `systems_manager/os_provider.py` (systems_manager/os_provider.py:102).
 - `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004`: process start runs `systems_manager/mcp_server.py`, which calls `register_workspace_tool(server, WorkspaceReader(root=..))` when `SYSTEMS_MANAGER_WORKSPACE_ROOT` is set.
 
