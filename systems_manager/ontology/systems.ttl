@@ -3,6 +3,7 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix infra: <https://knuckles-team.github.io/ontology/infrastructure#> .
 
 # Systems Manager infrastructure ontology — managed compute boundaries and their
 # OS-level resources. The native ingestion path stores opaque references and operational
@@ -13,11 +14,6 @@
     rdfs:subClassOf core:InfrastructureHost ;
     rdfs:label "Hardware Node" ;
     rdfs:comment "A managed physical or virtual compute boundary identified by an opaque deployment reference." .
-
-:NetworkInterface a owl:Class ;
-    rdfs:subClassOf core:Interface ;
-    rdfs:label "Network Interface" ;
-    rdfs:comment "A network interface on a HardwareNode, represented without an address, hardware address, or local interface name." .
 
 :DiskVolume a owl:Class ;
     rdfs:subClassOf core:StorageContainer ;
@@ -41,18 +37,6 @@
     rdfs:domain :HardwareNode ;
     rdfs:range xsd:integer .
 
-:uptimeSeconds a owl:DatatypeProperty ;
-    rdfs:label "uptime seconds" ;
-    rdfs:comment "Seconds since a HardwareNode last booted (sm_system_get_host_record)." ;
-    rdfs:domain :HardwareNode ;
-    rdfs:range xsd:integer .
-
-:hasInterface a owl:ObjectProperty ;
-    rdfs:label "has interface" ;
-    rdfs:comment "Links a HardwareNode to a NetworkInterface it exposes." ;
-    rdfs:domain :HardwareNode ;
-    rdfs:range :NetworkInterface .
-
 :hasVolume a owl:ObjectProperty ;
     rdfs:label "has volume" ;
     rdfs:comment "Links a HardwareNode to a DiskVolume mounted on it." ;
@@ -72,11 +56,6 @@
     rdfs:range :SoftwarePackage .
 
 # --- fields (owl:DatatypeProperty) ---
-
-:externalToolId a owl:DatatypeProperty ;
-    rdfs:label "opaque source reference" ;
-    rdfs:comment "A stable, one-way reference derived within the connector's namespace; never a raw local identifier." ;
-    rdfs:range xsd:string .
 
 :osVersion a owl:DatatypeProperty ;
     rdfs:label "os version" ;
@@ -107,25 +86,25 @@
 :linkSpeed a owl:DatatypeProperty ;
     rdfs:label "link speed" ;
     rdfs:comment "Negotiated link speed of a NetworkInterface in Mbps." ;
-    rdfs:domain :NetworkInterface ;
+    rdfs:domain infra:NetworkInterface ;
     rdfs:range xsd:integer .
 
 :isUp a owl:DatatypeProperty ;
     rdfs:label "is up" ;
     rdfs:comment "Whether a NetworkInterface is administratively/operationally up." ;
-    rdfs:domain :NetworkInterface ;
+    rdfs:domain infra:NetworkInterface ;
     rdfs:range xsd:boolean .
 
 :mtu a owl:DatatypeProperty ;
     rdfs:label "maximum transmission unit" ;
     rdfs:comment "Maximum transmission unit reported for a NetworkInterface." ;
-    rdfs:domain :NetworkInterface ;
+    rdfs:domain infra:NetworkInterface ;
     rdfs:range xsd:integer .
 
 :addressFamilyCount a owl:DatatypeProperty ;
     rdfs:label "address family count" ;
     rdfs:comment "Number of address families observed without retaining the addresses themselves." ;
-    rdfs:domain :NetworkInterface ;
+    rdfs:domain infra:NetworkInterface ;
     rdfs:range xsd:integer .
 
 :fstype a owl:DatatypeProperty ;

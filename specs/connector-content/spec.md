@@ -50,6 +50,14 @@ The fleet operator and the engine rely on this behaviour of `systems-manager`: S
 
 1. **Given** the `systems-manager` connector built from the default branch, **When** `tests/test_workspace_tool_served.py::test_tool_reads_root_and_refuses_traversal` runs, **Then** test: `tests/test_workspace_tool_served.py::test_tool_reads_root_and_refuses_traversal` (L3).
 
+### User Story 5 - The pack extends only the core ontology (Priority: P1)
+
+The fleet operator and the engine rely on this behaviour of ``: its pack adds terms under the core ontology and declares no second copy of a core term. It is proven independently of the other stories.
+
+**Acceptance Scenarios**:
+
+1. **Given** the `` connector built from the default branch, **When** `tests/test_ontology_extends_core.py::test_pack_declares_no_core_term` runs, **Then** the served Turtle declares none of the listed core terms.
+
 ### Edge Cases
 
 - The vendor service is unreachable or rejects the credential: the connector returns the SDK typed error and never a partial result.
@@ -61,6 +69,7 @@ The fleet operator and the engine rely on this behaviour of `systems-manager`: S
 - **FR-002**: Declare the host access contract of systems-manager and add the host record tool. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`.
 - **FR-003**: Prove service lifecycle parity across Linux, Windows and macOS. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003`.
 - **FR-004**: Register the workspace reader. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004`.
+- **FR-005**: The pack extends only the core ontology. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R005`.
 
 ## Success Criteria
 
@@ -68,6 +77,7 @@ The fleet operator and the engine rely on this behaviour of `systems-manager`: S
 - **SC-002**: Test: `tests/test_access_contracts.py::test_competency_contracts_certified` (L2) runs the connector ontology certification and validates each recording against its contract. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`.
 - **SC-003**: Test: `tests/test_service_parity_served.py::test_service_lifecycle_parity_by_platform` (L3) with a recorded command runner per platform. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003`.
 - **SC-004**: Test: `tests/test_workspace_tool_served.py::test_tool_reads_root_and_refuses_traversal` (L3). Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004`.
+- **SC-005**: The served Turtle declares none of the listed core terms. Rows: `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R005`.
 
 ## Assumptions
 
@@ -82,3 +92,4 @@ The fleet operator and the engine rely on this behaviour of `systems-manager`: S
 | FR-002 | `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002` | plan.md Production caller chain | T-002 | tests/test_access_contracts.py::test_competency_contracts_certified |
 | FR-003 | `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003` | plan.md Production caller chain | T-003 | systems_manager/mcp_server.py::sm_service_operations |
 | FR-004 | `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004` | plan.md Production caller chain | T-004 | tests/test_workspace_tool_served.py::test_tool_reads_root_and_refuses_traversal |
+| FR-005 | `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R005` | plan.md Production caller chain | T-005 | tests/test_ontology_extends_core.py::test_pack_declares_no_core_term |
