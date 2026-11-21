@@ -8,3 +8,4 @@ Each task line reads `- [ ] T001 [P] [US1] <ID>-R012.4 description`. Tasks run p
 - [x] T002 [US2] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002 Declare the host access contract and add the host record tool.
 - [ ] T003 [US3] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003 Prove service lifecycle parity across Linux, Windows and macOS.
 - [ ] T004 [US4] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004 Register the workspace reader.
+- [x] T005 [US5] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R005 The pack extends only the core ontology.

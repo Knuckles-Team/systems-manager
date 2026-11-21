@@ -16,7 +16,7 @@ This plan states how `systems-manager` delivers the rows of `CONN-SYSTEMS-MANAGE
 - **Project Type**: connector
 - **Performance Goals**: N/A, the vendor service sets the latency
 - **Constraints**: vendor calls go through the SDK governed client; no connector-local transport
-- **Scale/Scope**: 4 active row(s) in this spec
+- **Scale/Scope**: 5 active row(s) in this spec
 
 ## Constitution Check
 
@@ -54,7 +54,7 @@ This plan states how `systems-manager` delivers the rows of `CONN-SYSTEMS-MANAGE
 - **Project Type**: connector
 - **Performance Goals**: N/A, the vendor service sets the latency
 - **Constraints**: vendor calls go through the SDK governed client; no connector-local transport
-- **Scale/Scope**: 4 active row(s) in this spec
+- **Scale/Scope**: 5 active row(s) in this spec
 
 ### Constitution Check
 
@@ -92,7 +92,7 @@ This plan states how `systems-manager` delivers the rows of `CONN-SYSTEMS-MANAGE
 - **Project Type**: connector
 - **Performance Goals**: N/A, the vendor service sets the latency
 - **Constraints**: vendor calls go through the SDK governed client; no connector-local transport
-- **Scale/Scope**: 4 active row(s) in this spec
+- **Scale/Scope**: 5 active row(s) in this spec
 
 ### Constitution Check
 
@@ -186,6 +186,7 @@ None. The constitution check passed.
 - `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R002`: arbora `fleet.call` reaches the new read tool `sm_system_get_host_record` of `systems_manager/mcp_server.py` (hostnames stay excluded by the ontology privacy policy), whose result is validated against the `ac:AccessContract` declared in `systems_manager/ontology/access_contracts.ttl`; consumer MEDULLA-CQ-CONN-R001.2.
 - `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003`: an MCP client calls `sm_service_operations` (systems_manager/mcp_server.py:752), which calls `manage_service` and `query_system_logs` of `systems_manager/os_provider.py` (systems_manager/os_provider.py:102).
 - `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004`: process start runs `systems_manager/mcp_server.py`, which calls `register_workspace_tool(server, WorkspaceReader(root=..))` when `SYSTEMS_MANAGER_WORKSPACE_ROOT` is set.
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R005`: the ontology loader reads `systems_manager/ontology/` at server start; the engine imports the served pack and finds no redeclared core term.
 
 ## Cross-repo seams
 
