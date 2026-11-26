@@ -9,6 +9,23 @@ description: >-
 
 Network probes and account reads are sensitive; honor the deployment gates.
 
+## Steps
+
+1. Inventory the interfaces with `sm_network_list_network_interfaces` and verify the interface of interest is listed with an address.
+2. Read exposure with `sm_network_list_open_ports` and `sm_firewall_get_firewall_status`, and verify the status output names the rules in force.
+3. Probe reachability with `sm_network_ping_host` or `sm_network_dns_lookup` and verify the response carries a latency or resolved address.
+4. Change one firewall rule with `sm_firewall_add_firewall_rule` or `sm_firewall_remove_firewall_rule`, and verify by calling `sm_firewall_get_firewall_status` again.
+5. Review scheduled jobs and accounts with `sm_cron_list_cron_jobs`, `sm_user_list_users` and `sm_user_list_groups`, removing a job with `sm_cron_remove_cron_job` only on confirmation, and verify the job is gone from the list.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---|---|---|
+| A probe tool is denied | The network-probe gate is closed for this deployment | Report the denial and stop, because a policy denial is final |
+| `sm_firewall_remove_firewall_rule` finds no matching rule | The rule text differs from the one in the status output | Copy the rule exactly from `sm_firewall_get_firewall_status` and call the tool again with that text |
+| `sm_cron_remove_cron_job` is rejected | `confirm=true` was not supplied | Obtain the requester's confirmation and pass `confirm=true` |
+| `sm_user_list_users` is refused | Sensitive account reads are not enabled | Report the denial to the requester and do not use another tool to read accounts |
+
 ## Network
 
 - `sm_network_list_network_interfaces`: interfaces

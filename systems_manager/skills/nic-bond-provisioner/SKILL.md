@@ -2,13 +2,7 @@
 name: nic-bond-provisioner
 skill_type: skill
 description: >-
-  Convert multi-NIC Linux hosts to a systemd-networkd active-backup bond on a static
-  canonical IP, retiring NetworkManager, with a console-safe dead-man auto-revert. Use
-  when a node's egress/data-path is non-deterministic across reboots (multiple DHCP NICs),
-  when stabilizing a Docker Swarm VXLAN data-path before a swarm re-init, or when the user
-  asks to bond NICs, set a static canonical IP via netplan, or fix cross-node overlay drift.
-  Do NOT use for single-NIC hosts (already deterministic), for LACP/802.3ad throughput
-  bonding (this is failover, not aggregation), or for non-netplan distros.
+  Convert multi-NIC Linux hosts to a systemd-networkd active-backup bond on a static canonical IP with a console-safe auto-revert. Use when egress is non-deterministic or before a swarm re-init. Do NOT use for single-NIC hosts, LACP/802.3ad bonding, or non-netplan distros.
 license: MIT
 tags: [infra, networking, netplan, systemd-networkd, bond, docker-swarm, vxlan, failover, homelab]
 metadata:
@@ -17,6 +11,8 @@ metadata:
 ---
 
 # NIC Bond Provisioner
+
+Scope: Convert multi-NIC Linux hosts to a systemd-networkd active-backup bond on a static canonical IP, retiring NetworkManager, with a console-safe dead-man auto-revert. Use when a node's egress/data-path is non-deterministic across reboots (multiple DHCP NICs), when stabilizing a Docker Swarm VXLAN data-path before a swarm re-init, or when the user asks to bond NICs, set a static canonical IP via netplan, or fix cross-node overlay drift. Do NOT use for single-NIC hosts (already deterministic), for LACP/802.3ad throughput bonding (this is failover, not aggregation), or for non-netplan distros.
 
 Provision an **active-backup `bond0`** on a node's **canonical static IP** using
 `systemd-networkd`, retiring NetworkManager so there is a single network authority and a
@@ -39,6 +35,24 @@ bond mode later once the switch has port-channels.
 - `scripts/gen-bond-config.sh` — emit a site-agnostic bond netplan YAML from `--ip` + `--members`.
 - `references/recovery.md` — gotchas, manual recovery, and the post-rollout swarm re-init.
   **Read it before bonding a swarm manager or when an apply misbehaves.**
+
+## Steps
+
+1. Discover the carrier-up NICs with `ip -br link` and verify each intended member shows state UP and that `/etc/resolv.conf` points at the systemd-resolved stub.
+2. Generate the config with `scripts/gen-bond-config.sh --ip <CANONICAL/8> --members "<nic1 nic2>"` and verify the YAML file is written with the canonical address.
+3. Pre-flight recovery with `ipmitool -I lanplus -H <bmc-ip> chassis power status` and verify the BMC answers over the LAN before applying.
+4. Apply at the node console with `sudo bash scripts/apply-bond.sh /tmp/bond0-<NAME>.yaml 180` and verify the printed summary lists the bond and its members.
+5. Verify the result with `ip -br addr show bond0` and `ip route show default`, and verify only one default route exists via bond0 before committing.
+6. Commit with `sudo touch /tmp/bond_ok` to cancel the dead-man revert, and verify `bond0` is still up after the revert window passes.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---|---|---|
+| `bond0` never appears and networkd logs Permission denied | The source YAML is mode 0600 | Set the file to mode 0644 with `chmod 0644` and apply with `scripts/apply-bond.sh` |
+| Members show unmanaged in `networkctl` | NetworkManager still holds the NICs | Disable it with `sudo systemctl disable --now NetworkManager` and restart `systemd-networkd` |
+| DNS fails after NetworkManager is retired | `/etc/resolv.conf` is not owned by systemd-resolved | Link it to the stub with `ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf` |
+| The node is stranded after a bad apply | The dead-man revert did not fire and the BMC LAN is unverified | Use the physical console and follow the manual recovery in `references/recovery.md` |
 
 ## Procedure
 

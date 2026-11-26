@@ -9,6 +9,23 @@ description: >-
 
 Package and maintenance work. Search and read first; every install, clean or reboot is a confirmed change.
 
+## Steps
+
+1. Look up the package with `sm_system_search_package` and `sm_system_get_package_info`, and verify the name and version match the request.
+2. Check what is already present with `sm_system_list_installed_packages` and `sm_system_list_upgradable_packages`, and verify the package is not installed at the wanted version.
+3. Apply one change with `sm_system_install_applications`, `sm_system_install_local_package` or `sm_system_update`, passing `confirm=true`, and verify the tool returns a success status.
+4. Reclaim space only on request with `sm_system_clean_package_cache` or `sm_system_clean_temp_files`, and verify the reported freed space.
+5. Reboot with `sm_system_reboot` only after explicit confirmation, and verify the host answers `health_check` after it returns.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---|---|---|
+| An install or update is rejected | `confirm=true` was not supplied | Ask the requester to confirm, and pass `confirm=true` on the same call |
+| `sm_system_install_applications` reports package not found | The repository is missing or the name is wrong | Search with `sm_system_search_package` for the exact name, or add the source with `sm_system_add_repository` |
+| A mutation is denied by policy | Host mutation is not enabled for this deployment | Report the denial and stop, because a policy denial is final |
+| `sm_system_install_local_package` cannot read the file | The path is outside the managed root | Place the file under the managed root and pass that path |
+
 ## Packages
 
 - `sm_system_search_package`: search
