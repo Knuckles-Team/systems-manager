@@ -1,6 +1,32 @@
-# systems-manager
+# Systems Manager
+## CLI or API | MCP
 
-Version: 2.2.6
+![PyPI - Version](https://img.shields.io/pypi/v/systems-manager)
+![MCP Server](https://badge.mcpx.dev?type=server 'MCP Server')
+![PyPI - Downloads](https://img.shields.io/pypi/dd/systems-manager)
+![GitHub Repo stars](https://img.shields.io/github/stars/Knuckles-Team/systems-manager)
+![GitHub forks](https://img.shields.io/github/forks/Knuckles-Team/systems-manager)
+![GitHub contributors](https://img.shields.io/github/contributors/Knuckles-Team/systems-manager)
+![PyPI - License](https://img.shields.io/pypi/l/systems-manager)
+![GitHub](https://img.shields.io/github/license/Knuckles-Team/systems-manager)
+![GitHub last commit (by committer)](https://img.shields.io/github/last-commit/Knuckles-Team/systems-manager)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/Knuckles-Team/systems-manager)
+![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed/Knuckles-Team/systems-manager)
+![GitHub issues](https://img.shields.io/github/issues/Knuckles-Team/systems-manager)
+![GitHub top language](https://img.shields.io/github/languages/top/Knuckles-Team/systems-manager)
+![GitHub language count](https://img.shields.io/github/languages/count/Knuckles-Team/systems-manager)
+![GitHub repo size](https://img.shields.io/github/repo-size/Knuckles-Team/systems-manager)
+![GitHub repo file count (file type)](https://img.shields.io/github/directory-file-count/Knuckles-Team/systems-manager)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/systems-manager)
+![PyPI - Implementation](https://img.shields.io/pypi/implementation/systems-manager)
+
+> **Documentation** — Installation, deployment, and usage across the API, CLI, MCP,
+> and A2A agent interfaces are maintained in the
+> [official documentation](https://knuckles-team.github.io/systems-manager/).
+
+---
+
+## Overview
 
 `systems-manager` is the typed host-operations provider for Scion SDK and
 Arbora. It exposes cross-platform package, service, process, network, disk,
@@ -10,70 +36,11 @@ capabilities without exposing a raw command tool.
 The current package requires Python 3.11–3.14 and
 `scion-sdk>=2.0.0,<3.0.0`.
 
-## Install and run
+---
 
-Install only the interface the operator need:
+## MCP
 
-```bash
-pip install "systems-manager[mcp]"
-systems-manager-mcp --transport stdio
-```
-
-The optional extras are:
-
-| Extra | Capability |
-| --- | --- |
-| `mcp` | FastMCP provider runtime |
-| `agent` | Agent server and Logfire integration |
-| `all` | MCP plus agent runtime |
-| `test` | Test dependencies |
-
-For an ephemeral MCP start:
-
-```bash
-uvx --from "systems-manager[mcp]" systems-manager-mcp --transport stdio
-```
-
-The checked-in `mcp_config.json` is a reference-only client catalog. It contains
-`env://` references and safe deny defaults, never deployment endpoints, credentials,
-certificate paths, filesystem paths, hostnames, or identities. Project-specific values
-belong in AgentConfig or the process launcher.
-
-## Security contract
-
-- Network MCP listeners require configured authentication. Non-loopback listeners also
-  require direct TLS or a trusted TLS-stop proxy, exact allowed hosts, and the
-  current Scion SDK transport checks.
-- Host mutations are denied unless `SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS=true` and the
-  individual request receives destructive-operation approval.
-- Managed-file writes also require
-  `SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS=true`.
-- Sensitive reads and active probes have independent default-deny gates.
-- Managed paths are confined beneath an explicit
-  `SYSTEMS_MANAGER_FILESYSTEM_ROOT`; there is no working-directory fallback.
-- Raw shell, arbitrary commands, plaintext credentials, model-authored cron creation,
-  and compatibility command aliases are not capabilities.
-- Logs and observability are metadata-only. Keep `LANGFUSE_CAPTURE_CONTENT=false`.
-
-## AgentConfig, secrets, and TLS
-
-Use `TLS_PROFILE` / `TLS_PROFILE_REF` with `TLS_PROFILES_REF` for shared checked
-outbound trust. Service-specific profiles such as `OIDC_TLS_PROFILE_REF`,
-`MODEL_TLS_PROFILE_REF`, and `LANGFUSE_TLS_PROFILE_REF` may select entries from the
-same runtime catalog. Do not hardcode CA paths or verification flags in application
-code, and do not disable verification for incomplete certificate chains.
-
-Out-of-band BMC health reads consume one runtime secret projection from
-`SYSTEMS_MANAGER_BMC_CREDENTIALS`. AgentConfig resolves the checked `env://` or secret
-reference before start; the provider accepts exactly a JSON object with `host`, `user`,
-and `password`. No secret-store vendor, secret path, token, or credential value is
-embedded in this package.
-
-The MCP listener's own certificate or trusted-proxy boundary uses the current Agent
-Utilities `MCP_TLS_*` configuration. The optional agent listener uses `SERVER_TLS_*`
-and requires JWT configuration for non-loopback serving.
-
-## MCP tools
+### MCP tools
 
 The default `MCP_TOOL_MODE=intent` exposes the small intent-verb surface. Backing
 action-routed tools stay available for governed discovery and on-demand loading. Tool
@@ -124,6 +91,8 @@ Agent OS administration, and governed host telemetry ingestion. Discover an acti
 schema before calling it; unavailable operations must not be emulated with another
 tool.
 
+---
+
 ## Knowledge-graph ingestion
 
 `systems_ingest_host` reads local typed telemetry and submits an allowlisted projection
@@ -138,6 +107,8 @@ Hostnames, network addresses, hardware addresses, usernames, local paths, creden
 and arbitrary extra fields are rejected or excluded. Missing graph authority, invalid
 content, and unavailable ingestion fail explicitly; they are not silent no-ops.
 
+---
+
 ## Arbora delegation
 
 Host operations run inside the service's local operating-system boundary. For
@@ -148,6 +119,8 @@ external deployment configuration. Persist only opaque, non-personal references.
 The bundled `systems-manager-operations` skill covers every current provider workflow.
 Older BMC command and NIC-bond script skills were consolidated because those raw-script
 surfaces are not part of the typed current contract.
+
+---
 
 ## Agent server
 
@@ -162,7 +135,9 @@ configured and present. There is no packaged-config or current-directory fallbac
 A non-loopback listener requires an explicit allow gate, direct or trusted-proxy TLS,
 JWT issuer/JWKS/audience configuration, and debug mode disabled.
 
-## Environment variables
+---
+
+## Environment Variables
 
 The generated table is sourced from the value-free `.env.example` plus the inherited
 Scion SDK contract.
@@ -233,6 +208,8 @@ Scion SDK contract.
 _51 package + 19 inherited variable(s). Auto-generated from `.env.example` + the shared scion-sdk set — do not edit._
 <!-- ENV-VARS-TABLE:END -->
 
+---
+
 ## Development and release gates
 
 ```bash
@@ -252,7 +229,101 @@ or a stale dependency resolution.
 See [the documentation](docs/index.md) for installation, deployment, configuration,
 usage, multi-host delegation, and security details.
 
+---
 
+## Installation
+
+Install only the interface the operator need:
+
+```bash
+pip install "systems-manager[mcp]"
+systems-manager-mcp --transport stdio
+```
+
+The optional extras are:
+
+| Extra | Capability |
+| --- | --- |
+| `mcp` | FastMCP provider runtime |
+| `agent` | Agent server and Logfire integration |
+| `all` | MCP plus agent runtime |
+| `test` | Test dependencies |
+
+For an ephemeral MCP start:
+
+```bash
+uvx --from "systems-manager[mcp]" systems-manager-mcp --transport stdio
+```
+
+The checked-in `mcp_config.json` is a reference-only client catalog. It contains
+`env://` references and safe deny defaults, never deployment endpoints, credentials,
+certificate paths, filesystem paths, hostnames, or identities. Project-specific values
+belong in AgentConfig or the process launcher.
+
+---
+
+## Security contract
+
+- Network MCP listeners require configured authentication. Non-loopback listeners also
+  require direct TLS or a trusted TLS-stop proxy, exact allowed hosts, and the
+  current Scion SDK transport checks.
+- Host mutations are denied unless `SYSTEMS_MANAGER_ALLOW_HOST_MUTATIONS=true` and the
+  individual request receives destructive-operation approval.
+- Managed-file writes also require
+  `SYSTEMS_MANAGER_ALLOW_FILESYSTEM_MUTATIONS=true`.
+- Sensitive reads and active probes have independent default-deny gates.
+- Managed paths are confined beneath an explicit
+  `SYSTEMS_MANAGER_FILESYSTEM_ROOT`; there is no working-directory fallback.
+- Raw shell, arbitrary commands, plaintext credentials, model-authored cron creation,
+  and compatibility command aliases are not capabilities.
+- Logs and observability are metadata-only. Keep `LANGFUSE_CAPTURE_CONTENT=false`.
+
+---
+
+## AgentConfig, secrets, and TLS
+
+Use `TLS_PROFILE` / `TLS_PROFILE_REF` with `TLS_PROFILES_REF` for shared checked
+outbound trust. Service-specific profiles such as `OIDC_TLS_PROFILE_REF`,
+`MODEL_TLS_PROFILE_REF`, and `LANGFUSE_TLS_PROFILE_REF` may select entries from the
+same runtime catalog. Do not hardcode CA paths or verification flags in application
+code, and do not disable verification for incomplete certificate chains.
+
+Out-of-band BMC health reads consume one runtime secret projection from
+`SYSTEMS_MANAGER_BMC_CREDENTIALS`. AgentConfig resolves the checked `env://` or secret
+reference before start; the provider accepts exactly a JSON object with `host`, `user`,
+and `password`. No secret-store vendor, secret path, token, or credential value is
+embedded in this package.
+
+The MCP listener's own certificate or trusted-proxy boundary uses the current Agent
+Utilities `MCP_TLS_*` configuration. The optional agent listener uses `SERVER_TLS_*`
+and requires JWT configuration for non-loopback serving.
+
+---
+
+## Documentation
+
+The complete documentation is published as the
+[official documentation site](https://knuckles-team.github.io/systems-manager/) and is
+the recommended reference for installation, deployment, and day-to-day operation.
+
+---
+
+## Repository Owners
+
+<img width="100%" height="180em" src="https://github-readme-stats.vercel.app/api?username=example&show_icons=true&hide_border=true&&count_private=true&include_all_commits=true" />
+
+![GitHub followers](https://img.shields.io/github/followers/example)
+![GitHub User's stars](https://img.shields.io/github/stars/example)
+
+---
+
+## Contribute
+
+Contributions are welcome! Please ensure code quality by running local checks before submitting pull requests:
+- Format code using `ruff format .`
+- Lint code using `ruff check .`
+- Validate type-safety with `mypy .`
+- Run test suites using `pytest`
 
 <!-- GOVERNED-CAPABILITY:START -->
 ## Governed capability contract
