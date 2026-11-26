@@ -24,6 +24,23 @@ inspection, storage health, managed-file policy, and typed host telemetry belong
 here; durable graph storage, Arbora admission, and deployment credentials belong
 to their owning systems.
 
+## Steps
+
+1. Route the change by searching the owning spec with `git grep -n "<term>" -- specs` and verify a row exists before editing.
+2. Reuse the existing seam by reading `systems_manager/mcp_server.py` and `systems_manager/os_provider.py`, and verify the behaviour you need is not already implemented.
+3. Install the locked environment with `uv sync --locked` and verify `uv run systems-manager-mcp --help` prints usage.
+4. Make the smallest change and bind it to a test under `tests/`, and verify with `uv run pytest -q tests/test_default_content_surfaces.py tests/test_mcp_server.py`.
+5. Lint with `uv run ruff check systems_manager tests` and verify it reports no findings.
+6. Commit with the `Spec:` and `Co-Authored-By:` trailers on consecutive lines, and verify with `pre-commit run` that the configured gates pass.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---|---|---|
+| `uv sync --locked` fails | `uv.lock` is out of date with `pyproject.toml` | Refresh it with `uv lock` and commit the lockfile with the version mirrors together |
+| Content-surface test fails | A packaged skill, ontology or prompt is not discoverable | Fix the file under `systems_manager/skills/` and verify with `uv run pytest -q tests/test_default_content_surfaces.py` |
+| Trailer gate rejects the commit | `Spec:` and `Co-Authored-By:` are not in the same final paragraph | Amend the message so the two lines are adjacent with no blank line between them |
+
 ## Repository map and real entry points
 
 - `systems_manager/mcp_server.py` creates the `systems-manager` FastMCP server,

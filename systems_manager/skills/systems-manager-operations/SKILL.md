@@ -25,6 +25,23 @@ Use the provider's governed MCP tools through Arbora delegation.
    ChangeEnvelope boundary and a deployment-provided pseudonymization key.
 6. Verify the durable result and its trace/evidence before reporting completion.
 
+## Steps
+
+1. Establish the verified GraphSession and tenant, and verify both are present before the first `find` call.
+2. Discover the current tool surface with the intent `find` operation, and verify the exact action schema before building arguments.
+3. Run read-only inspection first, such as `get_management_capabilities`, and verify the result describes the intended host.
+4. For a change, present the impact, use the provider dry-run or the `act` preview when offered, and verify the preview matches the request.
+5. Execute the mutation as a fenced WorkItem with `act`, and verify the returned trace or evidence reference shows the durable result.
+6. Ingest host state only through `systems_ingest_host`, and verify the ChangeEnvelope result is accepted.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---|---|---|
+| A tool name or parameter is rejected | The cached tool surface is stale | Run `find` for the intent again and use the returned schema |
+| A mutation is denied by policy | The host-mutation or approval gate is closed | Report the denial and stop, because a policy denial is final |
+| BMC calls fail | `SYSTEMS_MANAGER_BMC_CREDENTIALS` is not resolved at runtime | Ask the operator to provide the BMC credential projection in the deployment configuration |
+
 ## Safety contract
 
 - Never persist credentials, endpoints, raw personal identifiers, hostnames, network

@@ -42,6 +42,24 @@ firewall, kernel panic).
 > Never hardcode BMC passwords in scripts/commits. Read from an env/secret. Default Dell iDRAC
 > creds are `root`/`calvin` — assume they should be rotated.
 
+## Steps
+
+1. Discover the BMC with `sudo ipmitool mc info` and verify the manufacturer and firmware fields are printed.
+2. Read the BMC network configuration with `sudo ipmitool lan print 1` and verify an IP address and IP source are shown, trying channel 2 if the output is empty.
+3. Read state before acting with `ipmitool chassis status` and `ipmitool power status`, and verify the power state is reported.
+4. Check health with `ipmitool sensor list` and `ipmitool sel elist`, and verify temperatures, fans and recent events are listed.
+5. Change power only after the target host is confirmed, using `ipmitool power cycle` in preference to `power off`, and verify with `ipmitool power status` afterwards.
+6. Attach a console for recovery with `ipmitool -I lanplus sol activate` and verify a login prompt appears.
+
+## Failure recovery
+
+| Failure | Cause | Recovery |
+|---|---|---|
+| `ipmitool` cannot open `/dev/ipmi0` | The `ipmi_si` and `ipmi_devintf` modules are not loaded | Load them with `sudo modprobe ipmi_si ipmi_devintf` and check `ls /dev/ipmi*` |
+| `lan print 1` is empty | The BMC LAN is on another channel | Use `ipmitool lan print 2` and pass that channel to later `lan set` commands |
+| `sol activate` is refused with a session already active | A stale serial session holds the BMC | Run `ipmitool sol deactivate` to clear it before activating again |
+| Out-of-band calls time out | The BMC address is unreachable or LAN access is off | Configure it in-band with `sudo ipmitool lan set 1 access on` and the address commands in Operations |
+
 ## Operations
 
 ### 1. Discover / verify the BMC
