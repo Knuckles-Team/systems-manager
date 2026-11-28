@@ -17,3 +17,10 @@ Each proving test above includes the refusal or error case that its row names. A
 ## Quality and release proof
 
 Run `uv run pytest tests` and `pre-commit run --all-files` from the repository root. A planned test is added by the code change that lands the row.
+
+## Machine roll-up proofs
+
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006`: `tests/test_machine_rollup.py::test_pack_class_reaches_the_core_machine` (planned; the owning change adds the test)
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006.1`: `tests/test_machine_rollup.py::test_hardware_node_rolls_up_to_machine_and_uuid_observes` (planned; the owning change adds the test)
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006.2`: `tests/test_machine_rollup.py::test_roll_up_is_wired_into_the_pack_and_ingest` (planned; the owning change adds the test)
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006.3`: `tests/test_machine_rollup.py::test_pack_class_reaches_the_core_machine` (planned; the owning change adds the test)

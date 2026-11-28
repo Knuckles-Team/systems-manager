@@ -9,3 +9,7 @@ Each task line reads `- [ ] T001 [P] [US1] <ID>-R012.4 description`. Tasks run p
 - [ ] T003 [US3] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R003 Prove service lifecycle parity across Linux, Windows and macOS.
 - [ ] T004 [US4] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R004 Register the workspace reader.
 - [x] T005 [US5] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R005 The pack extends only the core ontology.
+- [ ] T006 [US1] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006 Machine roll-up (rollup).
+- [ ] T007 [US1] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006.1 Class rolls up to the machine class.
+- [ ] T008 [US1] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006.2 Wiring.
+- [ ] T009 [US1] CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006.3 Hot-path proof: the pack roll-up reaches the core.
