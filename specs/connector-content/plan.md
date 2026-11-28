@@ -40,6 +40,16 @@ No unknowns. Every row names its code and test; the caller chain of each row was
 
 ## Phase 1: Design
 
+### Machine roll-up design
+
+1. **Owner.** systems-manager owns its telemetry classes and ingest. Medulla owns the machine class.
+2. **Cohesion.** The class parents and the optional link change together in the host ingest.
+3. **Dependency direction.** The connector imports `scion_sdk.machine`, which imports the engine client. Nothing points upward.
+4. **Interface depth.** none. The row adds no abstraction. It reuses the SDK helper.
+5. **Special cases.** A report with no system UUID emits no link, which keeps the privacy rule of the file.
+6. **State.** none. The connector holds no lifecycle. The lifecycle machine belongs to medulla.
+7. **Environment.** none. The roll-up and the link need no configuration.
+
 ### Summary
 
 This plan states how `systems-manager` delivers the rows of `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT`. The live caller is the `systems-manager` console script. The owner is the `systems_manager` package. The rows reuse the `scion-sdk` helpers and add no second authority. The plan changes no runtime code.
@@ -190,4 +200,4 @@ None. The constitution check passed.
 
 ## Cross-repo seams
 
-None. The rows depend only on the published `scion-sdk` package, which the connector imports.
+- `CONN-SYSTEMS-MANAGER-CONNECTOR-CONTENT-R006.1` consumes the observer helper of `SCION-CENTRALIZED-CAPABILITIES-R057.1`. Contract: `contracts/machine-observer.md`.
